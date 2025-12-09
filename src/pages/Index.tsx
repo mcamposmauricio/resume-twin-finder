@@ -63,16 +63,30 @@ export default function Index() {
 
       console.log("Raw AI response:", data);
 
-      // Validate response structure - check for candidates array
-      if (!data.candidates || !Array.isArray(data.candidates)) {
-        console.error("Invalid response structure:", data);
-        throw new Error("Resposta inválida da IA - candidates não encontrado");
+      // Extract candidates - handle both array and object formats
+      let candidatesArray: any[] = [];
+      
+      if (data.candidates && Array.isArray(data.candidates)) {
+        // Standard format: { candidates: [...] }
+        candidatesArray = data.candidates;
+      } else {
+        // Object with numeric keys: { 0: {...}, 1: {...}, tokens_used: ... }
+        // Extract numeric keys as candidates
+        const numericKeys = Object.keys(data).filter(key => !isNaN(Number(key))).sort((a, b) => Number(a) - Number(b));
+        if (numericKeys.length > 0) {
+          candidatesArray = numericKeys.map(key => data[key]);
+          console.log("Extracted candidates from numeric keys:", candidatesArray.length);
+        }
+      }
+
+      if (candidatesArray.length === 0) {
+        console.error("No candidates found in response:", data);
+        throw new Error("Nenhum candidato encontrado na resposta da IA");
       }
 
       // Normalize candidate data (handle different field names from AI)
       const normalizedData = {
-        ...data,
-        candidates: data.candidates.map((c: any, idx: number) => ({
+        candidates: candidatesArray.map((c: any, idx: number) => ({
           candidate_name: c.candidate_name || c.name || `Candidato ${idx + 1}`,
           file_name: c.file_name || `Arquivo ${idx + 1}`,
           match_score: c.match_score ?? 0,
@@ -115,6 +129,8 @@ export default function Index() {
             availability: "N/A",
           },
         })),
+        recommendation: data.recommendation || "Análise concluída. Revise os candidatos acima.",
+        comparison_summary: data.comparison_summary || "Todos os candidatos foram analisados com base na descrição da vaga.",
       };
 
       setResults(normalizedData);
