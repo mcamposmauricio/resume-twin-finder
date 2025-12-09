@@ -7,34 +7,29 @@ const corsHeaders = {
 
 const SYSTEM_PROMPT = `Você é um especialista sênior em RH e recrutamento. Sua tarefa é analisar currículos de candidatos em relação a uma descrição de vaga específica.
 
-Para CADA candidato, você deve fornecer uma análise detalhada incluindo:
+Para CADA candidato, forneça uma análise com:
 
-1. **match_score** (0-100): Pontuação geral de compatibilidade com a vaga
-2. **technical_fit** (0-100): Adequação técnica às requirements da vaga
-3. **potential_fit** (0-100): Potencial de crescimento e adaptação
-4. **summary**: Resumo de 2-3 frases sobre o candidato
-5. **years_experience**: Anos de experiência estimados
-6. **soft_skills**: Array de 5-8 soft skills com scores (0-100)
-7. **cultural_fit**: Objeto com results_orientation, process_orientation, people_orientation, innovation_orientation (todos 0-100)
-8. **red_flags**: Array de pontos de atenção ou alertas
-9. **gap_analysis**: Objeto com strong_match, moderate_match, weak_or_missing (arrays de skills)
-10. **inferred_info**: Objeto com seniority_level, estimated_salary_range, tools_and_technologies[], industry_experience[], education_level, languages[], certifications[], leadership_experience, remote_work_compatibility, availability
+1. **candidate_name**: Nome do candidato (extraído do CV)
+2. **file_name**: Nome do arquivo
+3. **match_score** (0-100): Compatibilidade com a vaga
+4. **technical_fit** (0-100): Adequação técnica
+5. **potential_fit** (0-100): Potencial de crescimento
+6. **summary**: Resumo de 1-2 frases curtas
+7. **years_experience**: Anos de experiência (número)
+8. **soft_skills**: Array de objetos {name: string, score: number} com 4-5 skills principais
+9. **cultural_fit**: {results_orientation, process_orientation, people_orientation, innovation_orientation} (0-100)
+10. **red_flags**: Array de strings (máx 3)
+11. **gap_analysis**: {strong_match: string[], moderate_match: string[], weak_or_missing: string[]} (máx 4 itens cada)
+12. **inferred_info**: {seniority_level, estimated_salary_range, tools_and_technologies: string[], industry_experience: string[], education_level, languages: string[], certifications: string[], leadership_experience, remote_work_compatibility, availability}
 
 Também forneça:
-- **recommendation**: Sua recomendação de quem contratar e por quê
-- **comparison_summary**: Resumo comparativo de todos os candidatos
+- **recommendation**: Recomendação curta (1-2 frases)
+- **comparison_summary**: Resumo comparativo curto (2-3 frases)
 
-IMPORTANTE: 
-- Extraia o nome do candidato do currículo. Se não encontrar, use "Candidato" + número
-- Seja objetivo e baseie-se apenas nas informações fornecidas
-- Red flags devem ser pontos genuínos de atenção, não apenas observações neutras
-
-Responda APENAS com JSON válido no seguinte formato:
-{
-  "candidates": [...],
-  "recommendation": "...",
-  "comparison_summary": "..."
-}`;
+REGRAS CRÍTICAS:
+- Responda APENAS com JSON válido, SEM markdown, SEM \`\`\`
+- Mantenha respostas CONCISAS para evitar truncamento
+- soft_skills DEVE ser array de objetos: [{"name": "Comunicação", "score": 85}]`;
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -122,10 +117,11 @@ serve(async (req) => {
             }
           ],
           generationConfig: {
-            temperature: 0.7,
-            topP: 0.95,
+            temperature: 0.5,
+            topP: 0.9,
             topK: 40,
-            maxOutputTokens: 8192,
+            maxOutputTokens: 65536,
+            responseMimeType: "application/json"
           }
         }),
       }
@@ -150,15 +146,37 @@ serve(async (req) => {
     // Parse the JSON from the response
     let analysisResult;
     try {
-      // Try to extract JSON from the response (it might be wrapped in markdown code blocks)
-      const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/) || 
-                       responseText.match(/```\s*([\s\S]*?)\s*```/) ||
-                       [null, responseText];
-      const jsonStr = jsonMatch[1] || responseText;
-      analysisResult = JSON.parse(jsonStr.trim());
+      // Clean the response text
+      let jsonStr = responseText.trim();
+      
+      // Remove markdown code blocks if present
+      if (jsonStr.startsWith("```")) {
+        jsonStr = jsonStr.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+      }
+      
+      analysisResult = JSON.parse(jsonStr);
+      console.log("Successfully parsed JSON response");
     } catch (parseError) {
-      console.error("Failed to parse Gemini response:", responseText);
-      throw new Error("Failed to parse AI response");
+      console.error("Failed to parse Gemini response. First 500 chars:", responseText.substring(0, 500));
+      console.error("Last 500 chars:", responseText.substring(responseText.length - 500));
+      
+      // Try to salvage partial JSON
+      try {
+        const partialMatch = responseText.match(/\{[\s\S]*"candidates"\s*:\s*\[[\s\S]*\]/);
+        if (partialMatch) {
+          // Try to complete the JSON
+          let partial = partialMatch[0];
+          if (!partial.endsWith("}")) {
+            partial += ', "recommendation": "Análise incompleta", "comparison_summary": "Análise parcial devido a limite de tokens."}';
+          }
+          analysisResult = JSON.parse(partial);
+          console.log("Recovered partial JSON");
+        } else {
+          throw new Error("Could not recover JSON");
+        }
+      } catch {
+        throw new Error("Failed to parse AI response - response may have been truncated");
+      }
     }
 
     // Add file names to candidates if missing
