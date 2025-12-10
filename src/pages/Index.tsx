@@ -9,6 +9,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { ResultsSection } from "@/components/ResultsSection";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import type { AppStep, UploadedFile, AnalysisResult, CandidateResult } from "@/types";
+import logoMarq from "@/assets/logo-marq-blue.png";
 
 export default function Index() {
   const [step, setStep] = useState<AppStep>("welcome");
@@ -273,7 +274,11 @@ export default function Index() {
 
       {/* Footer */}
       <footer className="py-6 text-center text-sm text-muted-foreground border-t border-border bg-card">
-        <p>CompareCV powered by MarQ © {new Date().getFullYear()}</p>
+        <div className="flex items-center justify-center gap-2">
+          <span>CompareCV powered by</span>
+          <img src={logoMarq} alt="MarQ HR" className="h-5" />
+          <span>© {new Date().getFullYear()}</span>
+        </div>
       </footer>
     </div>
   );

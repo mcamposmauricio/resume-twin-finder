@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FileText, Mail, Lock, ArrowRight, Upload, Brain, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import logoMarq from "@/assets/logo-marq-blue.png";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -212,9 +213,10 @@ export default function Auth() {
             </div>
           </div>
 
-          <p className="text-center text-slate-400 text-sm mt-6">
-            © {new Date().getFullYear()} CompareCV powered by MarQ. Todos os direitos reservados.
-          </p>
+          <div className="text-center text-slate-400 text-sm mt-6 flex items-center justify-center gap-2">
+            <span>© {new Date().getFullYear()} CompareCV powered by</span>
+            <img src={logoMarq} alt="MarQ HR" className="h-4" />
+          </div>
         </div>
       </div>
     </div>
