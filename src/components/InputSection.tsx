@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Upload, FileText, X, AlertCircle } from "lucide-react";
+import { Upload, FileText, X, AlertCircle, ArrowRight } from "lucide-react";
 import { UploadedFile } from "@/types";
 
 interface InputSectionProps {
@@ -36,7 +36,7 @@ export function InputSection({ onAnalyze, isLoading }: InputSectionProps) {
         resolve({
           name: file.name,
           type: file.type || `application/${extension.slice(1)}`,
-          content: content.split(",")[1] || content, // Remove data URL prefix if present
+          content: content.split(",")[1] || content,
         });
       };
       reader.onerror = () => resolve(null);
@@ -53,7 +53,6 @@ export function InputSection({ onAnalyze, isLoading }: InputSectionProps) {
       for (const file of Array.from(fileList)) {
         const processed = await processFile(file);
         if (processed) {
-          // Check for duplicates
           if (
             !files.some((f) => f.name === processed.name) &&
             !newFiles.some((f) => f.name === processed.name)
@@ -127,109 +126,131 @@ export function InputSection({ onAnalyze, isLoading }: InputSectionProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">
-          Upload de Currículos
-        </h2>
-        <p className="text-slate-600">
-          Arraste e solte os currículos ou clique para selecionar. Aceita PDF,
-          TXT e DOCX.
-        </p>
-      </div>
-
-      {/* Drop Zone */}
-      <div
-        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer mb-6 ${
-          dragActive
-            ? "border-blue-500 bg-blue-50"
-            : "border-slate-300 hover:border-blue-400 hover:bg-slate-50"
-        }`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        onClick={() => document.getElementById("file-input")?.click()}
-      >
-        <input
-          id="file-input"
-          type="file"
-          multiple
-          accept=".pdf,.txt,.docx"
-          onChange={handleFileInput}
-          className="hidden"
-        />
-        <Upload className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-        <p className="text-lg font-medium text-slate-700">
-          Arraste os currículos aqui
-        </p>
-        <p className="text-slate-500 mt-1">ou clique para selecionar</p>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-          <p className="text-red-700">{error}</p>
+    <div className="max-w-3xl mx-auto p-6 md:p-8 animate-fade-in">
+      {/* Step 1: Upload */}
+      <div className="mb-10">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
+            1
+          </div>
+          <h2 className="text-xl font-semibold text-foreground">
+            Upload de Currículos
+          </h2>
         </div>
-      )}
+        <p className="text-muted-foreground mb-6 ml-11">
+          Arraste e solte os currículos ou clique para selecionar. Aceita PDF, TXT e DOCX.
+        </p>
 
-      {/* File List */}
-      {files.length > 0 && (
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-slate-700 mb-3">
-            Arquivos Selecionados ({files.length})
-          </h3>
-          <div className="space-y-2">
+        {/* Drop Zone */}
+        <div
+          className={`ml-11 border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${
+            dragActive
+              ? "border-primary bg-primary/5"
+              : "border-border hover:border-primary/50 hover:bg-muted/50"
+          }`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={() => document.getElementById("file-input")?.click()}
+        >
+          <input
+            id="file-input"
+            type="file"
+            multiple
+            accept=".pdf,.txt,.docx"
+            onChange={handleFileInput}
+            className="hidden"
+          />
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Upload className="w-8 h-8 text-primary" />
+          </div>
+          <p className="text-lg font-medium text-foreground mb-1">
+            Arraste os currículos aqui
+          </p>
+          <p className="text-muted-foreground">ou clique para selecionar</p>
+        </div>
+
+        {/* File List */}
+        {files.length > 0 && (
+          <div className="ml-11 mt-4 space-y-2">
             {files.map((file) => (
               <div
                 key={file.name}
-                className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200"
+                className="flex items-center justify-between p-3 bg-muted rounded-xl"
               >
                 <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-blue-500" />
-                  <span className="text-slate-700 font-medium">{file.name}</span>
+                  <FileText className="w-5 h-5 text-primary" />
+                  <span className="text-foreground font-medium">{file.name}</span>
                 </div>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     removeFile(file.name);
                   }}
-                  className="p-1 hover:bg-slate-200 rounded-full transition-colors"
+                  className="p-1.5 hover:bg-background rounded-lg transition-colors"
                 >
-                  <X className="w-4 h-4 text-slate-500" />
+                  <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Job Description */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">
-          Descrição da Vaga
-        </h2>
-        <p className="text-slate-600 mb-4">
-          Cole a descrição completa da vaga, incluindo requisitos e
-          responsabilidades.
+      {/* Step 2: Job Description */}
+      <div className="mb-10">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
+            2
+          </div>
+          <h2 className="text-xl font-semibold text-foreground">
+            Descrição da Vaga
+          </h2>
+        </div>
+        <p className="text-muted-foreground mb-6 ml-11">
+          Cole a descrição completa da vaga, incluindo requisitos e responsabilidades.
         </p>
         <textarea
           value={jobDescription}
           onChange={(e) => setJobDescription(e.target.value)}
           placeholder="Cole aqui a descrição da vaga..."
-          className="w-full h-48 p-4 border border-slate-300 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+          className="input-clean ml-11 h-48 resize-none"
+          style={{ width: 'calc(100% - 44px)' }}
         />
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="mb-6 ml-11 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-red-700">{error}</p>
+        </div>
+      )}
+
       {/* Analyze Button */}
-      <button
-        onClick={handleSubmit}
-        disabled={isLoading || files.length === 0 || !jobDescription.trim()}
-        className="w-full py-4 bg-blue-700 text-white rounded-xl text-lg font-semibold hover:bg-blue-800 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-      >
-        {isLoading ? "Analisando..." : "Analisar Candidatos"}
-      </button>
+      <div className="ml-11">
+        <button
+          onClick={handleSubmit}
+          disabled={isLoading || files.length === 0 || !jobDescription.trim()}
+          className="btn-primary w-full py-4 text-base"
+        >
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              Analisando...
+            </span>
+          ) : (
+            <>
+              Analisar Candidatos
+              <ArrowRight className="w-5 h-5" />
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }
