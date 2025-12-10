@@ -8,7 +8,7 @@ import { InputSection } from "@/components/InputSection";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ResultsSection } from "@/components/ResultsSection";
 import { ErrorScreen } from "@/components/ErrorScreen";
-import type { AppStep, UploadedFile, AnalysisResult } from "@/types";
+import type { AppStep, UploadedFile, AnalysisResult, CandidateResult } from "@/types";
 
 export default function Index() {
   const [step, setStep] = useState<AppStep>("welcome");
@@ -177,7 +177,18 @@ export default function Index() {
       if (error) throw error;
 
       if (data?.results) {
-        setResults(data.results as unknown as AnalysisResult);
+        const rawResults = data.results as Record<string, unknown>;
+        
+        // Normalize the results - handle both candidates and candidates_analysis
+        const candidates = rawResults.candidates_analysis || rawResults.candidates || [];
+        
+        const normalizedResults: AnalysisResult = {
+          candidates: candidates as CandidateResult[],
+          recommendation: (rawResults.recommendation as string) || "",
+          comparison_summary: (rawResults.comparison_summary as string) || "",
+        };
+        
+        setResults(normalizedResults);
         setTokensUsed(data.tokens_used || 0);
         setSelectedAnalysisId(analysisId);
         setStep("results");
