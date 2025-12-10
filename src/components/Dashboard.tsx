@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Briefcase, Users, ArrowRight, Plus } from "lucide-react";
+import { Briefcase, Users, ArrowRight, Plus, FileText, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -42,7 +42,6 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis }: DashboardProp
       const analysesData = data || [];
       setAnalyses(analysesData);
 
-      // Calculate stats
       const totalAnalyses = analysesData.length;
       const totalCandidates = analysesData.reduce((acc, analysis) => {
         const candidates = Array.isArray(analysis.candidates) ? analysis.candidates : [];
@@ -58,42 +57,35 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis }: DashboardProp
   };
 
   const extractTitle = (jobDescription: string) => {
-    // Try to extract a title from the job description
     const lines = jobDescription.split('\n').filter(l => l.trim());
     if (lines.length > 0) {
       const firstLine = lines[0].trim();
-      if (firstLine.length <= 100) return firstLine;
-      return firstLine.substring(0, 97) + "...";
+      if (firstLine.length <= 60) return firstLine;
+      return firstLine.substring(0, 57) + "...";
     }
     return "Análise sem título";
   };
 
-  const extractSubtitle = (jobDescription: string) => {
-    const text = jobDescription.replace(/\n/g, ' ').trim();
-    if (text.length <= 80) return text;
-    return text.substring(0, 77) + "...";
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return format(date, "dd 'de' MMM.", { locale: ptBR });
+    return format(date, "dd MMM yyyy", { locale: ptBR });
   };
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Usuário";
 
   return (
-    <div className="px-4 py-8 md:px-8 max-w-5xl mx-auto">
+    <div className="px-4 py-10 md:px-8 max-w-5xl mx-auto animate-fade-in">
       {/* Welcome Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12 gap-6">
         <div>
-          <p className="text-sm text-muted-foreground mb-1">Bem-vindo de volta</p>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground uppercase tracking-tight">
-            {userName.toUpperCase()}
+          <p className="text-muted-foreground mb-2">Bem-vindo de volta,</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+            {userName}
           </h1>
         </div>
         <button
           onClick={onNewAnalysis}
-          className="mt-4 md:mt-0 flex items-center gap-2 px-6 py-3 bg-foreground text-background rounded-lg font-medium hover:bg-foreground/90 transition-colors"
+          className="btn-primary"
         >
           <Plus className="w-5 h-5" />
           Nova Análise
@@ -101,55 +93,65 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis }: DashboardProp
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-        <div className="bg-card border border-border rounded-xl p-6">
-          <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center mb-4">
-            <Briefcase className="w-6 h-6 text-muted-foreground" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div className="card-clean">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
+              <Briefcase className="w-7 h-7 text-primary" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-foreground">{stats.totalAnalyses}</p>
+              <p className="text-muted-foreground">Vagas analisadas</p>
+            </div>
           </div>
-          <p className="text-4xl font-bold text-foreground mb-1">{stats.totalAnalyses}</p>
-          <p className="text-sm text-muted-foreground">Vagas analisadas</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-6">
-          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
-            <Users className="w-6 h-6 text-blue-600" />
+        <div className="card-clean">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center">
+              <Users className="w-7 h-7 text-green-600" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-foreground">{stats.totalCandidates}</p>
+              <p className="text-muted-foreground">Currículos analisados</p>
+            </div>
           </div>
-          <p className="text-4xl font-bold text-foreground mb-1">{stats.totalCandidates}</p>
-          <p className="text-sm text-muted-foreground">Currículos analisados</p>
         </div>
       </div>
 
       {/* Recent Analyses */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <span className="bg-yellow-300 px-2 py-0.5 rounded text-sm font-medium text-foreground">
-              Análises Recentes
-            </span>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-foreground">
+            Análises Recentes
           </h2>
           {analyses.length > 5 && (
-            <button className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+            <button className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 font-medium transition-colors">
               Ver todas <ArrowRight className="w-4 h-4" />
             </button>
           )}
         </div>
 
         {loading ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-card border border-border rounded-xl p-4 animate-pulse">
-                <div className="h-5 bg-muted rounded w-1/3 mb-2" />
-                <div className="h-4 bg-muted rounded w-2/3" />
+              <div key={i} className="card-clean animate-pulse">
+                <div className="h-5 bg-muted rounded w-1/3 mb-3" />
+                <div className="h-4 bg-muted rounded w-1/4" />
               </div>
             ))}
           </div>
         ) : analyses.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-8 text-center">
+          <div className="card-clean text-center py-12">
+            <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-muted-foreground" />
+            </div>
             <p className="text-muted-foreground mb-4">Você ainda não realizou nenhuma análise.</p>
             <button
               onClick={onNewAnalysis}
-              className="text-primary font-medium hover:underline"
+              className="btn-primary"
             >
-              Comece sua primeira análise
+              <Plus className="w-5 h-5" />
+              Começar primeira análise
             </button>
           </div>
         ) : (
@@ -161,25 +163,30 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis }: DashboardProp
                 <button
                   key={analysis.id}
                   onClick={() => onViewAnalysis(analysis.id)}
-                  className="w-full bg-card border border-border rounded-xl p-4 hover:border-foreground/20 hover:shadow-sm transition-all text-left group"
+                  className="w-full card-hover text-left group"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0 pr-4">
-                      <h3 className="font-medium text-foreground truncate mb-1">
-                        {extractTitle(analysis.job_description)}
-                      </h3>
-                      <p className="text-sm text-muted-foreground truncate">
-                        Título: {extractSubtitle(analysis.job_description)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
-                      <div className="text-center">
-                        <p className="font-semibold text-foreground">{candidateCount}</p>
-                        <p className="text-xs">CVs</p>
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                        <FileText className="w-5 h-5 text-primary" />
                       </div>
-                      <p className="hidden sm:block">{formatDate(analysis.created_at)}</p>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-foreground truncate">
+                          {extractTitle(analysis.job_description)}
+                        </h3>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                          <span className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            {candidateCount} CVs
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {formatDate(analysis.created_at)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
+                    <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                   </div>
                 </button>
               );

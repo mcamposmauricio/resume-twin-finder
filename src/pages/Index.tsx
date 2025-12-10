@@ -19,6 +19,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
   const navigate = useNavigate();
+  
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
@@ -63,15 +64,11 @@ export default function Index() {
 
       console.log("Raw AI response:", data);
 
-      // Extract candidates - handle both array and object formats
       let candidatesArray: any[] = [];
       
       if (data.candidates && Array.isArray(data.candidates)) {
-        // Standard format: { candidates: [...] }
         candidatesArray = data.candidates;
       } else {
-        // Object with numeric keys: { 0: {...}, 1: {...}, tokens_used: ... }
-        // Extract numeric keys as candidates
         const numericKeys = Object.keys(data).filter(key => !isNaN(Number(key))).sort((a, b) => Number(a) - Number(b));
         if (numericKeys.length > 0) {
           candidatesArray = numericKeys.map(key => data[key]);
@@ -84,7 +81,6 @@ export default function Index() {
         throw new Error("Nenhum candidato encontrado na resposta da IA");
       }
 
-      // Normalize candidate data (handle different field names from AI)
       const normalizedData = {
         candidates: candidatesArray.map((c: any, idx: number) => ({
           candidate_name: c.candidate_name || c.name || `Candidato ${idx + 1}`,
@@ -96,7 +92,6 @@ export default function Index() {
           years_experience: c.years_experience ?? 0,
           soft_skills: Array.isArray(c.soft_skills) 
             ? c.soft_skills.map((s: any) => {
-                // Handle both {name, score} and {SkillName: score} formats
                 if (s.name && typeof s.score === 'number') {
                   return s;
                 }
@@ -137,7 +132,6 @@ export default function Index() {
       setTokensUsed(data.tokens_used || 0);
       setStep("results");
 
-      // Save analysis to database
       if (user) {
         const { error: saveError } = await supabase.from("analyses").insert({
           user_id: user.id,
@@ -200,45 +194,37 @@ export default function Index() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-4 border-muted border-t-primary animate-spin" />
       </div>
     );
   }
 
-  const getStepNumber = () => {
-    if (step === "welcome") return 0;
-    if (step === "input") return 1;
-    if (step === "loading") return 2;
-    if (step === "results") return 3;
-    return 1;
-  };
-
   return (
-    <div className="min-h-screen bg-background" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-card border-b border-border">
-        <div className="max-w-5xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
+      <header className="bg-card border-b border-border sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
           <button 
             onClick={handleBackToDashboard}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
           >
-            <div className="p-1.5 bg-muted rounded-lg">
-              <FileText className="w-5 h-5 text-foreground" />
+            <div className="p-2 bg-primary rounded-xl">
+              <FileText className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-semibold text-foreground">CompareCV</span>
+            <span className="text-lg font-bold text-foreground">CompareCV</span>
           </button>
 
-          {/* User Menu */}
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground hidden sm:block">
               {user?.email}
             </span>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+              title="Sair"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -260,14 +246,12 @@ export default function Index() {
         )}
         {step === "loading" && <LoadingScreen />}
         {step === "results" && results && (
-          <div className="max-w-7xl mx-auto">
-            <ResultsSection
-              results={results}
-              tokensUsed={tokensUsed}
-              onNewAnalysis={handleNewAnalysis}
-              onBack={handleBackToDashboard}
-            />
-          </div>
+          <ResultsSection
+            results={results}
+            tokensUsed={tokensUsed}
+            onNewAnalysis={handleNewAnalysis}
+            onBack={handleBackToDashboard}
+          />
         )}
         {step === "error" && (
           <ErrorScreen message={errorMessage} onRetry={handleRetry} />
@@ -275,7 +259,7 @@ export default function Index() {
       </main>
 
       {/* Footer */}
-      <footer className="py-4 text-center text-xs text-muted-foreground border-t border-border bg-card">
+      <footer className="py-6 text-center text-sm text-muted-foreground border-t border-border bg-card">
         <p>CompareCV © {new Date().getFullYear()}</p>
       </footer>
     </div>
