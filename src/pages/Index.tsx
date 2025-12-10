@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserCheck, LogOut } from "lucide-react";
+import { FileText, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { WelcomeScreen } from "@/components/WelcomeScreen";
+import { Dashboard } from "@/components/Dashboard";
 import { InputSection } from "@/components/InputSection";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ResultsSection } from "@/components/ResultsSection";
@@ -17,8 +17,8 @@ export default function Index() {
   const [errorMessage, setErrorMessage] = useState("");
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
   const navigate = useNavigate();
-
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
@@ -162,11 +162,40 @@ export default function Index() {
     setResults(null);
     setTokensUsed(0);
     setErrorMessage("");
+    setSelectedAnalysisId(null);
   };
 
   const handleRetry = () => {
     setStep("input");
     setErrorMessage("");
+  };
+
+  const handleViewAnalysis = async (analysisId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("analyses")
+        .select("*")
+        .eq("id", analysisId)
+        .single();
+
+      if (error) throw error;
+
+      if (data?.results) {
+        setResults(data.results as unknown as AnalysisResult);
+        setTokensUsed(data.tokens_used || 0);
+        setSelectedAnalysisId(analysisId);
+        setStep("results");
+      }
+    } catch (error) {
+      console.error("Error loading analysis:", error);
+      toast.error("Erro ao carregar análise");
+    }
+  };
+
+  const handleBackToDashboard = () => {
+    setStep("welcome");
+    setResults(null);
+    setSelectedAnalysisId(null);
   };
 
   if (loading) {
@@ -186,72 +215,58 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-background" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <UserCheck className="w-6 h-6 text-blue-700" />
+      <header className="bg-card border-b border-border">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
+          <button 
+            onClick={handleBackToDashboard}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <div className="p-1.5 bg-muted rounded-lg">
+              <FileText className="w-5 h-5 text-foreground" />
             </div>
-            <h1 className="text-xl font-bold text-slate-800">CompareCV</h1>
-          </div>
-
-          {/* Progress Indicator */}
-          {step !== "welcome" && step !== "error" && (
-            <div className="hidden md:flex items-center gap-2">
-              {[1, 2, 3].map((num) => (
-                <div key={num} className="flex items-center">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${
-                      getStepNumber() >= num
-                        ? "bg-blue-700 text-white"
-                        : "bg-slate-200 text-slate-500"
-                    }`}
-                  >
-                    {num}
-                  </div>
-                  {num < 3 && (
-                    <div
-                      className={`w-8 h-1 ${
-                        getStepNumber() > num ? "bg-blue-700" : "bg-slate-200"
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+            <span className="text-lg font-semibold text-foreground">CompareCV</span>
+          </button>
 
           {/* User Menu */}
           <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-600 hidden sm:block">
+            <span className="text-sm text-muted-foreground hidden sm:block">
               {user?.email}
             </span>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+              className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
             >
               <LogOut className="w-4 h-4" />
-              <span className="hidden sm:block">Sair</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto">
-        {step === "welcome" && <WelcomeScreen onStart={() => setStep("input")} />}
+      <main className="flex-1">
+        {step === "welcome" && (
+          <Dashboard 
+            user={user} 
+            onNewAnalysis={handleNewAnalysis} 
+            onViewAnalysis={handleViewAnalysis}
+          />
+        )}
         {step === "input" && (
-          <InputSection onAnalyze={handleAnalyze} isLoading={false} />
+          <div className="max-w-5xl mx-auto">
+            <InputSection onAnalyze={handleAnalyze} isLoading={false} />
+          </div>
         )}
         {step === "loading" && <LoadingScreen />}
         {step === "results" && results && (
-          <ResultsSection
-            results={results}
-            tokensUsed={tokensUsed}
-            onNewAnalysis={handleNewAnalysis}
-          />
+          <div className="max-w-7xl mx-auto">
+            <ResultsSection
+              results={results}
+              tokensUsed={tokensUsed}
+              onNewAnalysis={handleNewAnalysis}
+            />
+          </div>
         )}
         {step === "error" && (
           <ErrorScreen message={errorMessage} onRetry={handleRetry} />
@@ -259,11 +274,8 @@ export default function Index() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto py-6 text-center text-sm text-slate-500 border-t border-slate-200 bg-white">
-        <p>CompareCV © {new Date().getFullYear()} - Análise Inteligente de Currículos</p>
-        {tokensUsed > 0 && (
-          <p className="mt-1">Tokens utilizados nesta sessão: {tokensUsed.toLocaleString()}</p>
-        )}
+      <footer className="py-4 text-center text-xs text-muted-foreground border-t border-border bg-card">
+        <p>CompareCV © {new Date().getFullYear()}</p>
       </footer>
     </div>
   );
