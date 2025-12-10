@@ -23,19 +23,10 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
   };
 
   const getCellStyle = (perfIndex: number, potIndex: number): string => {
-    // High potential row (top)
-    if (potIndex === 2) {
-      if (perfIndex === 2) return "bg-[#1e3a5f]"; // Top right - darkest blue
-      if (perfIndex === 1) return "bg-[#2d4a6f]"; // Top middle
-      return "bg-muted"; // Top left - gray
+    // Only highlight the top-right cell (Zona de Recomendação)
+    if (perfIndex === 2 && potIndex === 2) {
+      return "bg-blue-100 border-2 border-blue-300";
     }
-    // Medium potential row
-    if (potIndex === 1) {
-      if (perfIndex === 2) return "bg-[#2d4a6f]";
-      if (perfIndex === 1) return "bg-[#3d5a7f]";
-      return "bg-muted";
-    }
-    // Low potential row
     return "bg-muted";
   };
 
@@ -85,9 +76,9 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
                     key={key}
                     className={`aspect-square p-3 rounded ${getCellStyle(perfIndex, potIndex)} flex flex-col items-center justify-center relative min-h-[100px]`}
                   >
-                    {isTopRight && boxCandidates.length > 0 && (
-                      <span className="absolute top-2 right-2 text-[10px] font-medium text-white/80 uppercase tracking-wide">
-                        Candidato Ideal
+                    {isTopRight && (
+                      <span className="absolute top-2 right-2 text-[10px] font-medium text-blue-600 uppercase tracking-wide">
+                        Zona de Recomendação
                       </span>
                     )}
                     
@@ -99,8 +90,8 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
                         const isTop = c.candidate_name === topCandidate?.candidate_name;
                         
                         return (
-                          <div key={c.candidate_name} className="flex flex-col items-center">
-                            <span className={`text-xs font-medium mb-1 ${potIndex >= 1 && perfIndex >= 1 ? 'text-white' : 'text-foreground'}`}>
+                      <div key={c.candidate_name} className="flex flex-col items-center">
+                            <span className="text-xs font-medium mb-1 text-foreground">
                               {c.candidate_name.split(' ').slice(0, 2).join(' ')}
                             </span>
                             <div
