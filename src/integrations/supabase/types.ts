@@ -44,11 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      invites: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          inviter_user_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          inviter_user_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          inviter_user_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invites_inviter_user_id_fkey"
+            columns: ["inviter_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
           email: string | null
           id: string
+          referral_code: string | null
+          referred_by_code: string | null
           total_resumes: number
           updated_at: string
           user_id: string
@@ -57,6 +91,8 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          referral_code?: string | null
+          referred_by_code?: string | null
           total_resumes?: number
           updated_at?: string
           user_id: string
@@ -65,6 +101,8 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          referral_code?: string | null
+          referred_by_code?: string | null
           total_resumes?: number
           updated_at?: string
           user_id?: string
@@ -76,7 +114,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_referral_code: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
