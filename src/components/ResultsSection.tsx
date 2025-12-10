@@ -491,7 +491,7 @@ export function ResultsSection({
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("CompareCV - Relatório de Análise", margin, 23);
+    doc.text("CompareCV powered by MarQ - Relatório", margin, 23);
     doc.setTextColor(0, 0, 0);
     y = 45;
 
@@ -555,7 +555,7 @@ export function ResultsSection({
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(128, 128, 128);
-      doc.text(`Gerado por CompareCV | Página ${i} de ${totalPages}`, margin, 290);
+      doc.text(`CompareCV powered by MarQ | Página ${i} de ${totalPages}`, margin, 290);
     }
 
     doc.save(`comparecv-relatorio-${new Date().toISOString().split("T")[0]}.pdf`);
