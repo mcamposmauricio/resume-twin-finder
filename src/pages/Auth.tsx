@@ -9,6 +9,8 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [showInviteField, setShowInviteField] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -41,14 +43,30 @@ export default function Auth() {
         if (error) throw error;
         toast.success("Login realizado com sucesso!");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              referred_by_code: inviteCode.trim().toUpperCase() || null,
+            },
           },
         });
         if (error) throw error;
+        
+        // If invite code was provided, update the profile with it
+        if (inviteCode.trim() && signUpData?.user) {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({ referred_by_code: inviteCode.trim().toUpperCase() })
+            .eq("user_id", signUpData.user.id);
+          
+          if (updateError) {
+            console.error("Error updating referred_by_code:", updateError);
+          }
+        }
+        
         toast.success("Conta criada com sucesso!");
       }
     } catch (error: any) {
@@ -178,6 +196,35 @@ export default function Auth() {
                   />
                 </div>
               </div>
+
+              {/* Invite Code Field - Only show on signup */}
+              {!isLogin && (
+                <div className="space-y-2">
+                  {!showInviteField ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowInviteField(true)}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                    >
+                      Tenho um código de convite
+                    </button>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Código de Convite (opcional)
+                      </label>
+                      <input
+                        type="text"
+                        value={inviteCode}
+                        onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                        placeholder="Ex: ABC123"
+                        maxLength={6}
+                        className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all uppercase tracking-wider text-center font-mono"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               <button
                 type="submit"

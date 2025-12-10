@@ -8,6 +8,7 @@ import { InputSection } from "@/components/InputSection";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ResultsSection } from "@/components/ResultsSection";
 import { ErrorScreen } from "@/components/ErrorScreen";
+import { ReferralDialog } from "@/components/ReferralDialog";
 import { useResumeBalance } from "@/hooks/useResumeBalance";
 import type { AppStep, UploadedFile, AnalysisResult, CandidateResult } from "@/types";
 import logoMarq from "@/assets/logo-marq-blue.png";
@@ -238,6 +239,7 @@ export default function Index() {
                 Saldo: {availableResumes} currículos
               </span>
             )}
+            {user && <ReferralDialog userId={user.id} />}
             <span className="text-sm text-muted-foreground hidden md:block">
               {user?.email}
             </span>
