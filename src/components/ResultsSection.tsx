@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
-  Star,
   AlertTriangle,
   Clock,
   Briefcase,
@@ -450,7 +449,8 @@ export function ResultsSection({
     (a, b) => b.match_score - a.match_score
   );
   
-  const topCandidate = sortedCandidates[0];
+  const recommendedCandidates = sortedCandidates.filter(c => c.match_score >= 50);
+  const notRecommendedCandidates = sortedCandidates.filter(c => c.match_score < 50);
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -478,46 +478,64 @@ export function ResultsSection({
       {/* Nine Box Chart */}
       <NineBoxChart candidates={sortedCandidates} />
 
-      {/* AI Recommendation */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
-        <div className="flex gap-6">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-3">
-              <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-              <h3 className="text-lg font-semibold text-foreground">Recomendação da IA</h3>
-            </div>
-            <p className="text-foreground leading-relaxed">{results.recommendation}</p>
-          </div>
-          
-          {topCandidate && (
-            <div className="bg-white rounded-xl p-4 min-w-[180px] text-center border border-amber-200">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Top Pick</p>
-              <p className="font-semibold text-foreground mb-1">{topCandidate.candidate_name}</p>
-              <p className="text-2xl font-bold text-blue-600">{topCandidate.match_score}%</p>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Comparison Table */}
       <ComparisonTable candidates={sortedCandidates} />
 
-      {/* Individual Analysis Header */}
-      <div className="flex items-center gap-2 pt-4">
-        <FileText className="w-5 h-5 text-muted-foreground" />
-        <h2 className="text-xl font-semibold text-foreground">Análise Individual Aprofundada</h2>
-      </div>
+      {/* Recommended Candidates - Individual Analysis */}
+      {recommendedCandidates.length > 0 && (
+        <>
+          <div className="flex items-center gap-2 pt-4">
+            <FileText className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-xl font-semibold text-foreground">Análise Individual Aprofundada</h2>
+          </div>
 
-      {/* Candidate Cards */}
-      <div className="space-y-4">
-        {sortedCandidates.map((candidate, index) => (
-          <CandidateCard
-            key={candidate.candidate_name}
-            candidate={candidate}
-            rank={index + 1}
-          />
-        ))}
-      </div>
+          <div className="space-y-4">
+            {recommendedCandidates.map((candidate, index) => (
+              <CandidateCard
+                key={candidate.candidate_name}
+                candidate={candidate}
+                rank={index + 1}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Not Recommended Candidates */}
+      {notRecommendedCandidates.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <h2 className="text-lg font-semibold text-foreground">Candidatos Não Recomendados</h2>
+            <span className="text-sm text-muted-foreground">(Match abaixo de 50%)</span>
+          </div>
+          <div className="space-y-3">
+            {notRecommendedCandidates.map((candidate) => (
+              <div
+                key={candidate.candidate_name}
+                className="flex items-center justify-between p-4 bg-muted/30 rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{candidate.candidate_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {candidate.years_experience} anos exp. • {candidate.inferred_info?.seniority_level || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="px-3 py-1 bg-red-100 text-red-600 font-medium rounded-full text-sm">
+                    {candidate.match_score}% Match
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="flex items-center justify-center pt-4 text-sm text-muted-foreground">
