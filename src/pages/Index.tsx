@@ -66,7 +66,9 @@ export default function Index() {
 
       let candidatesArray: any[] = [];
       
-      if (data.candidates && Array.isArray(data.candidates)) {
+      if (data.candidates_analysis && Array.isArray(data.candidates_analysis)) {
+        candidatesArray = data.candidates_analysis;
+      } else if (data.candidates && Array.isArray(data.candidates)) {
         candidatesArray = data.candidates;
       } else {
         const numericKeys = Object.keys(data).filter(key => !isNaN(Number(key))).sort((a, b) => Number(a) - Number(b));
