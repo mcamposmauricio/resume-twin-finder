@@ -226,12 +226,10 @@ export default function Index() {
         <div className="max-w-6xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
           <button 
             onClick={handleBackToDashboard}
-            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <div className="p-2 bg-primary rounded-xl">
-              <FileText className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-bold text-foreground">CompareCV <span className="text-primary text-xs font-normal">powered by MarQ</span></span>
+            <span className="text-lg font-semibold text-foreground">CompareCV powered by</span>
+            <img src={logoMarq} alt="MarQ HR" className="h-5" />
           </button>
 
           <div className="flex items-center gap-4">
