@@ -45,15 +45,15 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
   const getY = (value: number): number => padding.top + innerHeight - (value / 100) * innerHeight;
 
   const zones = [
-    { x1: 0, y1: 70, x2: 40, y2: 100, color: "hsl(48 96% 53% / 0.12)" },
-    { x1: 40, y1: 70, x2: 70, y2: 100, color: "hsl(142 76% 36% / 0.1)" },
-    { x1: 70, y1: 70, x2: 100, y2: 100, color: "hsl(142 76% 36% / 0.25)", highlight: true },
-    { x1: 0, y1: 40, x2: 40, y2: 70, color: "hsl(0 84% 60% / 0.08)" },
-    { x1: 40, y1: 40, x2: 70, y2: 70, color: "hsl(48 96% 53% / 0.12)" },
-    { x1: 70, y1: 40, x2: 100, y2: 70, color: "hsl(142 76% 36% / 0.1)" },
-    { x1: 0, y1: 0, x2: 40, y2: 40, color: "hsl(0 84% 60% / 0.15)" },
-    { x1: 40, y1: 0, x2: 70, y2: 40, color: "hsl(0 84% 60% / 0.08)" },
-    { x1: 70, y1: 0, x2: 100, y2: 40, color: "hsl(48 96% 53% / 0.12)" },
+    { x1: 0, y1: 70, x2: 40, y2: 100, color: "hsl(220 14% 96% / 0.8)" },
+    { x1: 40, y1: 70, x2: 70, y2: 100, color: "hsl(220 14% 94% / 0.6)" },
+    { x1: 70, y1: 70, x2: 100, y2: 100, color: "hsl(142 40% 90% / 0.9)", highlight: true },
+    { x1: 0, y1: 40, x2: 40, y2: 70, color: "hsl(220 14% 96% / 0.6)" },
+    { x1: 40, y1: 40, x2: 70, y2: 70, color: "hsl(220 14% 96% / 0.8)" },
+    { x1: 70, y1: 40, x2: 100, y2: 70, color: "hsl(220 14% 94% / 0.6)" },
+    { x1: 0, y1: 0, x2: 40, y2: 40, color: "hsl(220 14% 94% / 0.5)" },
+    { x1: 40, y1: 0, x2: 70, y2: 40, color: "hsl(220 14% 96% / 0.6)" },
+    { x1: 70, y1: 0, x2: 100, y2: 40, color: "hsl(220 14% 96% / 0.8)" },
   ];
 
   const fontSize = {
@@ -80,7 +80,7 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
               width={getX(zone.x2) - getX(zone.x1)}
               height={getY(zone.y1) - getY(zone.y2)}
               fill={zone.color}
-              stroke={zone.highlight ? "hsl(142 76% 36%)" : "none"}
+              stroke={zone.highlight ? "hsl(142 50% 45%)" : "none"}
               strokeWidth={zone.highlight ? 2 : 0}
             />
           ))}
@@ -115,7 +115,7 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
               x={getX(85)}
               y={getY(95)}
               textAnchor="middle"
-              className="fill-green-600 text-xs font-semibold"
+              className="fill-emerald-600 text-xs font-semibold"
             >
               Zona de Recomendação
             </text>
