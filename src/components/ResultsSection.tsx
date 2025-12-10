@@ -344,6 +344,11 @@ function CandidateCard({ candidate, rank }: { candidate: CandidateResult; rank: 
 
 // Strategic comparison table
 function ComparisonTable({ candidates }: { candidates: CandidateResult[] }) {
+  const [showNotRecommended, setShowNotRecommended] = useState(false);
+  
+  const recommendedCandidates = candidates.filter(c => c.match_score >= 50);
+  const notRecommendedCandidates = candidates.filter(c => c.match_score < 50);
+
   const getRiskLevel = (redFlags: string[]) => {
     if (redFlags.length === 0) return { label: 'Safe', color: 'text-green-600' };
     if (redFlags.length <= 2) return { label: `${redFlags.length}`, color: 'text-yellow-600', icon: true };
@@ -374,6 +379,46 @@ function ComparisonTable({ candidates }: { candidates: CandidateResult[] }) {
     return { score: avgScore, type: labels[maxKey as keyof typeof labels] };
   };
 
+  const renderRow = (candidate: CandidateResult) => {
+    const risk = getRiskLevel(candidate.red_flags);
+    const cultural = getCulturalType(candidate.cultural_fit);
+    
+    return (
+      <tr key={candidate.candidate_name} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+        <td className="p-4">
+          <span className="font-medium text-foreground">{candidate.candidate_name}</span>
+        </td>
+        <td className="p-4">
+          <ScoreBadge score={candidate.match_score} size="sm" />
+        </td>
+        <td className="p-4">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-blue-600 font-medium">T: {candidate.technical_fit}</span>
+            <span className="text-muted-foreground">|</span>
+            <span className="text-purple-600 font-medium">S: {candidate.potential_fit}</span>
+          </div>
+        </td>
+        <td className="p-4">
+          <div className="text-sm">
+            <span className="font-medium text-foreground">{cultural.score}%</span>
+            <span className="text-muted-foreground ml-1 text-xs">{cultural.type}</span>
+          </div>
+        </td>
+        <td className="p-4">
+          <div className={`flex items-center gap-1 text-sm font-medium ${risk.color}`}>
+            {risk.icon && <AlertTriangle className="w-4 h-4" />}
+            <span>{risk.label}</span>
+          </div>
+        </td>
+        <td className="p-4">
+          <span className="text-sm text-foreground">
+            {candidate.inferred_info?.seniority_level || 'N/A'}
+          </span>
+        </td>
+      </tr>
+    );
+  };
+
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       <div className="p-4 border-b border-border">
@@ -396,48 +441,40 @@ function ComparisonTable({ candidates }: { candidates: CandidateResult[] }) {
             </tr>
           </thead>
           <tbody>
-            {candidates.map((candidate) => {
-              const risk = getRiskLevel(candidate.red_flags);
-              const cultural = getCulturalType(candidate.cultural_fit);
-              
-              return (
-                <tr key={candidate.candidate_name} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                  <td className="p-4">
-                    <span className="font-medium text-foreground">{candidate.candidate_name}</span>
-                  </td>
-                  <td className="p-4">
-                    <ScoreBadge score={candidate.match_score} size="sm" />
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-blue-600 font-medium">T: {candidate.technical_fit}</span>
-                      <span className="text-muted-foreground">|</span>
-                      <span className="text-purple-600 font-medium">S: {candidate.potential_fit}</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="text-sm">
-                      <span className="font-medium text-foreground">{cultural.score}%</span>
-                      <span className="text-muted-foreground ml-1 text-xs">{cultural.type}</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className={`flex items-center gap-1 text-sm font-medium ${risk.color}`}>
-                      {risk.icon && <AlertTriangle className="w-4 h-4" />}
-                      <span>{risk.label}</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className="text-sm text-foreground">
-                      {candidate.inferred_info?.seniority_level || 'N/A'}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
+            {recommendedCandidates.map(renderRow)}
           </tbody>
         </table>
       </div>
+
+      {/* Not recommended section - collapsible */}
+      {notRecommendedCandidates.length > 0 && (
+        <div className="border-t border-border">
+          <button
+            onClick={() => setShowNotRecommended(!showNotRecommended)}
+            className="w-full p-4 flex items-center justify-between text-sm text-muted-foreground hover:bg-muted/20 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-500" />
+              Candidatos não recomendados ({notRecommendedCandidates.length})
+            </span>
+            {showNotRecommended ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </button>
+          
+          {showNotRecommended && (
+            <div className="overflow-x-auto border-t border-border bg-muted/10">
+              <table className="w-full">
+                <tbody>
+                  {notRecommendedCandidates.map(renderRow)}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -464,22 +501,23 @@ export function ResultsSection({
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
+      const margin = 5; // Narrow margin
       const canvas = await html2canvas(element, {
         scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', logging: false,
       });
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      const imgWidth = pdfWidth - (margin * 2);
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
       let position = 0;
       pdf.setFillColor(37, 99, 235);
-      pdf.rect(0, 0, pdfWidth, 15, "F");
+      pdf.rect(0, 0, pdfWidth, 12, "F");
       pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(12);
+      pdf.setFontSize(10);
       pdf.setFont("helvetica", "bold");
-      pdf.text("CompareCV powered by MarQ - Relatório de Análise", 10, 10);
+      pdf.text("CompareCV powered by MarQ - Relatório de Análise", margin + 2, 8);
       pdf.setTextColor(0, 0, 0);
-      const startY = 18;
-      const usableHeight = pdfHeight - startY - 10;
+      const startY = 14;
+      const usableHeight = pdfHeight - startY - 8;
       while (heightLeft > 0) {
         const sourceY = position * (canvas.height / imgHeight);
         const sourceHeight = Math.min(usableHeight * (canvas.height / imgHeight), canvas.height - sourceY);
@@ -492,9 +530,9 @@ export function ResultsSection({
           ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
           ctx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, pageCanvas.width, sourceHeight);
           const pageData = pageCanvas.toDataURL('image/jpeg', 0.95);
-          const thisPageHeight = (sourceHeight * pdfWidth) / canvas.width;
+          const thisPageHeight = (sourceHeight * imgWidth) / canvas.width;
           if (position > 0) pdf.addPage();
-          pdf.addImage(pageData, 'JPEG', 0, startY, imgWidth, thisPageHeight);
+          pdf.addImage(pageData, 'JPEG', margin, startY, imgWidth, thisPageHeight);
         }
         heightLeft -= usableHeight;
         position += usableHeight;
@@ -502,9 +540,9 @@ export function ResultsSection({
       const totalPages = pdf.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
-        pdf.setFontSize(8);
+        pdf.setFontSize(7);
         pdf.setTextColor(128, 128, 128);
-        pdf.text(`CompareCV powered by MarQ | Página ${i} de ${totalPages} | ${new Date().toLocaleDateString('pt-BR')}`, 10, pdfHeight - 5);
+        pdf.text(`CompareCV powered by MarQ | Página ${i} de ${totalPages} | ${new Date().toLocaleDateString('pt-BR')}`, margin + 2, pdfHeight - 3);
       }
       pdf.save(`comparecv-relatorio-${new Date().toISOString().split("T")[0]}.pdf`);
     } catch (error) {

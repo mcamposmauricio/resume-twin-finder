@@ -22,8 +22,8 @@ const COLORS = [
 ];
 
 export function NineBoxChart({ candidates }: NineBoxChartProps) {
-  const chartSize = 320;
-  const padding = 40;
+  const chartSize = 500;
+  const padding = 50;
   const innerSize = chartSize - padding * 2;
 
   const getPosition = (value: number): number => {
@@ -39,12 +39,12 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
   };
 
   return (
-    <div className="bg-card rounded-xl border border-border p-6">
+    <div className="bg-card rounded-xl border border-border p-6 w-full">
       <h3 className="text-lg font-semibold text-foreground text-center mb-6">
         Matriz de Adequação (9-Box)
       </h3>
 
-      <div className="flex justify-center">
+      <div className="flex justify-center w-full">
         <div className="relative">
           {/* Y-axis label */}
           <div 
@@ -130,9 +130,9 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
             />
             <text
               x={getPosition(85)}
-              y={padding + 12}
+              y={padding + 16}
               textAnchor="middle"
-              className="fill-blue-600 text-[8px] font-medium uppercase tracking-wide"
+              className="fill-blue-600 text-[10px] font-medium uppercase tracking-wide"
             >
               Zona de Recomendação
             </text>
@@ -168,26 +168,26 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
             />
 
             {/* X-axis labels */}
-            <text x={padding} y={chartSize - padding + 20} textAnchor="middle" className="fill-muted-foreground text-[10px]">0%</text>
-            <text x={getPosition(40)} y={chartSize - padding + 20} textAnchor="middle" className="fill-muted-foreground text-[10px]">40%</text>
-            <text x={getPosition(70)} y={chartSize - padding + 20} textAnchor="middle" className="fill-muted-foreground text-[10px]">70%</text>
-            <text x={chartSize - padding} y={chartSize - padding + 20} textAnchor="middle" className="fill-muted-foreground text-[10px]">100%</text>
+            <text x={padding} y={chartSize - padding + 24} textAnchor="middle" className="fill-muted-foreground text-[11px]">0%</text>
+            <text x={getPosition(40)} y={chartSize - padding + 24} textAnchor="middle" className="fill-muted-foreground text-[11px]">40%</text>
+            <text x={getPosition(70)} y={chartSize - padding + 24} textAnchor="middle" className="fill-muted-foreground text-[11px]">70%</text>
+            <text x={chartSize - padding} y={chartSize - padding + 24} textAnchor="middle" className="fill-muted-foreground text-[11px]">100%</text>
 
             {/* X-axis zone labels */}
-            <text x={getPosition(20)} y={chartSize - padding + 32} textAnchor="middle" className="fill-muted-foreground text-[9px] font-medium">Baixo</text>
-            <text x={getPosition(55)} y={chartSize - padding + 32} textAnchor="middle" className="fill-muted-foreground text-[9px] font-medium">Médio</text>
-            <text x={getPosition(85)} y={chartSize - padding + 32} textAnchor="middle" className="fill-muted-foreground text-[9px] font-medium">Alto</text>
+            <text x={getPosition(20)} y={chartSize - padding + 40} textAnchor="middle" className="fill-muted-foreground text-[10px] font-medium">Baixo</text>
+            <text x={getPosition(55)} y={chartSize - padding + 40} textAnchor="middle" className="fill-muted-foreground text-[10px] font-medium">Médio</text>
+            <text x={getPosition(85)} y={chartSize - padding + 40} textAnchor="middle" className="fill-muted-foreground text-[10px] font-medium">Alto</text>
 
             {/* Y-axis labels */}
-            <text x={padding - 8} y={chartSize - padding + 4} textAnchor="end" className="fill-muted-foreground text-[10px]">0%</text>
-            <text x={padding - 8} y={chartSize - getPosition(40) + 4} textAnchor="end" className="fill-muted-foreground text-[10px]">40%</text>
-            <text x={padding - 8} y={chartSize - getPosition(70) + 4} textAnchor="end" className="fill-muted-foreground text-[10px]">70%</text>
-            <text x={padding - 8} y={padding + 4} textAnchor="end" className="fill-muted-foreground text-[10px]">100%</text>
+            <text x={padding - 10} y={chartSize - padding + 4} textAnchor="end" className="fill-muted-foreground text-[11px]">0%</text>
+            <text x={padding - 10} y={chartSize - getPosition(40) + 4} textAnchor="end" className="fill-muted-foreground text-[11px]">40%</text>
+            <text x={padding - 10} y={chartSize - getPosition(70) + 4} textAnchor="end" className="fill-muted-foreground text-[11px]">70%</text>
+            <text x={padding - 10} y={padding + 4} textAnchor="end" className="fill-muted-foreground text-[11px]">100%</text>
 
             {/* Y-axis zone labels */}
-            <text x={padding - 24} y={chartSize - getPosition(20)} textAnchor="middle" className="fill-muted-foreground text-[9px] font-medium" transform={`rotate(-90 ${padding - 24} ${chartSize - getPosition(20)})`}>Baixo</text>
-            <text x={padding - 24} y={chartSize - getPosition(55)} textAnchor="middle" className="fill-muted-foreground text-[9px] font-medium" transform={`rotate(-90 ${padding - 24} ${chartSize - getPosition(55)})`}>Médio</text>
-            <text x={padding - 24} y={chartSize - getPosition(85)} textAnchor="middle" className="fill-muted-foreground text-[9px] font-medium" transform={`rotate(-90 ${padding - 24} ${chartSize - getPosition(85)})`}>Alto</text>
+            <text x={padding - 30} y={chartSize - getPosition(20)} textAnchor="middle" className="fill-muted-foreground text-[10px] font-medium" transform={`rotate(-90 ${padding - 30} ${chartSize - getPosition(20)})`}>Baixo</text>
+            <text x={padding - 30} y={chartSize - getPosition(55)} textAnchor="middle" className="fill-muted-foreground text-[10px] font-medium" transform={`rotate(-90 ${padding - 30} ${chartSize - getPosition(55)})`}>Médio</text>
+            <text x={padding - 30} y={chartSize - getPosition(85)} textAnchor="middle" className="fill-muted-foreground text-[10px] font-medium" transform={`rotate(-90 ${padding - 30} ${chartSize - getPosition(85)})`}>Alto</text>
 
             {/* Candidate dots */}
             <TooltipProvider>
@@ -206,7 +206,7 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
                           <circle
                             cx={x}
                             cy={y}
-                            r="14"
+                            r="18"
                             fill={color}
                             opacity="0.2"
                           />
@@ -215,11 +215,11 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
                         <circle
                           cx={x}
                           cy={y}
-                          r={isTopCandidate ? 10 : 8}
+                          r={isTopCandidate ? 14 : 10}
                           fill={color}
                           stroke="white"
                           strokeWidth="2"
-                          className="transition-all duration-200 hover:r-12"
+                          className="transition-all duration-200"
                         />
                         {/* Candidate initial */}
                         <text
@@ -227,7 +227,7 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
                           y={y + 1}
                           textAnchor="middle"
                           dominantBaseline="middle"
-                          className="fill-white text-[10px] font-bold pointer-events-none"
+                          className="fill-white text-[12px] font-bold pointer-events-none"
                         >
                           {candidate.candidate_name.charAt(0).toUpperCase()}
                         </text>
