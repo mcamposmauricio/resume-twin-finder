@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Mail, Lock, ArrowRight } from "lucide-react";
+import { FileText, Mail, Lock, ArrowRight, Upload, Brain, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -66,28 +66,66 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-blue-700 p-12 flex-col justify-between">
+      {/* Left side - Branding & Info */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#1a1a1a] p-12 flex-col justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-white/20 rounded-xl">
+          <div className="p-2 bg-white/10 rounded-xl">
             <FileText className="w-6 h-6 text-white" />
           </div>
           <span className="text-xl font-bold text-white">CompareCV</span>
         </div>
         
-        <div className="space-y-6">
-          <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
-            Compare currículos<br />
-            com inteligência<br />
-            artificial
-          </h1>
-          <p className="text-lg text-white/80 max-w-md">
-            Analise múltiplos candidatos de forma rápida e objetiva.
-            Nossa IA identifica o melhor match para sua vaga.
-          </p>
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight mb-4">
+              Currículos analisados em segundos.
+            </h1>
+            <p className="text-lg text-white/60">
+              Os melhores candidatos para sua vaga com precisão e rapidez.
+            </p>
+          </div>
+
+          {/* How it works - 3 steps */}
+          <div className="space-y-4 pt-4">
+            <div className="flex items-start gap-4 p-4 bg-white/5 rounded-xl">
+              <div className="p-2 bg-white/10 rounded-lg shrink-0">
+                <Upload className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">1. Enviar Dados</h3>
+                <p className="text-sm text-white/60">
+                  Upload dos currículos (PDF) e descrição detalhada da vaga.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4 p-4 bg-white/5 rounded-xl">
+              <div className="p-2 bg-white/10 rounded-lg shrink-0">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">2. Análise com IA</h3>
+                <p className="text-sm text-white/60">
+                  Avaliação automática de Hard Skills e Soft Skills.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4 p-4 bg-white/5 rounded-xl">
+              <div className="p-2 bg-white/10 rounded-lg shrink-0">
+                <CheckCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">3. Ranking e Decisão</h3>
+                <p className="text-sm text-white/60">
+                  Matriz visual, tabela comparativa e recomendação do candidato ideal.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
         
-        <p className="text-white/60 text-sm">
+        <p className="text-white/40 text-sm">
           © {new Date().getFullYear()} CompareCV. Todos os direitos reservados.
         </p>
       </div>
@@ -98,20 +136,20 @@ export default function Auth() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="inline-flex items-center gap-2">
-              <div className="p-2 bg-primary rounded-xl">
+              <div className="p-2 bg-[#1a1a1a] rounded-xl">
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold text-foreground">CompareCV</span>
             </div>
           </div>
 
-          <div className="text-center lg:text-left mb-8">
+          <div className="text-center mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-              {isLogin ? "Bem-vindo de volta" : "Crie sua conta"}
+              {isLogin ? "Entrar na sua conta" : "Criar sua conta"}
             </h2>
             <p className="text-muted-foreground">
               {isLogin 
-                ? "Entre para continuar analisando candidatos" 
+                ? "Comece a analisar seus currículos hoje" 
                 : "Comece a usar o CompareCV gratuitamente"}
             </p>
           </div>
@@ -155,7 +193,7 @@ export default function Auth() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-4 text-base"
+              className="w-full py-4 text-base bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -177,10 +215,10 @@ export default function Auth() {
           <div className="mt-8 text-center">
             <button
               onClick={() => setIsLogin(!isLogin)}
-              className="text-primary hover:text-primary/80 font-medium transition-colors"
+              className="text-foreground hover:text-foreground/80 font-medium transition-colors"
             >
               {isLogin
-                ? "Não tem conta? Cadastre-se"
+                ? "Não tem conta? Criar agora"
                 : "Já tem conta? Faça login"}
             </button>
           </div>
