@@ -7,29 +7,76 @@ import logoMarq from "@/assets/logo-marq-blue.png";
 
 // List of blocked personal email domains
 const BLOCKED_EMAIL_DOMAINS = [
+  // pessoais comuns
   "gmail.com",
+  "gmail.com.br",
   "hotmail.com",
+  "hotmail.com.br",
   "outlook.com",
+  "outlook.com.br",
   "yahoo.com",
   "yahoo.com.br",
   "live.com",
+  "msn.com",
   "icloud.com",
+  "me.com",
+  "mac.com",
+  "aol.com",
+  "proton.me",
+  "protonmail.com",
+  "zoho.com",
+  "mail.com",
+  "gmx.com",
+  "gmx.net",
+
+  // provedores BR
   "bol.com.br",
   "uol.com.br",
   "terra.com.br",
-  "proton.me",
-  "protonmail.com",
-  "aol.com",
-  "msn.com",
-  "globo.com",
   "ig.com.br",
   "r7.com",
   "zipmail.com.br",
-  "me.com",
-  "mail.com",
-  "ymail.com",
-  "gmx.com",
-  "gmx.net",
+  "globo.com",
+  "superig.com.br",
+  "oi.com.br",
+  "brturbo.com.br",
+  "pop.com.br",
+
+  // descartáveis / temporários
+  "mailinator.com",
+  "yopmail.com",
+  "10minutemail.com",
+  "temp-mail.org",
+  "guerrillamail.com",
+  "sharklasers.com",
+  "getnada.com",
+  "trashmail.com",
+  "dispostable.com",
+  "maildrop.cc",
+  "fakeinbox.com",
+  "throwawaymail.com",
+
+  // usados em testes (EN e PT)
+  "example.com",
+  "example.com.br",
+  "test.com",
+  "test.com.br",
+  "testing.com",
+  "testing.com.br",
+  "email.com",
+  "email.com.br",
+  "teste.com",
+  "teste.com.br",
+  "exemplo.com",
+  "exemplo.com.br",
+  "dominiofake.com",
+  "dominiofake.com.br",
+  "emailfake.com",
+  "emailfake.com.br",
+  "testando.com",
+  "testando.com.br",
+  "seusite.com",
+  "seusite.com.br",
 ];
 
 const isPersonalEmail = (email: string): boolean => {
@@ -48,7 +95,9 @@ export default function Auth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         navigate("/");
       }
@@ -79,13 +128,13 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Block personal emails on signup
     if (!isLogin && isPersonalEmail(email)) {
       toast.error("Por favor, use um e-mail corporativo para continuar.");
       return;
     }
-    
+
     setLoading(true);
 
     try {
@@ -108,19 +157,19 @@ export default function Auth() {
           },
         });
         if (error) throw error;
-        
+
         // If invite code was provided, update the profile with it
         if (inviteCode.trim() && signUpData?.user) {
           const { error: updateError } = await supabase
             .from("profiles")
             .update({ referred_by_code: inviteCode.trim().toUpperCase() })
             .eq("user_id", signUpData.user.id);
-          
+
           if (updateError) {
             console.error("Error updating referred_by_code:", updateError);
           }
         }
-        
+
         toast.success("Conta criada com sucesso!");
       }
     } catch (error: any) {
@@ -145,7 +194,9 @@ export default function Auth() {
           <div className="p-2 bg-blue-600 rounded-xl">
             <FileText className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-slate-900">CompareCV <span className="text-blue-600 text-sm font-normal">powered by MarQ</span></span>
+          <span className="text-xl font-bold text-slate-900">
+            CompareCV <span className="text-blue-600 text-sm font-normal">powered by MarQ</span>
+          </span>
         </div>
       </header>
 
@@ -155,10 +206,10 @@ export default function Auth() {
           <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-slate-900 leading-tight mb-6">
             <span className="text-blue-600">Análise de currículos</span> com inteligência artificial
           </h1>
-          
+
           <p className="text-lg text-slate-600 mb-10 leading-relaxed">
-            Compare múltiplos candidatos de forma rápida e objetiva. 
-            Nossa IA identifica o melhor match para sua vaga em segundos.
+            Compare múltiplos candidatos de forma rápida e objetiva. Nossa IA identifica o melhor match para sua vaga em
+            segundos.
           </p>
 
           {/* How it works - 3 steps */}
@@ -169,9 +220,7 @@ export default function Auth() {
               </div>
               <div>
                 <h3 className="font-semibold text-slate-900 mb-1">1. Enviar Dados</h3>
-                <p className="text-sm text-slate-500">
-                  Upload dos currículos (PDF) e descrição detalhada da vaga.
-                </p>
+                <p className="text-sm text-slate-500">Upload dos currículos (PDF) e descrição detalhada da vaga.</p>
               </div>
             </div>
 
@@ -181,9 +230,7 @@ export default function Auth() {
               </div>
               <div>
                 <h3 className="font-semibold text-slate-900 mb-1">2. Análise com IA</h3>
-                <p className="text-sm text-slate-500">
-                  Avaliação automática de Hard Skills e Soft Skills.
-                </p>
+                <p className="text-sm text-slate-500">Avaliação automática de Hard Skills e Soft Skills.</p>
               </div>
             </div>
 
@@ -209,17 +256,13 @@ export default function Auth() {
                 {isLogin ? "Entrar na sua conta" : "Criar sua conta"}
               </h2>
               <p className="text-slate-500">
-                {isLogin 
-                  ? "Comece a analisar seus currículos hoje" 
-                  : "Comece a usar o CompareCV gratuitamente"}
+                {isLogin ? "Comece a analisar seus currículos hoje" : "Comece a usar o CompareCV gratuitamente"}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
@@ -233,15 +276,11 @@ export default function Auth() {
                     }`}
                   />
                 </div>
-                {emailError && (
-                  <p className="text-sm text-red-500 mt-1.5">{emailError}</p>
-                )}
+                {emailError && <p className="text-sm text-red-500 mt-1.5">{emailError}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Senha
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Senha</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
@@ -293,8 +332,20 @@ export default function Auth() {
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
                     </svg>
                     Carregando...
                   </span>
@@ -312,9 +363,7 @@ export default function Auth() {
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
               >
-                {isLogin
-                  ? "Não tem conta? Criar agora"
-                  : "Já tem conta? Faça login"}
+                {isLogin ? "Não tem conta? Criar agora" : "Já tem conta? Faça login"}
               </button>
             </div>
           </div>

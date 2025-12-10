@@ -8,12 +8,41 @@ AS $$
 DECLARE
   domain TEXT;
   blocked_domains TEXT[] := ARRAY[
-    'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'yahoo.com.br',
-    'live.com', 'icloud.com', 'bol.com.br', 'uol.com.br', 'terra.com.br',
-    'proton.me', 'protonmail.com', 'aol.com', 'msn.com', 'globo.com',
-    'ig.com.br', 'r7.com', 'zipmail.com.br', 'me.com', 'mail.com',
-    'ymail.com', 'gmx.com', 'gmx.net'
-  ];
+    -- pessoais comuns
+    'gmail.com', 'gmail.com.br',
+    'hotmail.com', 'hotmail.com.br',
+    'outlook.com', 'outlook.com.br',
+    'yahoo.com', 'yahoo.com.br',
+    'live.com', 'msn.com',
+    'icloud.com', 'me.com', 'mac.com',
+    'aol.com', 'zoho.com',
+    'proton.me', 'protonmail.com',
+    'mail.com', 'gmx.com', 'gmx.net',
+
+    -- provedores brasileiros
+    'bol.com.br', 'uol.com.br', 'terra.com.br',
+    'ig.com.br', 'r7.com', 'zipmail.com.br',
+    'globo.com', 'superig.com.br',
+    'oi.com.br', 'brturbo.com.br', 'pop.com.br',
+
+    -- temporários / descartáveis
+    'mailinator.com', 'yopmail.com', '10minutemail.com',
+    'temp-mail.org', 'guerrillamail.com', 'sharklasers.com',
+    'getnada.com', 'trashmail.com', 'dispostable.com',
+    'maildrop.cc', 'fakeinbox.com', 'throwawaymail.com',
+
+    -- domínios de teste (EN + PT + versões .br)
+    'example.com', 'example.com.br',
+    'test.com', 'test.com.br',
+    'testing.com', 'testing.com.br',
+    'email.com', 'email.com.br',
+    'teste.com', 'teste.com.br',
+    'exemplo.com', 'exemplo.com.br',
+    'dominiofake.com', 'dominiofake.com.br',
+    'emailfake.com', 'emailfake.com.br',
+    'testando.com', 'testando.com.br',
+    'seusite.com', 'seusite.com.br'
+];
 BEGIN
   domain := lower(split_part(email, '@', 2));
   RETURN NOT (domain = ANY(blocked_domains));
