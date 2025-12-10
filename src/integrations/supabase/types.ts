@@ -115,6 +115,7 @@ export type Database = {
     }
     Functions: {
       generate_referral_code: { Args: never; Returns: string }
+      is_corporate_email: { Args: { email: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
