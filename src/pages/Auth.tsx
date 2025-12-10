@@ -72,7 +72,7 @@ export default function Auth() {
           <div className="p-2 bg-blue-600 rounded-xl">
             <FileText className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-slate-900">CompareCV</span>
+          <span className="text-xl font-bold text-slate-900">CompareCV <span className="text-blue-600 text-sm font-normal">powered by MarQ</span></span>
         </div>
       </header>
 
@@ -213,7 +213,7 @@ export default function Auth() {
           </div>
 
           <p className="text-center text-slate-400 text-sm mt-6">
-            © {new Date().getFullYear()} CompareCV. Todos os direitos reservados.
+            © {new Date().getFullYear()} CompareCV powered by MarQ. Todos os direitos reservados.
           </p>
         </div>
       </div>

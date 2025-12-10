@@ -11,7 +11,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         <UserCheck className="w-16 h-16 text-blue-700" />
       </div>
       <h1 className="text-4xl font-bold text-slate-800 mb-4">
-        Bem-vindo ao CompareCV
+        Bem-vindo ao CompareCV <span className="text-blue-600 text-lg font-normal">powered by MarQ</span>
       </h1>
       <p className="text-lg text-slate-600 max-w-2xl mb-8">
         A ferramenta de RH mais inteligente do mercado. Faça upload de múltiplos

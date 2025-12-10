@@ -225,7 +225,7 @@ export default function Index() {
             <div className="p-2 bg-primary rounded-xl">
               <FileText className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-bold text-foreground">CompareCV</span>
+            <span className="text-lg font-bold text-foreground">CompareCV <span className="text-primary text-xs font-normal">powered by MarQ</span></span>
           </button>
 
           <div className="flex items-center gap-4">
@@ -273,7 +273,7 @@ export default function Index() {
 
       {/* Footer */}
       <footer className="py-6 text-center text-sm text-muted-foreground border-t border-border bg-card">
-        <p>CompareCV © {new Date().getFullYear()}</p>
+        <p>CompareCV powered by MarQ © {new Date().getFullYear()}</p>
       </footer>
     </div>
   );
