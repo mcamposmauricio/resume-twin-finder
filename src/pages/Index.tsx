@@ -224,31 +224,32 @@ export default function Index() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-8 py-3 sm:py-4 flex items-center justify-between gap-2">
           <button 
             onClick={handleBackToDashboard}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-1.5 sm:gap-2 hover:opacity-80 transition-opacity min-w-0"
           >
-            <span className="text-lg font-semibold text-foreground">CompareCV powered by</span>
-            <img src={logoMarq} alt="MarQ HR" className="h-5" />
+            <span className="text-sm sm:text-lg font-semibold text-foreground truncate">CompareCV</span>
+            <span className="hidden sm:inline text-sm sm:text-lg font-semibold text-foreground">powered by</span>
+            <img src={logoMarq} alt="MarQ HR" className="h-4 sm:h-5 hidden sm:block" />
           </button>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {!balanceLoading && (
-              <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-full font-medium hidden sm:block">
-                Saldo: {availableResumes} currículos
+              <span className="text-xs sm:text-sm bg-primary/10 text-primary px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-medium whitespace-nowrap">
+                <span className="hidden sm:inline">Saldo: </span>{availableResumes} <span className="hidden xs:inline">CVs</span>
               </span>
             )}
             {user && <ReferralDialog userId={user.id} />}
-            <span className="text-sm text-muted-foreground hidden md:block">
+            <span className="text-sm text-muted-foreground hidden lg:block truncate max-w-[150px]">
               {user?.email}
             </span>
             <button
               onClick={handleLogout}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
               title="Sair"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
