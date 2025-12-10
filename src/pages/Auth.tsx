@@ -5,6 +5,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoMarq from "@/assets/logo-marq-blue.png";
 
+// List of blocked personal email domains
+const BLOCKED_EMAIL_DOMAINS = [
+  "gmail.com",
+  "hotmail.com",
+  "outlook.com",
+  "yahoo.com",
+  "yahoo.com.br",
+  "live.com",
+  "icloud.com",
+  "bol.com.br",
+  "uol.com.br",
+  "terra.com.br",
+  "proton.me",
+  "protonmail.com",
+  "aol.com",
+  "msn.com",
+  "globo.com",
+  "ig.com.br",
+  "r7.com",
+  "zipmail.com.br",
+  "me.com",
+  "mail.com",
+  "ymail.com",
+  "gmx.com",
+  "gmx.net",
+];
+
+const isPersonalEmail = (email: string): boolean => {
+  const domain = email.toLowerCase().split("@")[1];
+  return BLOCKED_EMAIL_DOMAINS.includes(domain);
+};
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -12,6 +44,7 @@ export default function Auth() {
   const [inviteCode, setInviteCode] = useState("");
   const [showInviteField, setShowInviteField] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,8 +63,29 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Validate email on change (only for signup)
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (!isLogin && value && value.includes("@")) {
+      if (isPersonalEmail(value)) {
+        setEmailError("Por favor, use um e-mail corporativo para continuar.");
+      } else {
+        setEmailError("");
+      }
+    } else {
+      setEmailError("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Block personal emails on signup
+    if (!isLogin && isPersonalEmail(email)) {
+      toast.error("Por favor, use um e-mail corporativo para continuar.");
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -171,12 +225,17 @@ export default function Auth() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    placeholder={isLogin ? "seu@email.com" : "seu@empresa.com.br"}
                     required
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                      emailError ? "border-red-400 bg-red-50/50" : "border-slate-200"
+                    }`}
                   />
                 </div>
+                {emailError && (
+                  <p className="text-sm text-red-500 mt-1.5">{emailError}</p>
+                )}
               </div>
 
               <div>
