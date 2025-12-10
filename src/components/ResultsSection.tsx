@@ -18,6 +18,7 @@ import {
 import { AnalysisResult, CandidateResult } from "@/types";
 import { NineBoxChart } from "./NineBoxChart";
 import { Button } from "./ui/button";
+import { jsPDF } from "jspdf";
 
 interface ResultsSectionProps {
   results: AnalysisResult;
@@ -452,6 +453,114 @@ export function ResultsSection({
   const recommendedCandidates = sortedCandidates.filter(c => c.match_score >= 50);
   const notRecommendedCandidates = sortedCandidates.filter(c => c.match_score < 50);
 
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 20;
+    const lineHeight = 7;
+    const margin = 15;
+    const maxWidth = pageWidth - margin * 2;
+
+    const addText = (text: string, fontSize = 10, isBold = false) => {
+      doc.setFontSize(fontSize);
+      doc.setFont("helvetica", isBold ? "bold" : "normal");
+      const lines = doc.splitTextToSize(text, maxWidth);
+      lines.forEach((line: string) => {
+        if (y > 280) {
+          doc.addPage();
+          y = 20;
+        }
+        doc.text(line, margin, y);
+        y += lineHeight;
+      });
+    };
+
+    const addSection = (title: string) => {
+      y += 5;
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      addText(title, 14, true);
+      y += 3;
+    };
+
+    // Header
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, pageWidth, 35, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("CompareCV - Relatório de Análise", margin, 23);
+    doc.setTextColor(0, 0, 0);
+    y = 45;
+
+    // Summary
+    addSection("Resumo da Análise");
+    addText(`Total de candidatos analisados: ${sortedCandidates.length}`);
+    addText(`Candidatos recomendados (≥50%): ${recommendedCandidates.length}`);
+    addText(`Candidatos não recomendados (<50%): ${notRecommendedCandidates.length}`);
+    
+    if (results.recommendation) {
+      y += 3;
+      addText(`Recomendação: ${results.recommendation}`);
+    }
+
+    // Ranking
+    addSection("Ranking de Candidatos");
+    sortedCandidates.forEach((candidate, index) => {
+      const status = candidate.match_score >= 50 ? "✓" : "✗";
+      addText(`${index + 1}. ${candidate.candidate_name} - ${candidate.match_score}% ${status}`);
+    });
+
+    // Detailed analysis for recommended candidates
+    if (recommendedCandidates.length > 0) {
+      addSection("Análise Detalhada - Candidatos Recomendados");
+      
+      recommendedCandidates.forEach((candidate, index) => {
+        if (y > 250) {
+          doc.addPage();
+          y = 20;
+        }
+        
+        y += 5;
+        addText(`${index + 1}. ${candidate.candidate_name}`, 12, true);
+        addText(`Match Score: ${candidate.match_score}% | Tech Fit: ${candidate.technical_fit}% | Potential: ${candidate.potential_fit}%`);
+        addText(`Experiência: ${candidate.years_experience} anos | ${candidate.inferred_info?.seniority_level || "N/A"}`);
+        addText(`Resumo: ${candidate.summary}`);
+        
+        if (candidate.soft_skills?.length > 0) {
+          addText(`Soft Skills: ${candidate.soft_skills.map(s => `${s.name} (${s.score}%)`).join(", ")}`);
+        }
+        
+        if (candidate.red_flags?.length > 0) {
+          addText(`Red Flags: ${candidate.red_flags.join("; ")}`);
+        }
+        
+        y += 3;
+      });
+    }
+
+    // Not recommended list
+    if (notRecommendedCandidates.length > 0) {
+      addSection("Candidatos Não Recomendados");
+      notRecommendedCandidates.forEach((candidate) => {
+        addText(`• ${candidate.candidate_name} - ${candidate.match_score}% (${candidate.inferred_info?.seniority_level || "N/A"})`);
+      });
+    }
+
+    // Footer
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Gerado por CompareCV | Página ${i} de ${totalPages}`, margin, 290);
+    }
+
+    doc.save(`comparecv-relatorio-${new Date().toISOString().split("T")[0]}.pdf`);
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Header Actions */}
@@ -468,7 +577,7 @@ export function ResultsSection({
             <RefreshCw className="w-4 h-4" />
             Nova Análise
           </Button>
-          <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+          <Button onClick={generatePDF} className="gap-2 bg-blue-600 hover:bg-blue-700">
             <Download className="w-4 h-4" />
             Baixar Relatório
           </Button>
