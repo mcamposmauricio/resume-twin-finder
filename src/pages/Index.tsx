@@ -265,6 +265,7 @@ export default function Index() {
               results={results}
               tokensUsed={tokensUsed}
               onNewAnalysis={handleNewAnalysis}
+              onBack={handleBackToDashboard}
             />
           </div>
         )}

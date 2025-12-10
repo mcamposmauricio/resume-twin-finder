@@ -1,35 +1,34 @@
 import { useState } from "react";
 import {
-  Trophy,
-  User,
-  Briefcase,
-  Brain,
-  AlertTriangle,
-  Target,
-  Star,
-  TrendingUp,
   ChevronDown,
   ChevronUp,
-  Award,
-  Globe,
-  GraduationCap,
-  Wrench,
+  Star,
+  AlertTriangle,
   Clock,
-  DollarSign,
-  Users,
-  MapPin,
+  Briefcase,
+  Target,
+  Zap,
+  Check,
+  Grid3X3,
+  FileText,
+  User,
+  ArrowLeft,
   RefreshCw,
+  Download,
 } from "lucide-react";
 import { AnalysisResult, CandidateResult } from "@/types";
 import { NineBoxChart } from "./NineBoxChart";
+import { Button } from "./ui/button";
 
 interface ResultsSectionProps {
   results: AnalysisResult;
   tokensUsed: number;
   onNewAnalysis: () => void;
+  onBack?: () => void;
 }
 
-function ScoreBar({ score, label }: { score: number; label: string }) {
+// Score badge component
+function ScoreBadge({ score, size = "md" }: { score: number; size?: "sm" | "md" | "lg" }) {
   const getColor = (s: number) => {
     if (s >= 80) return "bg-green-500";
     if (s >= 60) return "bg-blue-500";
@@ -37,326 +36,405 @@ function ScoreBar({ score, label }: { score: number; label: string }) {
     return "bg-red-500";
   };
 
+  const sizeClasses = {
+    sm: "px-2 py-0.5 text-xs",
+    md: "px-3 py-1 text-sm",
+    lg: "px-4 py-1.5 text-base",
+  };
+
   return (
-    <div className="mb-2">
-      <div className="flex justify-between text-sm mb-1">
-        <span className="text-slate-600">{label}</span>
-        <span className="font-medium text-slate-800">{score}%</span>
+    <span className={`${getColor(score)} text-white font-medium rounded-full ${sizeClasses[size]}`}>
+      {score}% Match
+    </span>
+  );
+}
+
+// Soft skill item with score bar
+function SoftSkillItem({ name, score, description }: { name: string; score: number | null; description?: string }) {
+  const isNA = score === null || score === undefined;
+  
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-foreground">{name}</span>
+        <span className={`text-sm font-semibold ${isNA ? 'text-muted-foreground' : 'text-foreground'}`}>
+          {isNA ? 'N/A' : score}
+        </span>
       </div>
-      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-        <div
-          className={`h-full ${getColor(score)} transition-all duration-500`}
-          style={{ width: `${score}%` }}
-        />
+      {!isNA && (
+        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-blue-500 rounded-full transition-all duration-500"
+            style={{ width: `${score}%` }}
+          />
+        </div>
+      )}
+      {description && (
+        <p className="text-xs text-muted-foreground line-clamp-2">{description}</p>
+      )}
+    </div>
+  );
+}
+
+// Cultural fit card
+function CulturalFitCard({ culturalFit }: { culturalFit: CandidateResult['cultural_fit'] }) {
+  const getFitType = () => {
+    const scores = [
+      culturalFit.results_orientation,
+      culturalFit.process_orientation,
+      culturalFit.people_orientation,
+      culturalFit.innovation_orientation
+    ];
+    const maxScore = Math.max(...scores);
+    
+    if (culturalFit.results_orientation === maxScore) return "RESULTADOS";
+    if (culturalFit.process_orientation === maxScore) return "PROCESSOS";
+    if (culturalFit.people_orientation === maxScore) return "PESSOAS";
+    return "INOVAÇÃO";
+  };
+
+  const avgScore = Math.round(
+    (culturalFit.results_orientation + 
+     culturalFit.process_orientation + 
+     culturalFit.people_orientation + 
+     culturalFit.innovation_orientation) / 4
+  );
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-2 h-2 rounded-full bg-green-500" />
+        <span className="text-sm font-semibold text-foreground uppercase tracking-wide">Fit Cultural</span>
+      </div>
+      <div className="flex items-center gap-4">
+        <span className="text-4xl font-bold text-blue-600">{avgScore}</span>
+        <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded uppercase">
+          {getFitType()}
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+        Análise de fit cultural baseada nas orientações do candidato.
+      </p>
+    </div>
+  );
+}
+
+// Gap Analysis table
+function GapAnalysisTable({ gapAnalysis }: { gapAnalysis: CandidateResult['gap_analysis'] }) {
+  const allSkills = [
+    ...gapAnalysis.strong_match.map(s => ({ skill: s, level: 'Strong', impact: 'Baixo' })),
+    ...gapAnalysis.moderate_match.map(s => ({ skill: s, level: 'Medium', impact: 'Médio' })),
+    ...gapAnalysis.weak_or_missing.map(s => ({ skill: s, level: 'Weak', impact: 'Alto' })),
+  ].slice(0, 4);
+
+  const getLevelBadge = (level: string) => {
+    const colors = {
+      Strong: 'bg-green-100 text-green-700',
+      Medium: 'bg-yellow-100 text-yellow-700',
+      Weak: 'bg-red-100 text-red-700',
+    };
+    return colors[level as keyof typeof colors] || 'bg-muted text-muted-foreground';
+  };
+
+  const getImpactBadge = (impact: string) => {
+    const colors = {
+      Baixo: 'bg-green-100 text-green-700',
+      Médio: 'bg-yellow-100 text-yellow-700',
+      Alto: 'bg-red-100 text-red-700',
+    };
+    return colors[impact as keyof typeof colors] || 'bg-muted text-muted-foreground';
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <Target className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm font-semibold text-foreground uppercase tracking-wide">Gap Analysis (Técnico)</span>
+      </div>
+      
+      <div className="space-y-1">
+        <div className="grid grid-cols-3 gap-2 text-xs font-medium text-muted-foreground uppercase pb-2 border-b border-border">
+          <span>Skill</span>
+          <span>Nível</span>
+          <span>Impacto</span>
+        </div>
+        {allSkills.map((item, idx) => (
+          <div key={idx} className="grid grid-cols-3 gap-2 py-2 text-sm">
+            <span className="text-foreground">{item.skill}</span>
+            <span className={`px-2 py-0.5 rounded text-xs font-medium w-fit ${getLevelBadge(item.level)}`}>
+              {item.level}
+            </span>
+            <span className={`px-2 py-0.5 rounded text-xs font-medium w-fit ${getImpactBadge(item.impact)}`}>
+              {item.impact}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-function CandidateCard({
-  candidate,
-  rank,
-}: {
-  candidate: CandidateResult;
-  rank: number;
-}) {
-  const [expanded, setExpanded] = useState(false);
+// Red flags section
+function RedFlagsSection({ redFlags }: { redFlags: string[] }) {
+  const hasFlags = redFlags.length > 0;
+  
+  return (
+    <div className="bg-card border border-border rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <AlertTriangle className={`w-4 h-4 ${hasFlags ? 'text-red-500' : 'text-green-500'}`} />
+        <span className="text-sm font-semibold text-red-600 uppercase tracking-wide">Red Flags (Riscos)</span>
+      </div>
+      
+      {hasFlags ? (
+        <ul className="space-y-2">
+          {redFlags.map((flag, idx) => (
+            <li key={idx} className="flex items-start gap-2 text-sm text-foreground">
+              <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+              <span>{flag}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="flex items-center gap-2 text-green-600">
+          <Check className="w-4 h-4" />
+          <span className="text-sm">Nenhum risco crítico identificado.</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
-  const getRankColor = (r: number) => {
-    if (r === 1) return "bg-yellow-500";
-    if (r === 2) return "bg-slate-400";
-    if (r === 3) return "bg-amber-600";
-    return "bg-slate-300";
-  };
+// Individual candidate card
+function CandidateCard({ candidate, rank }: { candidate: CandidateResult; rank: number }) {
+  const [expanded, setExpanded] = useState(rank === 1);
+
+  // Parse soft skills into grid format
+  const softSkillsGrid = candidate.soft_skills.slice(0, 8);
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="p-6 border-b border-slate-100">
-        <div className="flex items-start justify-between mb-4">
+      <div className="p-6 border-b border-border">
+        <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div
-              className={`w-12 h-12 ${getRankColor(rank)} rounded-full flex items-center justify-center text-white font-bold text-lg`}
-            >
-              {rank}
+            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+              <User className="w-6 h-6 text-muted-foreground" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-800">
+              <h3 className="text-xl font-bold text-foreground">
                 {candidate.candidate_name}
               </h3>
-              <p className="text-sm text-slate-500">{candidate.file_name}</p>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                <span className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  {candidate.years_experience} anos exp.
+                </span>
+                <span className="flex items-center gap-1">
+                  <Briefcase className="w-4 h-4" />
+                  {candidate.inferred_info?.seniority_level || 'N/A'}
+                </span>
+              </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold text-blue-600">
-              {candidate.match_score}%
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-3xl font-bold text-blue-600">
+                {candidate.match_score}%
+              </div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Match Geral</p>
             </div>
-            <p className="text-sm text-slate-500">Match Score</p>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              {expanded ? (
+                <ChevronUp className="w-5 h-5 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-muted-foreground" />
+              )}
+            </button>
           </div>
-        </div>
-
-        {/* Main Scores */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <ScoreBar score={candidate.technical_fit} label="Technical Fit" />
-          <ScoreBar score={candidate.potential_fit} label="Potential Fit" />
-        </div>
-
-        {/* Summary */}
-        <p className="text-slate-600">{candidate.summary}</p>
-        <div className="flex items-center gap-2 mt-2 text-sm text-slate-500">
-          <Briefcase className="w-4 h-4" />
-          <span>{candidate.years_experience} anos de experiência</span>
         </div>
       </div>
 
-      {/* Expandable Content */}
-      <div className="border-t border-slate-100">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="w-full p-4 flex items-center justify-center gap-2 text-blue-600 hover:bg-slate-50 transition-colors"
-        >
-          {expanded ? (
-            <>
-              <ChevronUp className="w-5 h-5" />
-              <span>Ver menos</span>
-            </>
-          ) : (
-            <>
-              <ChevronDown className="w-5 h-5" />
-              <span>Ver análise completa</span>
-            </>
-          )}
-        </button>
+      {expanded && (
+        <div className="p-6 space-y-6">
+          {/* Info Cards Row */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                Inteligência de Dados
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Pretensão (Est.)</p>
+                <p className="text-sm font-medium text-foreground">
+                  {candidate.inferred_info?.estimated_salary_range || 'Sem dados'}
+                </p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Tenure Médio</p>
+                <p className="text-sm font-medium text-foreground">
+                  {candidate.inferred_info?.availability || 'N/A'}
+                </p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Modelo Ideal</p>
+                <p className="text-sm font-medium text-foreground">
+                  {candidate.inferred_info?.remote_work_compatibility || 'Sem dados'}
+                </p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Senioridade Real</p>
+                <p className="text-sm font-medium text-foreground">
+                  {candidate.inferred_info?.seniority_level || 'N/A'}
+                </p>
+              </div>
+            </div>
+          </div>
 
-        {expanded && (
-          <div className="p-6 pt-0 space-y-6">
+          {/* Professional Summary */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Resumo Profissional</p>
+            <blockquote className="text-sm text-foreground italic border-l-2 border-muted pl-4">
+              "{candidate.summary}"
+            </blockquote>
+          </div>
+
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-2 gap-6">
             {/* Soft Skills */}
-            <div>
-              <h4 className="flex items-center gap-2 text-lg font-semibold text-slate-800 mb-3">
-                <Brain className="w-5 h-5 text-blue-500" />
-                Soft Skills
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                {candidate.soft_skills.map((skill) => (
-                  <ScoreBar
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Zap className="w-4 h-4 text-yellow-500" />
+                <span className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                  Soft Skills (Comportamental)
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {softSkillsGrid.map((skill) => (
+                  <SoftSkillItem
                     key={skill.name}
+                    name={skill.name}
                     score={skill.score}
-                    label={skill.name}
                   />
                 ))}
               </div>
             </div>
 
             {/* Cultural Fit */}
-            <div>
-              <h4 className="flex items-center gap-2 text-lg font-semibold text-slate-800 mb-3">
-                <Users className="w-5 h-5 text-purple-500" />
-                Cultural Fit
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                <ScoreBar
-                  score={candidate.cultural_fit.results_orientation}
-                  label="Orientação a Resultados"
-                />
-                <ScoreBar
-                  score={candidate.cultural_fit.process_orientation}
-                  label="Orientação a Processos"
-                />
-                <ScoreBar
-                  score={candidate.cultural_fit.people_orientation}
-                  label="Orientação a Pessoas"
-                />
-                <ScoreBar
-                  score={candidate.cultural_fit.innovation_orientation}
-                  label="Orientação à Inovação"
-                />
-              </div>
-            </div>
-
-            {/* Red Flags */}
-            {candidate.red_flags.length > 0 && (
-              <div>
-                <h4 className="flex items-center gap-2 text-lg font-semibold text-slate-800 mb-3">
-                  <AlertTriangle className="w-5 h-5 text-red-500" />
-                  Red Flags
-                </h4>
-                <ul className="space-y-2">
-                  {candidate.red_flags.map((flag, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-start gap-2 text-red-700 bg-red-50 p-3 rounded-lg"
-                    >
-                      <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                      <span>{flag}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Gap Analysis */}
-            <div>
-              <h4 className="flex items-center gap-2 text-lg font-semibold text-slate-800 mb-3">
-                <Target className="w-5 h-5 text-green-500" />
-                Gap Analysis
-              </h4>
-              <div className="space-y-3">
-                {candidate.gap_analysis.strong_match.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-green-700 mb-1">
-                      Strong Match
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {candidate.gap_analysis.strong_match.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {candidate.gap_analysis.moderate_match.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-yellow-700 mb-1">
-                      Moderate Match
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {candidate.gap_analysis.moderate_match.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {candidate.gap_analysis.weak_or_missing.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-red-700 mb-1">
-                      Weak/Missing
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {candidate.gap_analysis.weak_or_missing.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Inferred Info */}
-            <div>
-              <h4 className="flex items-center gap-2 text-lg font-semibold text-slate-800 mb-3">
-                <Star className="w-5 h-5 text-amber-500" />
-                Informações Inferidas
-              </h4>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-600">Senioridade:</span>
-                  <span className="font-medium">
-                    {candidate.inferred_info.seniority_level}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-600">Faixa Salarial:</span>
-                  <span className="font-medium">
-                    {candidate.inferred_info.estimated_salary_range}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-600">Educação:</span>
-                  <span className="font-medium">
-                    {candidate.inferred_info.education_level}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-600">Idiomas:</span>
-                  <span className="font-medium">
-                    {candidate.inferred_info.languages.join(", ")}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-600">Liderança:</span>
-                  <span className="font-medium">
-                    {candidate.inferred_info.leadership_experience}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-600">Remoto:</span>
-                  <span className="font-medium">
-                    {candidate.inferred_info.remote_work_compatibility}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-600">Disponibilidade:</span>
-                  <span className="font-medium">
-                    {candidate.inferred_info.availability}
-                  </span>
-                </div>
-              </div>
-
-              {/* Tools */}
-              {candidate.inferred_info.tools_and_technologies.length > 0 && (
-                <div className="mt-3">
-                  <p className="flex items-center gap-2 text-sm text-slate-600 mb-2">
-                    <Wrench className="w-4 h-4" />
-                    Ferramentas:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {candidate.inferred_info.tools_and_technologies.map(
-                      (tool) => (
-                        <span
-                          key={tool}
-                          className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs"
-                        >
-                          {tool}
-                        </span>
-                      )
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Certifications */}
-              {candidate.inferred_info.certifications.length > 0 && (
-                <div className="mt-3">
-                  <p className="flex items-center gap-2 text-sm text-slate-600 mb-2">
-                    <Award className="w-4 h-4" />
-                    Certificações:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {candidate.inferred_info.certifications.map((cert) => (
-                      <span
-                        key={cert}
-                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs"
-                      >
-                        {cert}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <CulturalFitCard culturalFit={candidate.cultural_fit} />
           </div>
-        )}
+
+          {/* Gap Analysis and Red Flags */}
+          <div className="grid grid-cols-2 gap-6">
+            <GapAnalysisTable gapAnalysis={candidate.gap_analysis} />
+            <RedFlagsSection redFlags={candidate.red_flags} />
+          </div>
+
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Strategic comparison table
+function ComparisonTable({ candidates }: { candidates: CandidateResult[] }) {
+  const getRiskLevel = (redFlags: string[]) => {
+    if (redFlags.length === 0) return { label: 'Safe', color: 'text-green-600' };
+    if (redFlags.length <= 2) return { label: `${redFlags.length}`, color: 'text-yellow-600', icon: true };
+    return { label: `${redFlags.length}`, color: 'text-red-600', icon: true };
+  };
+
+  const getCulturalType = (culturalFit: CandidateResult['cultural_fit']) => {
+    const scores = {
+      results: culturalFit.results_orientation,
+      process: culturalFit.process_orientation,
+      people: culturalFit.people_orientation,
+      innovation: culturalFit.innovation_orientation
+    };
+    const maxKey = Object.keys(scores).reduce((a, b) => 
+      scores[a as keyof typeof scores] > scores[b as keyof typeof scores] ? a : b
+    );
+    const avgScore = Math.round(
+      (scores.results + scores.process + scores.people + scores.innovation) / 4
+    );
+    
+    const labels = {
+      results: 'RESULTADOS',
+      process: 'PROCESSOS',
+      people: 'PESSOAS',
+      innovation: 'INOVAÇÃO'
+    };
+    
+    return { score: avgScore, type: labels[maxKey as keyof typeof labels] };
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="p-4 border-b border-border">
+        <div className="flex items-center gap-2">
+          <Grid3X3 className="w-5 h-5 text-muted-foreground" />
+          <h3 className="text-lg font-semibold text-foreground">Comparativo Estratégico</h3>
+        </div>
+      </div>
+      
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border bg-muted/30">
+              <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Candidato</th>
+              <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Score</th>
+              <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tech / Soft</th>
+              <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fit Cultural</th>
+              <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Riscos</th>
+              <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nível Est.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {candidates.map((candidate) => {
+              const risk = getRiskLevel(candidate.red_flags);
+              const cultural = getCulturalType(candidate.cultural_fit);
+              
+              return (
+                <tr key={candidate.candidate_name} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <td className="p-4">
+                    <span className="font-medium text-foreground">{candidate.candidate_name}</span>
+                  </td>
+                  <td className="p-4">
+                    <ScoreBadge score={candidate.match_score} size="sm" />
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-blue-600 font-medium">T: {candidate.technical_fit}</span>
+                      <span className="text-muted-foreground">|</span>
+                      <span className="text-purple-600 font-medium">S: {candidate.potential_fit}</span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="text-sm">
+                      <span className="font-medium text-foreground">{cultural.score}%</span>
+                      <span className="text-muted-foreground ml-1 text-xs">{cultural.type}</span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className={`flex items-center gap-1 text-sm font-medium ${risk.color}`}>
+                      {risk.icon && <AlertTriangle className="w-4 h-4" />}
+                      <span>{risk.label}</span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-sm text-foreground">
+                      {candidate.inferred_info?.seniority_level || 'N/A'}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -366,45 +444,72 @@ export function ResultsSection({
   results,
   tokensUsed,
   onNewAnalysis,
+  onBack,
 }: ResultsSectionProps) {
-  // Sort candidates by match_score
   const sortedCandidates = [...results.candidates].sort(
     (a, b) => b.match_score - a.match_score
   );
+  
+  const topCandidate = sortedCandidates[0];
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* Recommendation */}
-      <div className="bg-gradient-to-r from-blue-700 to-blue-900 rounded-2xl p-6 mb-8 text-white">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-white/20 rounded-full">
-            <Trophy className="w-8 h-8" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Recomendação da IA</h2>
-            <p className="text-blue-100 text-lg">{results.recommendation}</p>
-          </div>
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
+      {/* Header Actions */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Voltar</span>
+        </button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={onNewAnalysis} className="gap-2">
+            <RefreshCw className="w-4 h-4" />
+            Nova Análise
+          </Button>
+          <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Download className="w-4 h-4" />
+            Baixar Relatório
+          </Button>
         </div>
       </div>
 
-      {/* Comparison Summary */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-        <h3 className="text-xl font-bold text-slate-800 mb-4">
-          Resumo Comparativo
-        </h3>
-        <p className="text-slate-600">{results.comparison_summary}</p>
+      {/* Nine Box Chart */}
+      <NineBoxChart candidates={sortedCandidates} />
+
+      {/* AI Recommendation */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+        <div className="flex gap-6">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-3">
+              <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+              <h3 className="text-lg font-semibold text-foreground">Recomendação da IA</h3>
+            </div>
+            <p className="text-foreground leading-relaxed">{results.recommendation}</p>
+          </div>
+          
+          {topCandidate && (
+            <div className="bg-white rounded-xl p-4 min-w-[180px] text-center border border-amber-200">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Top Pick</p>
+              <p className="font-semibold text-foreground mb-1">{topCandidate.candidate_name}</p>
+              <p className="text-2xl font-bold text-blue-600">{topCandidate.match_score}%</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Nine Box Chart */}
-      <div className="mb-8">
-        <NineBoxChart candidates={sortedCandidates} />
+      {/* Comparison Table */}
+      <ComparisonTable candidates={sortedCandidates} />
+
+      {/* Individual Analysis Header */}
+      <div className="flex items-center gap-2 pt-4">
+        <FileText className="w-5 h-5 text-muted-foreground" />
+        <h2 className="text-xl font-semibold text-foreground">Análise Individual Aprofundada</h2>
       </div>
 
       {/* Candidate Cards */}
-      <h3 className="text-2xl font-bold text-slate-800 mb-6">
-        Análise Individual
-      </h3>
-      <div className="space-y-6 mb-8">
+      <div className="space-y-4">
         {sortedCandidates.map((candidate, index) => (
           <CandidateCard
             key={candidate.candidate_name}
@@ -415,17 +520,8 @@ export function ResultsSection({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between p-4 bg-slate-100 rounded-xl">
-        <p className="text-sm text-slate-500">
-          Tokens utilizados: {tokensUsed.toLocaleString()}
-        </p>
-        <button
-          onClick={onNewAnalysis}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg font-medium hover:bg-blue-800 transition-colors"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Nova Análise
-        </button>
+      <div className="flex items-center justify-center pt-4 text-sm text-muted-foreground">
+        <span>Tokens utilizados: {tokensUsed.toLocaleString()}</span>
       </div>
     </div>
   );
