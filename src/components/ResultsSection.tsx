@@ -584,6 +584,19 @@ export function ResultsSection({
         </div>
       </div>
 
+      {/* Analysis Summary */}
+      <div className="bg-card border border-border rounded-xl p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg font-semibold text-foreground">Resumo da Análise</h2>
+        </div>
+        <p className="text-foreground">
+          Para esta análise foram avaliados <span className="font-semibold text-blue-600">{sortedCandidates.length} currículos</span>, 
+          sendo <span className="font-semibold text-green-600">{recommendedCandidates.length} na zona de recomendação</span> (match ≥ 50%) 
+          e <span className="font-semibold text-red-600">{notRecommendedCandidates.length} fora da recomendação</span> (match &lt; 50%).
+        </p>
+      </div>
+
       {/* Nine Box Chart */}
       <NineBoxChart candidates={sortedCandidates} />
 
