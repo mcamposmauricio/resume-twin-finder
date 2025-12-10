@@ -1,13 +1,15 @@
 import { useState, useCallback } from "react";
-import { Upload, FileText, X, AlertCircle, ArrowRight } from "lucide-react";
+import { Upload, FileText, X, AlertCircle, ArrowRight, Info } from "lucide-react";
 import { UploadedFile } from "@/types";
 
 interface InputSectionProps {
   onAnalyze: (files: UploadedFile[], jobDescription: string) => void;
   isLoading: boolean;
+  maxFiles: number;
+  availableBalance: number;
 }
 
-export function InputSection({ onAnalyze, isLoading }: InputSectionProps) {
+export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance }: InputSectionProps) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [jobDescription, setJobDescription] = useState("");
   const [dragActive, setDragActive] = useState(false);
@@ -49,8 +51,17 @@ export function InputSection({ onAnalyze, isLoading }: InputSectionProps) {
       setError(null);
       const newFiles: UploadedFile[] = [];
       const invalidFiles: string[] = [];
+      
+      const remainingSlots = maxFiles - files.length;
 
-      for (const file of Array.from(fileList)) {
+      if (remainingSlots <= 0) {
+        setError(`Você atingiu o limite de ${maxFiles} currículos por análise.`);
+        return;
+      }
+
+      const filesToProcess = Array.from(fileList).slice(0, remainingSlots);
+
+      for (const file of filesToProcess) {
         const processed = await processFile(file);
         if (processed) {
           if (
@@ -70,11 +81,15 @@ export function InputSection({ onAnalyze, isLoading }: InputSectionProps) {
         );
       }
 
+      if (Array.from(fileList).length > remainingSlots) {
+        setError(`Limite atingido. Apenas ${remainingSlots} arquivo(s) foram adicionados.`);
+      }
+
       if (newFiles.length > 0) {
         setFiles((prev) => [...prev, ...newFiles]);
       }
     },
-    [files]
+    [files, maxFiles]
   );
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -125,8 +140,38 @@ export function InputSection({ onAnalyze, isLoading }: InputSectionProps) {
     onAnalyze(files, jobDescription);
   };
 
+  const canAddMoreFiles = files.length < maxFiles && maxFiles > 0;
+  const hasNoBalance = availableBalance <= 0;
+
+  if (hasNoBalance) {
+    return (
+      <div className="max-w-3xl mx-auto p-6 md:p-8 animate-fade-in">
+        <div className="p-8 bg-muted/50 border border-border rounded-2xl text-center">
+          <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Saldo Esgotado</h2>
+          <p className="text-muted-foreground">
+            Você não possui currículos disponíveis para análise. Entre em contato com o administrador para adquirir mais créditos.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto p-6 md:p-8 animate-fade-in">
+      {/* Balance Info */}
+      <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center gap-3">
+        <Info className="w-5 h-5 text-primary flex-shrink-0" />
+        <p className="text-sm text-foreground">
+          Você tem um saldo de <span className="font-bold text-primary">{availableBalance}</span> currículos para analisar.
+          {maxFiles < availableBalance && (
+            <span className="text-muted-foreground"> (máximo de {maxFiles} por análise)</span>
+          )}
+        </p>
+      </div>
+
       {/* Step 1: Upload */}
       <div className="mb-10">
         <div className="flex items-center gap-3 mb-4">
@@ -136,6 +181,7 @@ export function InputSection({ onAnalyze, isLoading }: InputSectionProps) {
           <h2 className="text-xl font-semibold text-foreground">
             Upload de Currículos
           </h2>
+          <span className="text-sm text-muted-foreground">({files.length}/{maxFiles})</span>
         </div>
         <p className="text-muted-foreground mb-6 ml-11">
           Arraste e solte os currículos ou clique para selecionar. Aceita PDF, TXT e DOCX.
@@ -143,16 +189,18 @@ export function InputSection({ onAnalyze, isLoading }: InputSectionProps) {
 
         {/* Drop Zone */}
         <div
-          className={`ml-11 border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${
-            dragActive
-              ? "border-primary bg-primary/5"
-              : "border-border hover:border-primary/50 hover:bg-muted/50"
+          className={`ml-11 border-2 border-dashed rounded-2xl p-10 text-center transition-all ${
+            !canAddMoreFiles
+              ? "border-muted bg-muted/30 cursor-not-allowed opacity-60"
+              : dragActive
+                ? "border-primary bg-primary/5 cursor-pointer"
+                : "border-border hover:border-primary/50 hover:bg-muted/50 cursor-pointer"
           }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          onClick={() => document.getElementById("file-input")?.click()}
+          onDragEnter={canAddMoreFiles ? handleDrag : undefined}
+          onDragLeave={canAddMoreFiles ? handleDrag : undefined}
+          onDragOver={canAddMoreFiles ? handleDrag : undefined}
+          onDrop={canAddMoreFiles ? handleDrop : undefined}
+          onClick={canAddMoreFiles ? () => document.getElementById("file-input")?.click() : undefined}
         >
           <input
             id="file-input"
@@ -161,14 +209,17 @@ export function InputSection({ onAnalyze, isLoading }: InputSectionProps) {
             accept=".pdf,.txt,.docx"
             onChange={handleFileInput}
             className="hidden"
+            disabled={!canAddMoreFiles}
           />
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Upload className="w-8 h-8 text-primary" />
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${canAddMoreFiles ? 'bg-primary/10' : 'bg-muted'}`}>
+            <Upload className={`w-8 h-8 ${canAddMoreFiles ? 'text-primary' : 'text-muted-foreground'}`} />
           </div>
           <p className="text-lg font-medium text-foreground mb-1">
-            Arraste os currículos aqui
+            {canAddMoreFiles ? "Arraste os currículos aqui" : "Limite de currículos atingido"}
           </p>
-          <p className="text-muted-foreground">ou clique para selecionar</p>
+          <p className="text-muted-foreground">
+            {canAddMoreFiles ? "ou clique para selecionar" : `Máximo de ${maxFiles} currículos por análise`}
+          </p>
         </div>
 
         {/* File List */}

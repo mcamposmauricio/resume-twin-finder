@@ -8,6 +8,7 @@ import { InputSection } from "@/components/InputSection";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ResultsSection } from "@/components/ResultsSection";
 import { ErrorScreen } from "@/components/ErrorScreen";
+import { useResumeBalance } from "@/hooks/useResumeBalance";
 import type { AppStep, UploadedFile, AnalysisResult, CandidateResult } from "@/types";
 import logoMarq from "@/assets/logo-marq-blue.png";
 
@@ -20,6 +21,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { availableResumes, maxPerAnalysis, loading: balanceLoading, refetch: refetchBalance } = useResumeBalance(user?.id);
   
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -145,6 +147,9 @@ export default function Index() {
         });
         if (saveError) {
           console.error("Error saving analysis:", saveError);
+        } else {
+          // Refetch balance after successful analysis
+          refetchBalance();
         }
       }
     } catch (error: any) {
@@ -230,7 +235,12 @@ export default function Index() {
           </button>
 
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden sm:block">
+            {!balanceLoading && (
+              <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-full font-medium hidden sm:block">
+                Saldo: {availableResumes} currículos
+              </span>
+            )}
+            <span className="text-sm text-muted-foreground hidden md:block">
               {user?.email}
             </span>
             <button
@@ -255,7 +265,12 @@ export default function Index() {
         )}
         {step === "input" && (
           <div className="max-w-5xl mx-auto">
-            <InputSection onAnalyze={handleAnalyze} isLoading={false} />
+            <InputSection 
+              onAnalyze={handleAnalyze} 
+              isLoading={false} 
+              maxFiles={maxPerAnalysis}
+              availableBalance={availableResumes}
+            />
           </div>
         )}
         {step === "loading" && <LoadingScreen />}
