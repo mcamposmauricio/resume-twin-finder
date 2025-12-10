@@ -154,27 +154,78 @@ serve(async (req) => {
         jsonStr = jsonStr.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
       }
       
-      analysisResult = JSON.parse(jsonStr);
-      console.log("Successfully parsed JSON response");
+      const parsed = JSON.parse(jsonStr);
+      
+      // Handle different response formats
+      if (Array.isArray(parsed)) {
+        // Response is an array of candidates directly
+        analysisResult = {
+          candidates_analysis: parsed,
+          recommendation: "Análise completa dos candidatos.",
+          comparison_summary: "Veja a tabela comparativa para detalhes."
+        };
+        console.log("Parsed array response, wrapped in object");
+      } else if (parsed.candidates_analysis) {
+        // Response has candidates_analysis key
+        analysisResult = parsed;
+        console.log("Parsed object with candidates_analysis");
+      } else if (parsed.candidates) {
+        // Response has candidates key
+        analysisResult = {
+          ...parsed,
+          candidates_analysis: parsed.candidates
+        };
+        console.log("Parsed object with candidates key");
+      } else {
+        // Try to find candidates in any key
+        const candidatesKey = Object.keys(parsed).find(k => Array.isArray(parsed[k]) && parsed[k].length > 0 && parsed[k][0].candidate_name);
+        if (candidatesKey) {
+          analysisResult = {
+            ...parsed,
+            candidates_analysis: parsed[candidatesKey]
+          };
+          console.log(`Found candidates in key: ${candidatesKey}`);
+        } else {
+          throw new Error("Could not find candidates in response");
+        }
+      }
+      console.log(`Successfully parsed JSON with ${analysisResult.candidates_analysis?.length || 0} candidates`);
     } catch (parseError) {
-      console.error("Failed to parse Gemini response. First 500 chars:", responseText.substring(0, 500));
+      console.error("JSON parse error:", parseError);
+      console.error("First 500 chars:", responseText.substring(0, 500));
       console.error("Last 500 chars:", responseText.substring(responseText.length - 500));
       
-      // Try to salvage partial JSON
+      // Try to salvage partial JSON - look for array or object patterns
       try {
-        const partialMatch = responseText.match(/\{[\s\S]*"candidates"\s*:\s*\[[\s\S]*\]/);
-        if (partialMatch) {
-          // Try to complete the JSON
-          let partial = partialMatch[0];
-          if (!partial.endsWith("}")) {
-            partial += ', "recommendation": "Análise incompleta", "comparison_summary": "Análise parcial devido a limite de tokens."}';
-          }
-          analysisResult = JSON.parse(partial);
-          console.log("Recovered partial JSON");
+        // First try to find an array
+        const arrayMatch = responseText.match(/\[\s*\{[\s\S]*"candidate_name"[\s\S]*\}\s*\]/);
+        if (arrayMatch) {
+          const candidates = JSON.parse(arrayMatch[0]);
+          analysisResult = {
+            candidates_analysis: candidates,
+            recommendation: "Análise recuperada parcialmente.",
+            comparison_summary: "Alguns dados podem estar incompletos."
+          };
+          console.log("Recovered array from partial response");
         } else {
-          throw new Error("Could not recover JSON");
+          // Try object pattern
+          const objMatch = responseText.match(/\{[\s\S]*"candidates(?:_analysis)?"\s*:\s*\[[\s\S]*\]/);
+          if (objMatch) {
+            let partial = objMatch[0];
+            if (!partial.endsWith("}")) {
+              partial += '}';
+            }
+            analysisResult = JSON.parse(partial);
+            if (analysisResult.candidates && !analysisResult.candidates_analysis) {
+              analysisResult.candidates_analysis = analysisResult.candidates;
+            }
+            console.log("Recovered object from partial response");
+          } else {
+            throw new Error("Could not recover JSON structure");
+          }
         }
-      } catch {
+      } catch (recoveryError) {
+        console.error("Recovery failed:", recoveryError);
         throw new Error("Failed to parse AI response - response may have been truncated");
       }
     }
