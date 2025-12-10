@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -14,11 +14,13 @@ import {
   ArrowLeft,
   RefreshCw,
   Download,
+  Loader2,
 } from "lucide-react";
 import { AnalysisResult, CandidateResult } from "@/types";
 import { NineBoxChart } from "./NineBoxChart";
 import { Button } from "./ui/button";
 import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 interface ResultsSectionProps {
   results: AnalysisResult;
@@ -446,119 +448,70 @@ export function ResultsSection({
   onNewAnalysis,
   onBack,
 }: ResultsSectionProps) {
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const sortedCandidates = [...results.candidates].sort(
     (a, b) => b.match_score - a.match_score
   );
-  
   const recommendedCandidates = sortedCandidates.filter(c => c.match_score >= 50);
   const notRecommendedCandidates = sortedCandidates.filter(c => c.match_score < 50);
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let y = 20;
-    const lineHeight = 7;
-    const margin = 15;
-    const maxWidth = pageWidth - margin * 2;
-
-    const addText = (text: string, fontSize = 10, isBold = false) => {
-      doc.setFontSize(fontSize);
-      doc.setFont("helvetica", isBold ? "bold" : "normal");
-      const lines = doc.splitTextToSize(text, maxWidth);
-      lines.forEach((line: string) => {
-        if (y > 280) {
-          doc.addPage();
-          y = 20;
-        }
-        doc.text(line, margin, y);
-        y += lineHeight;
+  const generatePDF = async () => {
+    if (!resultsRef.current || isGeneratingPDF) return;
+    setIsGeneratingPDF(true);
+    try {
+      const element = resultsRef.current;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const canvas = await html2canvas(element, {
+        scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', logging: false,
       });
-    };
-
-    const addSection = (title: string) => {
-      y += 5;
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      pdf.setFillColor(37, 99, 235);
+      pdf.rect(0, 0, pdfWidth, 15, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(12);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("CompareCV powered by MarQ - Relatório de Análise", 10, 10);
+      pdf.setTextColor(0, 0, 0);
+      const startY = 18;
+      const usableHeight = pdfHeight - startY - 10;
+      while (heightLeft > 0) {
+        const sourceY = position * (canvas.height / imgHeight);
+        const sourceHeight = Math.min(usableHeight * (canvas.height / imgHeight), canvas.height - sourceY);
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sourceHeight;
+        const ctx = pageCanvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, pageCanvas.width, sourceHeight);
+          const pageData = pageCanvas.toDataURL('image/jpeg', 0.95);
+          const thisPageHeight = (sourceHeight * pdfWidth) / canvas.width;
+          if (position > 0) pdf.addPage();
+          pdf.addImage(pageData, 'JPEG', 0, startY, imgWidth, thisPageHeight);
+        }
+        heightLeft -= usableHeight;
+        position += usableHeight;
       }
-      addText(title, 14, true);
-      y += 3;
-    };
-
-    // Header
-    doc.setFillColor(37, 99, 235);
-    doc.rect(0, 0, pageWidth, 35, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.text("CompareCV powered by MarQ - Relatório", margin, 23);
-    doc.setTextColor(0, 0, 0);
-    y = 45;
-
-    // Summary
-    addSection("Resumo da Análise");
-    addText(`Total de candidatos analisados: ${sortedCandidates.length}`);
-    addText(`Candidatos recomendados (≥50%): ${recommendedCandidates.length}`);
-    addText(`Candidatos não recomendados (<50%): ${notRecommendedCandidates.length}`);
-    
-    if (results.recommendation) {
-      y += 3;
-      addText(`Recomendação: ${results.recommendation}`);
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(128, 128, 128);
+        pdf.text(`CompareCV powered by MarQ | Página ${i} de ${totalPages} | ${new Date().toLocaleDateString('pt-BR')}`, 10, pdfHeight - 5);
+      }
+      pdf.save(`comparecv-relatorio-${new Date().toISOString().split("T")[0]}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      setIsGeneratingPDF(false);
     }
-
-    // Ranking
-    addSection("Ranking de Candidatos");
-    sortedCandidates.forEach((candidate, index) => {
-      const status = candidate.match_score >= 50 ? "✓" : "✗";
-      addText(`${index + 1}. ${candidate.candidate_name} - ${candidate.match_score}% ${status}`);
-    });
-
-    // Detailed analysis for recommended candidates
-    if (recommendedCandidates.length > 0) {
-      addSection("Análise Detalhada - Candidatos Recomendados");
-      
-      recommendedCandidates.forEach((candidate, index) => {
-        if (y > 250) {
-          doc.addPage();
-          y = 20;
-        }
-        
-        y += 5;
-        addText(`${index + 1}. ${candidate.candidate_name}`, 12, true);
-        addText(`Match Score: ${candidate.match_score}% | Tech Fit: ${candidate.technical_fit}% | Potential: ${candidate.potential_fit}%`);
-        addText(`Experiência: ${candidate.years_experience} anos | ${candidate.inferred_info?.seniority_level || "N/A"}`);
-        addText(`Resumo: ${candidate.summary}`);
-        
-        if (candidate.soft_skills?.length > 0) {
-          addText(`Soft Skills: ${candidate.soft_skills.map(s => `${s.name} (${s.score}%)`).join(", ")}`);
-        }
-        
-        if (candidate.red_flags?.length > 0) {
-          addText(`Red Flags: ${candidate.red_flags.join("; ")}`);
-        }
-        
-        y += 3;
-      });
-    }
-
-    // Not recommended list
-    if (notRecommendedCandidates.length > 0) {
-      addSection("Candidatos Não Recomendados");
-      notRecommendedCandidates.forEach((candidate) => {
-        addText(`• ${candidate.candidate_name} - ${candidate.match_score}% (${candidate.inferred_info?.seniority_level || "N/A"})`);
-      });
-    }
-
-    // Footer
-    const totalPages = doc.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(128, 128, 128);
-      doc.text(`CompareCV powered by MarQ | Página ${i} de ${totalPages}`, margin, 290);
-    }
-
-    doc.save(`comparecv-relatorio-${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
   return (
@@ -577,13 +530,14 @@ export function ResultsSection({
             <RefreshCw className="w-4 h-4" />
             Nova Análise
           </Button>
-          <Button onClick={generatePDF} className="gap-2 bg-blue-600 hover:bg-blue-700">
-            <Download className="w-4 h-4" />
-            Baixar Relatório
+          <Button onClick={generatePDF} disabled={isGeneratingPDF} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            {isGeneratingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {isGeneratingPDF ? 'Gerando...' : 'Baixar Relatório'}
           </Button>
         </div>
       </div>
 
+      <div ref={resultsRef} className="space-y-6 bg-background">
       {/* Analysis Summary */}
       <div className="bg-card border border-border rounded-xl p-6">
         <div className="flex items-center gap-2 mb-4">
@@ -658,6 +612,7 @@ export function ResultsSection({
           </div>
         </div>
       )}
+      </div>
 
       {/* Footer */}
       <div className="flex items-center justify-center pt-4 text-sm text-muted-foreground">
