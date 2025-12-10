@@ -216,31 +216,31 @@ function CandidateCard({ candidate, rank }: { candidate: CandidateResult; rank: 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="p-6 border-b border-border">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-              <User className="w-6 h-6 text-muted-foreground" />
+      <div className="p-4 sm:p-6 border-b border-border">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+              <User className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-foreground">
+            <div className="min-w-0">
+              <h3 className="text-lg sm:text-xl font-bold text-foreground truncate">
                 {candidate.candidate_name}
               </h3>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-1">
                 <span className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  {candidate.years_experience} anos exp.
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                  {candidate.years_experience} anos
                 </span>
                 <span className="flex items-center gap-1">
-                  <Briefcase className="w-4 h-4" />
+                  <Briefcase className="w-3 h-3 sm:w-4 sm:h-4" />
                   {candidate.inferred_info?.seniority_level || 'N/A'}
                 </span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-3xl font-bold text-blue-600">
+          <div className="flex items-center justify-between sm:justify-end gap-3">
+            <div className="text-left sm:text-right">
+              <div className="text-2xl sm:text-3xl font-bold text-blue-600">
                 {candidate.match_score}%
               </div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide">Match Geral</p>
@@ -269,28 +269,28 @@ function CandidateCard({ candidate, rank }: { candidate: CandidateResult; rank: 
                 Inteligência de Dados
               </span>
             </div>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground mb-1">Pretensão (Est.)</p>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-sm font-medium text-foreground truncate">
                   {candidate.inferred_info?.estimated_salary_range || 'Sem dados'}
                 </p>
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground mb-1">Tenure Médio</p>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-sm font-medium text-foreground truncate">
                   {candidate.inferred_info?.availability || 'N/A'}
                 </p>
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground mb-1">Modelo Ideal</p>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-sm font-medium text-foreground truncate">
                   {candidate.inferred_info?.remote_work_compatibility || 'Sem dados'}
                 </p>
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground mb-1">Senioridade Real</p>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-sm font-medium text-foreground truncate">
                   {candidate.inferred_info?.seniority_level || 'N/A'}
                 </p>
               </div>
@@ -306,7 +306,7 @@ function CandidateCard({ candidate, rank }: { candidate: CandidateResult; rank: 
           </div>
 
           {/* Two Column Layout */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Soft Skills */}
             <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center gap-2 mb-4">
@@ -315,7 +315,7 @@ function CandidateCard({ candidate, rank }: { candidate: CandidateResult; rank: 
                   Soft Skills (Comportamental)
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {softSkillsGrid.map((skill) => (
                   <SoftSkillItem
                     key={skill.name}
@@ -331,7 +331,7 @@ function CandidateCard({ candidate, rank }: { candidate: CandidateResult; rank: 
           </div>
 
           {/* Gap Analysis and Red Flags */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <GapAnalysisTable gapAnalysis={candidate.gap_analysis} />
             <RedFlagsSection redFlags={candidate.red_flags} />
           </div>
@@ -553,9 +553,9 @@ export function ResultsSection({
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
       {/* Header Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <button
           onClick={onBack}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -563,14 +563,16 @@ export function ResultsSection({
           <ArrowLeft className="w-4 h-4" />
           <span>Voltar</span>
         </button>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={onNewAnalysis} className="gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Button variant="outline" onClick={onNewAnalysis} className="gap-2 text-xs sm:text-sm px-3 sm:px-4">
             <RefreshCw className="w-4 h-4" />
-            Nova Análise
+            <span className="hidden sm:inline">Nova Análise</span>
+            <span className="sm:hidden">Nova</span>
           </Button>
-          <Button onClick={generatePDF} disabled={isGeneratingPDF} className="gap-2 bg-blue-600 hover:bg-blue-700">
+          <Button onClick={generatePDF} disabled={isGeneratingPDF} className="gap-2 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm px-3 sm:px-4">
             {isGeneratingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            {isGeneratingPDF ? 'Gerando...' : 'Baixar Relatório'}
+            <span className="hidden sm:inline">{isGeneratingPDF ? 'Gerando...' : 'Baixar Relatório'}</span>
+            <span className="sm:hidden">{isGeneratingPDF ? '...' : 'PDF'}</span>
           </Button>
         </div>
       </div>
