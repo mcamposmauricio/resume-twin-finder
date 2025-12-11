@@ -83,6 +83,7 @@ export type Database = {
           id: string
           referral_code: string | null
           referred_by_code: string | null
+          show_marq_banner: boolean
           total_resumes: number
           updated_at: string
           user_id: string
@@ -93,6 +94,7 @@ export type Database = {
           id?: string
           referral_code?: string | null
           referred_by_code?: string | null
+          show_marq_banner?: boolean
           total_resumes?: number
           updated_at?: string
           user_id: string
@@ -103,6 +105,7 @@ export type Database = {
           id?: string
           referral_code?: string | null
           referred_by_code?: string | null
+          show_marq_banner?: boolean
           total_resumes?: number
           updated_at?: string
           user_id?: string
