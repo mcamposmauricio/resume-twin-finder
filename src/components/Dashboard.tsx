@@ -22,10 +22,33 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis }: DashboardProp
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalAnalyses: 0, totalCandidates: 0 });
+  const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
     fetchAnalyses();
+    fetchUserProfile();
   }, [user]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error) throw error;
+      
+      // Use name from profile, or fallback to email
+      const displayName = data?.name || user?.email?.split('@')[0] || "Usuário";
+      setUserName(displayName);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      setUserName(user?.email?.split('@')[0] || "Usuário");
+    }
+  };
 
   const fetchAnalyses = async () => {
     if (!user) return;
@@ -80,8 +103,6 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis }: DashboardProp
     const date = new Date(dateString);
     return format(date, "dd MMM yyyy", { locale: ptBR });
   };
-
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Usuário";
 
   return (
     <div className="px-4 py-6 sm:py-10 md:px-8 max-w-5xl mx-auto animate-fade-in">
