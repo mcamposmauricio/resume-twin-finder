@@ -52,6 +52,23 @@ export default function Index() {
 
   const [currentJobTitle, setCurrentJobTitle] = useState<string | undefined>();
 
+  // Mapeamento de códigos de erro para mensagens amigáveis
+  const getFriendlyErrorMessage = (errorCode?: string, defaultMessage?: string): string => {
+    const errorMessages: Record<string, string> = {
+      "INSUFFICIENT_JOB_DESC": "A descrição da vaga não contém informações suficientes para análise. Tente incluir título da posição, requisitos técnicos, responsabilidades e nível de senioridade.",
+      "NO_FILES": "Por favor, adicione pelo menos um currículo para análise.",
+      "INVALID_FILE": "Arquivo inválido ou em formato diferente de um currículo tradicional. Verifique se o documento contém informações profissionais, como experiência e formação.",
+      "CONFIG_ERROR": "Algo inesperado ocorreu durante a análise. Tente novamente.",
+      "ANALYSIS_ERROR": "Algo inesperado ocorreu durante a análise. Tente novamente.",
+    };
+
+    if (errorCode && errorMessages[errorCode]) {
+      return errorMessages[errorCode];
+    }
+
+    return defaultMessage || "Algo inesperado ocorreu durante a análise. Tente novamente ou revise as informações enviadas.";
+  };
+
   const handleAnalyze = async (files: UploadedFile[], jobDescription: string, jobTitle?: string) => {
     setStep("loading");
     setCurrentJobTitle(jobTitle);
@@ -63,11 +80,11 @@ export default function Index() {
 
       if (error) {
         console.error("Edge function error:", error);
-        throw new Error(error.message || "Erro ao analisar currículos");
+        throw new Error(getFriendlyErrorMessage(undefined, error.message));
       }
 
       if (data.error) {
-        throw new Error(data.error);
+        throw new Error(getFriendlyErrorMessage(data.error_code, data.error));
       }
 
       console.log("Raw AI response:", data);
@@ -88,7 +105,7 @@ export default function Index() {
 
       if (candidatesArray.length === 0) {
         console.error("No candidates found in response:", data);
-        throw new Error("Nenhum candidato encontrado na resposta da IA");
+        throw new Error("Não foi possível processar os currículos enviados. Verifique se os arquivos contêm informações válidas de candidatos.");
       }
 
       const normalizedData = {
@@ -160,7 +177,7 @@ export default function Index() {
       }
     } catch (error: any) {
       console.error("Analysis error:", error);
-      setErrorMessage(error.message || "Erro ao processar a análise. Tente novamente.");
+      setErrorMessage(error.message || "Algo inesperado ocorreu durante a análise. Tente novamente ou revise as informações enviadas.");
       setStep("error");
     }
   };
