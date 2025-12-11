@@ -81,9 +81,12 @@ export type Database = {
       }
       profiles: {
         Row: {
+          company_name: string | null
           created_at: string
           email: string | null
+          employee_count: string | null
           id: string
+          name: string | null
           referral_code: string | null
           referred_by_code: string | null
           show_marq_banner: boolean
@@ -92,9 +95,12 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_name?: string | null
           created_at?: string
           email?: string | null
+          employee_count?: string | null
           id?: string
+          name?: string | null
           referral_code?: string | null
           referred_by_code?: string | null
           show_marq_banner?: boolean
@@ -103,9 +109,12 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_name?: string | null
           created_at?: string
           email?: string | null
+          employee_count?: string | null
           id?: string
+          name?: string | null
           referral_code?: string | null
           referred_by_code?: string | null
           show_marq_banner?: boolean

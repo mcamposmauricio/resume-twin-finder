@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, ArrowRight, Upload, Brain, CheckCircle } from "lucide-react";
+import { Mail, Lock, ArrowRight, Upload, Brain, CheckCircle, User, Building2, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoMarq from "@/assets/logo-marq-blue.png";
@@ -88,6 +88,9 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [employeeCount, setEmployeeCount] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [showInviteField, setShowInviteField] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -153,6 +156,9 @@ export default function Auth() {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
               referred_by_code: inviteCode.trim().toUpperCase() || null,
+              name: name.trim() || null,
+              company_name: companyName.trim() || null,
+              employee_count: employeeCount || null,
             },
           },
         });
@@ -295,6 +301,61 @@ export default function Auth() {
                   />
                 </div>
               </div>
+
+              {/* Additional signup fields */}
+              {!isLogin && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Seu nome</label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Nome completo"
+                        required
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Nome da empresa</label>
+                    <div className="relative">
+                      <Building2 className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="text"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        placeholder="Sua empresa"
+                        required
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Quantidade de funcionários</label>
+                    <div className="relative">
+                      <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <select
+                        value={employeeCount}
+                        onChange={(e) => setEmployeeCount(e.target.value)}
+                        required
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="">Selecione</option>
+                        <option value="1-10">1-10 funcionários</option>
+                        <option value="11-50">11-50 funcionários</option>
+                        <option value="51-200">51-200 funcionários</option>
+                        <option value="201-500">201-500 funcionários</option>
+                        <option value="501+">Mais de 500 funcionários</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Invite Code Field - Only show on signup */}
               {!isLogin && (
