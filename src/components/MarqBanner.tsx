@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, ExternalLink } from "lucide-react";
+import { X, Sparkles, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface MarqBannerProps {
@@ -54,23 +54,31 @@ export function MarqBanner({ userId }: MarqBannerProps) {
   return (
     <div 
       onClick={handleClick}
-      className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-4 py-3 cursor-pointer hover:from-primary/90 hover:to-primary/70 transition-all"
+      className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 text-white px-4 py-3 cursor-pointer group transition-all hover:shadow-lg"
     >
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-        <div className="flex-1 text-center">
-          <p className="text-sm sm:text-base font-medium">
-            <span className="font-bold">Você já conhece a MarQ?</span>{" "}
-            <span className="hidden sm:inline">Sistema de RH completo: Controle de ponto, envio de holerites, Avaliação de desempenho, PDI e muito mais!</span>
-            <span className="sm:hidden">Sistema de RH completo!</span>
-            <span className="inline-flex items-center gap-1 ml-2 underline underline-offset-2">
-              Clique aqui e conheça!
-              <ExternalLink className="w-3.5 h-3.5" />
+      {/* Animated background effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+      
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 relative">
+        <div className="flex-1 flex items-center justify-center gap-3">
+          <Sparkles className="w-5 h-5 animate-pulse hidden sm:block" />
+          <p className="text-sm sm:text-base font-medium text-center">
+            <span className="font-bold">🚀 Turbine seu RH!</span>{" "}
+            <span className="hidden md:inline">
+              Ponto digital, holerites, avaliações e PDI em um só lugar.
+            </span>
+            <span className="md:hidden">
+              Sistema completo de RH!
+            </span>
+            <span className="inline-flex items-center gap-1 ml-2 bg-white/20 px-3 py-1 rounded-full font-semibold group-hover:bg-white/30 transition-colors">
+              Conhecer a MarQ
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </span>
           </p>
         </div>
         <button
           onClick={handleDismiss}
-          className="p-1 hover:bg-primary-foreground/20 rounded transition-colors flex-shrink-0"
+          className="p-1.5 hover:bg-white/20 rounded-full transition-colors flex-shrink-0"
           title="Fechar"
         >
           <X className="w-4 h-4" />
