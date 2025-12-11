@@ -5,7 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BATCH_SIZE = 6;
+const BATCH_SIZE = 4;
+const PARALLEL_BATCHES = 2;
 
 const SYSTEM_PROMPT = `Você é um especialista sênior em RH e recrutamento. Sua tarefa é analisar currículos de candidatos em relação a uma descrição de vaga específica.
 
@@ -360,45 +361,61 @@ serve(async (req) => {
 
     console.log(`Created ${batches.length} batch(es)`);
 
-    // Process each batch sequentially
+    // Process batches in parallel (PARALLEL_BATCHES at a time)
     const allCandidates: any[] = [];
     let totalTokens = 0;
 
-    for (let i = 0; i < batches.length; i++) {
-      try {
-        const { candidates, tokens } = await processBatch(
-          batches[i],
-          jobDescription,
-          GEMINI_API_KEY,
-          i + 1,
-          batches.length
+    for (let i = 0; i < batches.length; i += PARALLEL_BATCHES) {
+      const parallelRound = Math.floor(i / PARALLEL_BATCHES) + 1;
+      const totalRounds = Math.ceil(batches.length / PARALLEL_BATCHES);
+      console.log(`Processing parallel round ${parallelRound}/${totalRounds}...`);
+
+      const batchPromises: Promise<{ candidates: any[]; tokens: number }>[] = [];
+
+      // Queue up to PARALLEL_BATCHES batches to run in parallel
+      for (let j = 0; j < PARALLEL_BATCHES && i + j < batches.length; j++) {
+        const batchIndex = i + j;
+        batchPromises.push(
+          processBatch(
+            batches[batchIndex],
+            jobDescription,
+            GEMINI_API_KEY,
+            batchIndex + 1,
+            batches.length
+          )
         );
-        allCandidates.push(...candidates);
-        totalTokens += tokens;
-      } catch (batchError) {
-        console.error(`Batch ${i + 1} failed:`, batchError);
+      }
+
+      try {
+        const results = await Promise.all(batchPromises);
+        for (const result of results) {
+          allCandidates.push(...result.candidates);
+          totalTokens += result.tokens;
+        }
+      } catch (parallelError) {
+        console.error(`Parallel round ${parallelRound} had failures:`, parallelError);
         
         // If we have some candidates already, continue with what we have
         if (allCandidates.length > 0) {
-          console.log(`Continuing with ${allCandidates.length} candidates from previous batches`);
+          console.log(`Continuing with ${allCandidates.length} candidates from previous rounds`);
           break;
         }
         
-        // If first batch fails, retry once
+        // If first round fails completely, try processing one by one
         if (i === 0) {
-          console.log("Retrying first batch...");
+          console.log("Retrying first batch individually...");
           try {
             const { candidates, tokens } = await processBatch(
-              batches[i],
+              batches[0],
               jobDescription,
               GEMINI_API_KEY,
-              i + 1,
+              1,
               batches.length
             );
             allCandidates.push(...candidates);
             totalTokens += tokens;
           } catch (retryError) {
-            console.error("Retry failed:", retryError);
+            console.error("Individual retry failed:", retryError);
             throw retryError;
           }
         }
