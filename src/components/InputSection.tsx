@@ -173,11 +173,55 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
         </p>
       </div>
 
-      {/* Step 1: Upload */}
-      <div className="mb-8 sm:mb-10">
+      {/* Step 1: Job Title (Optional) */}
+      <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-2 sm:gap-3 mb-4">
           <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
             1
+          </div>
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground">
+            Título da Vaga
+          </h2>
+          <span className="text-xs text-muted-foreground">(opcional)</span>
+        </div>
+        <p className="text-xs sm:text-sm text-muted-foreground mb-4 ml-9 sm:ml-11">
+          Informe o título da vaga para facilitar a identificação nas análises.
+        </p>
+        <input
+          type="text"
+          value={jobTitle}
+          onChange={(e) => setJobTitle(e.target.value)}
+          placeholder="Ex: Desenvolvedor Full Stack Sênior"
+          className="input-clean ml-0 sm:ml-9 md:ml-11 w-full sm:w-[calc(100%-36px)] md:w-[calc(100%-44px)]"
+        />
+      </div>
+
+      {/* Step 2: Job Description */}
+      <div className="mb-8 sm:mb-10">
+        <div className="flex items-center gap-2 sm:gap-3 mb-4">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
+            2
+          </div>
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground">
+            Descrição da Vaga
+          </h2>
+        </div>
+        <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 ml-9 sm:ml-11">
+          Cole a descrição completa da vaga, incluindo requisitos e responsabilidades.
+        </p>
+        <textarea
+          value={jobDescription}
+          onChange={(e) => setJobDescription(e.target.value)}
+          placeholder="Cole aqui a descrição da vaga..."
+          className="input-clean ml-0 sm:ml-9 md:ml-11 h-40 sm:h-48 resize-none w-full sm:w-[calc(100%-36px)] md:w-[calc(100%-44px)]"
+        />
+      </div>
+
+      {/* Step 3: Upload */}
+      <div className="mb-8 sm:mb-10">
+        <div className="flex items-center gap-2 sm:gap-3 mb-4">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
+            3
           </div>
           <h2 className="text-lg sm:text-xl font-semibold text-foreground">
             Upload de Currículos
@@ -248,50 +292,6 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
             ))}
           </div>
         )}
-      </div>
-
-      {/* Step 2: Job Title (Optional) */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex items-center gap-2 sm:gap-3 mb-4">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
-            2
-          </div>
-          <h2 className="text-lg sm:text-xl font-semibold text-foreground">
-            Título da Vaga
-          </h2>
-          <span className="text-xs text-muted-foreground">(opcional)</span>
-        </div>
-        <p className="text-xs sm:text-sm text-muted-foreground mb-4 ml-9 sm:ml-11">
-          Informe o título da vaga para facilitar a identificação nas análises.
-        </p>
-        <input
-          type="text"
-          value={jobTitle}
-          onChange={(e) => setJobTitle(e.target.value)}
-          placeholder="Ex: Desenvolvedor Full Stack Sênior"
-          className="input-clean ml-0 sm:ml-9 md:ml-11 w-full sm:w-[calc(100%-36px)] md:w-[calc(100%-44px)]"
-        />
-      </div>
-
-      {/* Step 3: Job Description */}
-      <div className="mb-8 sm:mb-10">
-        <div className="flex items-center gap-2 sm:gap-3 mb-4">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
-            3
-          </div>
-          <h2 className="text-lg sm:text-xl font-semibold text-foreground">
-            Descrição da Vaga
-          </h2>
-        </div>
-        <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 ml-9 sm:ml-11">
-          Cole a descrição completa da vaga, incluindo requisitos e responsabilidades.
-        </p>
-        <textarea
-          value={jobDescription}
-          onChange={(e) => setJobDescription(e.target.value)}
-          placeholder="Cole aqui a descrição da vaga..."
-          className="input-clean ml-0 sm:ml-9 md:ml-11 h-40 sm:h-48 resize-none w-full sm:w-[calc(100%-36px)] md:w-[calc(100%-44px)]"
-        />
       </div>
 
       {/* Error Message */}

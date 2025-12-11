@@ -248,7 +248,7 @@ export default function Index() {
           <div className="flex items-center gap-2 sm:gap-4">
             {!balanceLoading && (
               <span className="text-xs sm:text-sm bg-primary/10 text-primary px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-medium whitespace-nowrap">
-                <span className="hidden sm:inline">Saldo: </span>{availableResumes} <span className="hidden xs:inline">CVs</span>
+                {availableResumes} {availableResumes === 1 ? 'currículo' : 'currículos'} <span className="hidden sm:inline">para analisar</span>
               </span>
             )}
             {user && <ReferralDialog userId={user.id} />}
