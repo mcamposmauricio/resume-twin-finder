@@ -12,6 +12,13 @@ import { ReferralDialog } from "@/components/ReferralDialog";
 import { MarqBanner } from "@/components/MarqBanner";
 import { useResumeBalance } from "@/hooks/useResumeBalance";
 import type { AppStep, UploadedFile, AnalysisResult, CandidateResult } from "@/types";
+
+interface DraftData {
+  id?: string;
+  files: UploadedFile[];
+  jobTitle: string;
+  jobDescription: string;
+}
 import logoMarq from "@/assets/logo-marq-blue.png";
 
 export default function Index() {
@@ -22,6 +29,7 @@ export default function Index() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const [currentDraft, setCurrentDraft] = useState<DraftData | null>(null);
   const navigate = useNavigate();
   const { availableResumes, maxPerAnalysis, loading: balanceLoading, refetch: refetchBalance } = useResumeBalance(user?.id);
   
@@ -160,19 +168,42 @@ export default function Index() {
       setStep("results");
 
       if (user) {
-        const { error: saveError } = await supabase.from("analyses").insert({
-          user_id: user.id,
-          job_title: jobTitle || null,
-          job_description: jobDescription,
-          candidates: files.map((f) => ({ name: f.name })),
-          results: data,
-          tokens_used: data.tokens_used || 0,
-        });
-        if (saveError) {
-          console.error("Error saving analysis:", saveError);
+        if (currentDraft?.id) {
+          // Update existing draft to completed
+          const { error: updateError } = await supabase
+            .from("analyses")
+            .update({
+              job_title: jobTitle || null,
+              job_description: jobDescription,
+              candidates: files.map((f) => ({ name: f.name })),
+              results: data,
+              tokens_used: data.tokens_used || 0,
+              status: "completed",
+            })
+            .eq("id", currentDraft.id);
+          
+          if (updateError) {
+            console.error("Error updating analysis:", updateError);
+          } else {
+            refetchBalance();
+            setCurrentDraft(null);
+          }
         } else {
-          // Refetch balance after successful analysis
-          refetchBalance();
+          // Create new analysis
+          const { error: saveError } = await supabase.from("analyses").insert({
+            user_id: user.id,
+            job_title: jobTitle || null,
+            job_description: jobDescription,
+            candidates: files.map((f) => ({ name: f.name })),
+            results: data,
+            tokens_used: data.tokens_used || 0,
+            status: "completed",
+          });
+          if (saveError) {
+            console.error("Error saving analysis:", saveError);
+          } else {
+            refetchBalance();
+          }
         }
       }
     } catch (error: any) {
@@ -188,6 +219,80 @@ export default function Index() {
     setTokensUsed(0);
     setErrorMessage("");
     setSelectedAnalysisId(null);
+    setCurrentDraft(null);
+  };
+
+  const handleSaveDraft = async (files: UploadedFile[], jobDescription: string, jobTitle?: string) => {
+    if (!user) return;
+    
+    try {
+      const candidatesData = files.map((f) => ({ name: f.name, content: f.content, type: f.type }));
+      
+      if (currentDraft?.id) {
+        // Update existing draft
+        const { error } = await supabase
+          .from("analyses")
+          .update({
+            job_title: jobTitle || null,
+            job_description: jobDescription || "",
+            candidates: candidatesData,
+          })
+          .eq("id", currentDraft.id);
+        
+        if (error) throw error;
+        toast.success("Rascunho atualizado com sucesso!");
+      } else {
+        // Create new draft
+        const { error } = await supabase.from("analyses").insert({
+          user_id: user.id,
+          job_title: jobTitle || null,
+          job_description: jobDescription || "",
+          candidates: candidatesData,
+          status: "draft",
+        });
+        
+        if (error) throw error;
+        toast.success("Rascunho salvo com sucesso!");
+      }
+      
+      setStep("welcome");
+      setCurrentDraft(null);
+    } catch (error: any) {
+      console.error("Error saving draft:", error);
+      toast.error("Erro ao salvar rascunho. Tente novamente.");
+    }
+  };
+
+  const handleContinueDraft = async (analysisId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("analyses")
+        .select("*")
+        .eq("id", analysisId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+        const draftFiles: UploadedFile[] = candidates.map((c: any) => ({
+          name: c.name || "Arquivo",
+          content: c.content || "",
+          type: c.type || "application/pdf",
+        }));
+
+        setCurrentDraft({
+          id: data.id,
+          files: draftFiles,
+          jobTitle: data.job_title || "",
+          jobDescription: data.job_description || "",
+        });
+        setStep("input");
+      }
+    } catch (error) {
+      console.error("Error loading draft:", error);
+      toast.error("Erro ao carregar rascunho");
+    }
   };
 
   const handleRetry = () => {
@@ -232,6 +337,7 @@ export default function Index() {
     setStep("welcome");
     setResults(null);
     setSelectedAnalysisId(null);
+    setCurrentDraft(null);
   };
 
   if (loading) {
@@ -293,15 +399,18 @@ export default function Index() {
             user={user} 
             onNewAnalysis={handleNewAnalysis} 
             onViewAnalysis={handleViewAnalysis}
+            onContinueDraft={handleContinueDraft}
           />
         )}
         {step === "input" && (
           <div className="max-w-5xl mx-auto">
             <InputSection 
-              onAnalyze={handleAnalyze} 
+              onAnalyze={handleAnalyze}
+              onSaveDraft={handleSaveDraft}
               isLoading={false} 
               maxFiles={maxPerAnalysis}
               availableBalance={availableResumes}
+              initialDraft={currentDraft}
             />
           </div>
         )}
