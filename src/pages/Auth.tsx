@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Mail, Lock, ArrowRight, Upload, Brain, CheckCircle } from "lucide-react";
+import { Mail, Lock, ArrowRight, Upload, Brain, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoMarq from "@/assets/logo-marq-blue.png";
@@ -190,13 +190,14 @@ export default function Auth() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-10 px-6 lg:px-12 py-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-600 rounded-xl">
-            <FileText className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-slate-900">
-            CompareCV <span className="text-blue-600 text-sm font-normal">powered by MarQ</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] bg-clip-text text-transparent">
+            CompareCV
           </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-slate-500 font-medium">powered by</span>
+            <img src={logoMarq} alt="MarQ HR" className="h-5" />
+          </div>
         </div>
       </header>
 
