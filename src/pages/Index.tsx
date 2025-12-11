@@ -50,8 +50,11 @@ export default function Index() {
     toast.success("Logout realizado com sucesso!");
   };
 
-  const handleAnalyze = async (files: UploadedFile[], jobDescription: string) => {
+  const [currentJobTitle, setCurrentJobTitle] = useState<string | undefined>();
+
+  const handleAnalyze = async (files: UploadedFile[], jobDescription: string, jobTitle?: string) => {
     setStep("loading");
+    setCurrentJobTitle(jobTitle);
     
     try {
       const { data, error } = await supabase.functions.invoke("analyze-resumes", {
@@ -142,6 +145,7 @@ export default function Index() {
       if (user) {
         const { error: saveError } = await supabase.from("analyses").insert({
           user_id: user.id,
+          job_title: jobTitle || null,
           job_description: jobDescription,
           candidates: files.map((f) => ({ name: f.name })),
           results: data,
