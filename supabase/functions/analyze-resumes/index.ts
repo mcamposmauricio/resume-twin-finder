@@ -124,14 +124,6 @@ serve(async (req) => {
         } catch {
           parts.push({ text: file.content });
         }
-      } else if (file.type.includes("word") || file.name.endsWith(".docx")) {
-        // For DOCX, send as binary and let Gemini handle it
-        parts.push({
-          inline_data: {
-            mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            data: file.content
-          }
-        });
       }
     }
 
