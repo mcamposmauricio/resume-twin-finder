@@ -2,6 +2,14 @@ import { useState, useCallback } from "react";
 import { Upload, FileText, X, AlertCircle, ArrowRight, Info } from "lucide-react";
 import { UploadedFile } from "@/types";
 
+const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB em bytes
+
+interface FileProcessResult {
+  file: UploadedFile | null;
+  error?: "invalid_type" | "size_exceeded";
+  fileName: string;
+}
+
 interface InputSectionProps {
   onAnalyze: (files: UploadedFile[], jobDescription: string, jobTitle?: string) => void;
   isLoading: boolean;
@@ -16,7 +24,7 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const processFile = async (file: File): Promise<UploadedFile | null> => {
+  const processFile = async (file: File): Promise<FileProcessResult> => {
     const allowedTypes = [
       "application/pdf",
       "text/plain",
@@ -25,11 +33,15 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
     const allowedExtensions = [".pdf", ".txt", ".docx"];
 
     const extension = "." + file.name.split(".").pop()?.toLowerCase();
-    if (
-      !allowedTypes.includes(file.type) &&
-      !allowedExtensions.includes(extension)
-    ) {
-      return null;
+    
+    // Verificar tipo de arquivo
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension)) {
+      return { file: null, error: "invalid_type", fileName: file.name };
+    }
+
+    // Verificar tamanho do arquivo
+    if (file.size > MAX_FILE_SIZE) {
+      return { file: null, error: "size_exceeded", fileName: file.name };
     }
 
     return new Promise((resolve) => {
@@ -37,12 +49,15 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
       reader.onload = (e) => {
         const content = e.target?.result as string;
         resolve({
-          name: file.name,
-          type: file.type || `application/${extension.slice(1)}`,
-          content: content.split(",")[1] || content,
+          file: {
+            name: file.name,
+            type: file.type || `application/${extension.slice(1)}`,
+            content: content.split(",")[1] || content,
+          },
+          fileName: file.name,
         });
       };
-      reader.onerror = () => resolve(null);
+      reader.onerror = () => resolve({ file: null, error: "invalid_type", fileName: file.name });
       reader.readAsDataURL(file);
     });
   };
@@ -51,7 +66,8 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
     async (fileList: FileList) => {
       setError(null);
       const newFiles: UploadedFile[] = [];
-      const invalidFiles: string[] = [];
+      const invalidTypeFiles: string[] = [];
+      const oversizedFiles: string[] = [];
       
       const remainingSlots = maxFiles - files.length;
 
@@ -63,27 +79,39 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
       const filesToProcess = Array.from(fileList).slice(0, remainingSlots);
 
       for (const file of filesToProcess) {
-        const processed = await processFile(file);
-        if (processed) {
+        const result = await processFile(file);
+        
+        if (result.error === "invalid_type") {
+          invalidTypeFiles.push(result.fileName);
+        } else if (result.error === "size_exceeded") {
+          oversizedFiles.push(result.fileName);
+        } else if (result.file) {
           if (
-            !files.some((f) => f.name === processed.name) &&
-            !newFiles.some((f) => f.name === processed.name)
+            !files.some((f) => f.name === result.file!.name) &&
+            !newFiles.some((f) => f.name === result.file!.name)
           ) {
-            newFiles.push(processed);
+            newFiles.push(result.file);
           }
-        } else {
-          invalidFiles.push(file.name);
         }
       }
 
-      if (invalidFiles.length > 0) {
-        setError(
-          `Arquivos não suportados: ${invalidFiles.join(", ")}. Use PDF, TXT ou DOCX.`
-        );
+      // Montar mensagem de erro amigável
+      const errors: string[] = [];
+      
+      if (invalidTypeFiles.length > 0) {
+        errors.push("Arquivo não suportado. Para análise, aceitamos apenas currículos em PDF, DOCX ou TXT.");
+      }
+      
+      if (oversizedFiles.length > 0) {
+        errors.push(`O arquivo ${oversizedFiles.join(", ")} excede o tamanho máximo permitido (3MB). Tente enviar um PDF mais leve.`);
       }
 
       if (Array.from(fileList).length > remainingSlots) {
-        setError(`Limite atingido. Apenas ${remainingSlots} arquivo(s) foram adicionados.`);
+        errors.push(`Limite atingido. Apenas ${remainingSlots} arquivo(s) foram adicionados.`);
+      }
+
+      if (errors.length > 0) {
+        setError(errors.join(" "));
       }
 
       if (newFiles.length > 0) {
@@ -135,6 +163,10 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
     }
     if (!jobDescription.trim()) {
       setError("Por favor, preencha a descrição da vaga.");
+      return;
+    }
+    if (jobDescription.trim().length < 100) {
+      setError("A descrição da vaga não contém informações suficientes para análise. Tente incluir título da posição, requisitos técnicos, responsabilidades e nível de senioridade.");
       return;
     }
     setError(null);
@@ -229,7 +261,7 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
           <span className="text-xs sm:text-sm text-muted-foreground">({files.length}/{maxFiles})</span>
         </div>
         <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 ml-9 sm:ml-11">
-          Arraste e solte os currículos ou clique para selecionar. Aceita PDF, TXT e DOCX.
+          Arraste e solte os currículos ou clique para selecionar. Aceita PDF, TXT e DOCX (máx. 3MB).
         </p>
 
         {/* Drop Zone */}

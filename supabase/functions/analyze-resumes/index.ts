@@ -31,6 +31,24 @@ REGRAS CRÍTICAS:
 - Mantenha respostas CONCISAS para evitar truncamento
 - soft_skills DEVE ser array de objetos: [{"name": "Comunicação", "score": 85}]`;
 
+// Função para sanitizar erros e retornar mensagens amigáveis
+function getSanitizedError(error: string): string {
+  const errorMappings: Record<string, string> = {
+    "API key not configured": "Algo inesperado ocorreu durante a análise. Tente novamente.",
+    "Gemini API error": "Algo inesperado ocorreu durante a análise. Tente novamente.",
+    "No response from AI": "Algo inesperado ocorreu durante a análise. Tente novamente.",
+    "Failed to parse AI response": "Algo inesperado ocorreu durante a análise. Tente novamente.",
+  };
+  
+  for (const [key, message] of Object.entries(errorMappings)) {
+    if (error.includes(key)) {
+      return message;
+    }
+  }
+  
+  return "Algo inesperado ocorreu durante a análise. Tente novamente.";
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -40,10 +58,38 @@ serve(async (req) => {
   try {
     const { files, jobDescription } = await req.json();
     
+    // Validar descrição da vaga
+    if (!jobDescription || jobDescription.trim().length < 50) {
+      return new Response(
+        JSON.stringify({ 
+          error_code: "INSUFFICIENT_JOB_DESC",
+          error: "A descrição da vaga não contém informações suficientes para análise." 
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validar arquivos
+    if (!files || files.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          error_code: "NO_FILES",
+          error: "Por favor, adicione pelo menos um currículo para análise." 
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     const GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
     if (!GEMINI_API_KEY) {
       console.error("GOOGLE_GEMINI_API_KEY not configured");
-      throw new Error("API key not configured");
+      return new Response(
+        JSON.stringify({ 
+          error_code: "CONFIG_ERROR",
+          error: "Algo inesperado ocorreu durante a análise. Tente novamente." 
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log(`Analyzing ${files.length} resumes...`);
@@ -252,9 +298,11 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Error in analyze-resumes function:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Unknown error occurred" 
+        error_code: "ANALYSIS_ERROR",
+        error: getSanitizedError(errorMessage)
       }),
       {
         status: 500,
