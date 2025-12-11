@@ -228,11 +228,17 @@ export default function Index() {
         <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-8 py-3 sm:py-4 flex items-center justify-between gap-2">
           <button 
             onClick={handleBackToDashboard}
-            className="flex items-center gap-1.5 sm:gap-2 hover:opacity-80 transition-opacity min-w-0"
+            className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity min-w-0 group"
           >
-            <span className="text-sm sm:text-lg font-semibold text-foreground truncate">CompareCV</span>
-            <span className="hidden sm:inline text-sm sm:text-lg font-semibold text-foreground">powered by</span>
-            <img src={logoMarq} alt="MarQ HR" className="h-4 sm:h-5 hidden sm:block" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] bg-clip-text text-transparent">
+                CompareCV
+              </span>
+              <div className="hidden sm:flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground font-medium">powered by</span>
+                <img src={logoMarq} alt="MarQ HR" className="h-5 group-hover:scale-105 transition-transform" />
+              </div>
+            </div>
           </button>
 
           <div className="flex items-center gap-2 sm:gap-4">
