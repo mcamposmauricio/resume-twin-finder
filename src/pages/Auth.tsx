@@ -207,55 +207,62 @@ export default function Auth() {
         </div>
       </header>
 
-      <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center px-6 lg:px-12 py-24 gap-12 lg:gap-24">
-        {/* Left side - Content */}
-        <div className="flex-1 max-w-xl animate-fade-in">
-          <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-slate-900 leading-tight mb-6">
-            <span className="text-blue-600">Triagem de currículos em segundos</span>
-            <br />
-            com inteligência artificial
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 lg:px-12 py-24">
+        {/* Top Hero Section - Centered */}
+        <div className="text-center mb-12 animate-fade-in">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-blue-600 leading-tight mb-2">
+            Triagem de currículos em segundos
           </h1>
-
-          <p className="text-lg text-slate-600 mb-10 leading-relaxed">
-            Compare múltiplos candidatos de forma rápida e objetiva. Nossa IA identifica o melhor match para sua vaga em
-            segundos.
+          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900">
+            com inteligência artificial
           </p>
+        </div>
 
-          {/* How it works - 3 steps */}
-          <div className="space-y-4">
-            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="p-3 bg-blue-100 rounded-xl shrink-0">
-                <Upload className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900 mb-1">1. Enviar Dados</h3>
-                <p className="text-sm text-slate-500">Upload dos currículos (PDF) e descrição detalhada da vaga.</p>
-              </div>
-            </div>
+        {/* Content row - Steps + Form */}
+        <div className="w-full flex flex-col lg:flex-row items-start justify-center gap-12 lg:gap-24">
+          {/* Left side - Content */}
+          <div className="flex-1 max-w-xl animate-fade-in">
+            <p className="text-lg text-slate-600 mb-10 leading-relaxed">
+              Compare múltiplos candidatos de forma rápida e objetiva. Nossa IA identifica o melhor match para sua vaga em
+              segundos.
+            </p>
 
-            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="p-3 bg-blue-100 rounded-xl shrink-0">
-                <Brain className="w-5 h-5 text-blue-600" />
+            {/* How it works - 3 steps */}
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                <div className="p-3 bg-blue-100 rounded-xl shrink-0">
+                  <Upload className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-1">1. Enviar Dados</h3>
+                  <p className="text-sm text-slate-500">Upload dos currículos (PDF) e descrição detalhada da vaga.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-slate-900 mb-1">2. Análise com IA</h3>
-                <p className="text-sm text-slate-500">Avaliação automática de Hard Skills e Soft Skills.</p>
-              </div>
-            </div>
 
-            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="p-3 bg-blue-100 rounded-xl shrink-0">
-                <CheckCircle className="w-5 h-5 text-blue-600" />
+              <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                <div className="p-3 bg-blue-100 rounded-xl shrink-0">
+                  <Brain className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-1">2. Análise com IA</h3>
+                  <p className="text-sm text-slate-500">Avaliação automática de Hard Skills e Soft Skills.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-slate-900 mb-1">3. Ranking e Decisão</h3>
-                <p className="text-sm text-slate-500">
-                  Matriz visual, tabela comparativa e recomendação do candidato ideal.
-                </p>
+
+              <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                <div className="p-3 bg-blue-100 rounded-xl shrink-0">
+                  <CheckCircle className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-1">3. Ranking e Decisão</h3>
+                  <p className="text-sm text-slate-500">
+                    Matriz visual, tabela comparativa e recomendação do candidato ideal.
+                  </p>
+          </div>
+        </div>
               </div>
             </div>
           </div>
-        </div>
 
         {/* Right side - Form */}
         <div className="w-full max-w-md">
