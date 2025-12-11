@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dashboard } from "@/components/Dashboard";
@@ -9,6 +9,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { ResultsSection } from "@/components/ResultsSection";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { ReferralDialog } from "@/components/ReferralDialog";
+import { MarqBanner } from "@/components/MarqBanner";
 import { useResumeBalance } from "@/hooks/useResumeBalance";
 import type { AppStep, UploadedFile, AnalysisResult, CandidateResult } from "@/types";
 import logoMarq from "@/assets/logo-marq-blue.png";
@@ -21,6 +22,7 @@ export default function Index() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const [showMarqBanner, setShowMarqBanner] = useState(false);
   const navigate = useNavigate();
   const { availableResumes, maxPerAnalysis, loading: balanceLoading, refetch: refetchBalance } = useResumeBalance(user?.id);
   
@@ -137,6 +139,7 @@ export default function Index() {
       setResults(normalizedData);
       setTokensUsed(data.tokens_used || 0);
       setStep("results");
+      setShowMarqBanner(true);
 
       if (user) {
         const { error: saveError } = await supabase.from("analyses").insert({
@@ -222,6 +225,9 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* MarQ Promotional Banner */}
+      <MarqBanner show={showMarqBanner} />
+
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-8 py-3 sm:py-4 flex items-center justify-between gap-2">
