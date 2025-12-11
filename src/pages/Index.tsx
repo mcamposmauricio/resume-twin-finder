@@ -223,9 +223,6 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* MarQ Promotional Banner */}
-      <MarqBanner userId={user?.id} />
-
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-8 py-3 sm:py-4 flex items-center justify-between gap-2">
@@ -258,6 +255,9 @@ export default function Index() {
           </div>
         </div>
       </header>
+
+      {/* MarQ Promotional Banner */}
+      <MarqBanner userId={user?.id} />
 
       {/* Main Content */}
       <main className="flex-1">
