@@ -1,33 +1,51 @@
 import { useState, useEffect } from "react";
 import { X, ExternalLink } from "lucide-react";
-
-const BANNER_DISMISSED_KEY = "marq_banner_dismissed";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MarqBannerProps {
-  show: boolean;
+  userId: string | undefined;
 }
 
-export function MarqBanner({ show }: MarqBannerProps) {
+export function MarqBanner({ userId }: MarqBannerProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (show) {
-      const dismissed = localStorage.getItem(BANNER_DISMISSED_KEY);
-      if (!dismissed) {
+    if (!userId) return;
+
+    const fetchBannerStatus = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("show_marq_banner")
+        .eq("user_id", userId)
+        .single();
+
+      if (!error && data?.show_marq_banner) {
         setVisible(true);
       }
-    }
-  }, [show]);
+    };
 
-  const handleClick = () => {
-    localStorage.setItem(BANNER_DISMISSED_KEY, "true");
+    fetchBannerStatus();
+  }, [userId]);
+
+  const handleClick = async () => {
+    if (userId) {
+      await supabase
+        .from("profiles")
+        .update({ show_marq_banner: false })
+        .eq("user_id", userId);
+    }
     setVisible(false);
     window.open("https://marqhr.com/", "_blank");
   };
 
-  const handleDismiss = (e: React.MouseEvent) => {
+  const handleDismiss = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    localStorage.setItem(BANNER_DISMISSED_KEY, "true");
+    if (userId) {
+      await supabase
+        .from("profiles")
+        .update({ show_marq_banner: false })
+        .eq("user_id", userId);
+    }
     setVisible(false);
   };
 
