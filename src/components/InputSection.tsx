@@ -3,7 +3,7 @@ import { Upload, FileText, X, AlertCircle, ArrowRight, Info } from "lucide-react
 import { UploadedFile } from "@/types";
 
 interface InputSectionProps {
-  onAnalyze: (files: UploadedFile[], jobDescription: string) => void;
+  onAnalyze: (files: UploadedFile[], jobDescription: string, jobTitle?: string) => void;
   isLoading: boolean;
   maxFiles: number;
   availableBalance: number;
@@ -11,6 +11,7 @@ interface InputSectionProps {
 
 export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance }: InputSectionProps) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,7 +138,7 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
       return;
     }
     setError(null);
-    onAnalyze(files, jobDescription);
+    onAnalyze(files, jobDescription, jobTitle.trim() || undefined);
   };
 
   const canAddMoreFiles = files.length < maxFiles && maxFiles > 0;
@@ -249,11 +250,34 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
         )}
       </div>
 
-      {/* Step 2: Job Description */}
-      <div className="mb-8 sm:mb-10">
+      {/* Step 2: Job Title (Optional) */}
+      <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-2 sm:gap-3 mb-4">
           <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
             2
+          </div>
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground">
+            Título da Vaga
+          </h2>
+          <span className="text-xs text-muted-foreground">(opcional)</span>
+        </div>
+        <p className="text-xs sm:text-sm text-muted-foreground mb-4 ml-9 sm:ml-11">
+          Informe o título da vaga para facilitar a identificação nas análises.
+        </p>
+        <input
+          type="text"
+          value={jobTitle}
+          onChange={(e) => setJobTitle(e.target.value)}
+          placeholder="Ex: Desenvolvedor Full Stack Sênior"
+          className="input-clean ml-0 sm:ml-9 md:ml-11 w-full sm:w-[calc(100%-36px)] md:w-[calc(100%-44px)]"
+        />
+      </div>
+
+      {/* Step 3: Job Description */}
+      <div className="mb-8 sm:mb-10">
+        <div className="flex items-center gap-2 sm:gap-3 mb-4">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
+            3
           </div>
           <h2 className="text-lg sm:text-xl font-semibold text-foreground">
             Descrição da Vaga

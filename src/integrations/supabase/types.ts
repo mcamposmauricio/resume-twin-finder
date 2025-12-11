@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           id: string
           job_description: string
+          job_title: string | null
           results: Json | null
           tokens_used: number | null
           user_id: string
@@ -29,6 +30,7 @@ export type Database = {
           created_at?: string
           id?: string
           job_description: string
+          job_title?: string | null
           results?: Json | null
           tokens_used?: number | null
           user_id: string
@@ -38,6 +40,7 @@ export type Database = {
           created_at?: string
           id?: string
           job_description?: string
+          job_title?: string | null
           results?: Json | null
           tokens_used?: number | null
           user_id?: string

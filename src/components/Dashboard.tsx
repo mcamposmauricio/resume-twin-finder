@@ -12,6 +12,7 @@ interface DashboardProps {
 
 interface Analysis {
   id: string;
+  job_title: string | null;
   job_description: string;
   candidates: any;
   created_at: string;
@@ -54,6 +55,15 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis }: DashboardProp
     } finally {
       setLoading(false);
     }
+  };
+
+  const getAnalysisTitle = (analysis: Analysis) => {
+    if (analysis.job_title) {
+      return analysis.job_title.length > 60 
+        ? analysis.job_title.substring(0, 57) + "..." 
+        : analysis.job_title;
+    }
+    return extractTitle(analysis.job_description);
   };
 
   const extractTitle = (jobDescription: string) => {
@@ -172,7 +182,7 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis }: DashboardProp
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm sm:text-base font-medium text-foreground truncate">
-                          {extractTitle(analysis.job_description)}
+                          {getAnalysisTitle(analysis)}
                         </h3>
                         <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                           <span className="flex items-center gap-1">
