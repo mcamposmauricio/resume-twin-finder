@@ -57,12 +57,8 @@ export function InputSection({ onAnalyze, onSaveDraft, isLoading, maxFiles, avai
   };
 
   const processFile = async (file: File): Promise<FileProcessResult> => {
-    const allowedTypes = [
-      "application/pdf",
-      "text/plain",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ];
-    const allowedExtensions = [".pdf", ".txt", ".docx"];
+    const allowedTypes = ["application/pdf", "text/plain"];
+    const allowedExtensions = [".pdf", ".txt"];
 
     const extension = "." + file.name.split(".").pop()?.toLowerCase();
     
@@ -131,7 +127,7 @@ export function InputSection({ onAnalyze, onSaveDraft, isLoading, maxFiles, avai
       const errors: string[] = [];
       
       if (invalidTypeFiles.length > 0) {
-        errors.push("Arquivo não suportado. Para análise, aceitamos apenas currículos em PDF, DOCX ou TXT.");
+        errors.push("Arquivo não suportado. Para análise, aceitamos apenas currículos em PDF ou TXT.");
       }
       
       if (oversizedFiles.length > 0) {
@@ -293,7 +289,7 @@ export function InputSection({ onAnalyze, onSaveDraft, isLoading, maxFiles, avai
           <span className="text-xs sm:text-sm text-muted-foreground">({files.length}/{maxFiles})</span>
         </div>
         <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 ml-9 sm:ml-11">
-          Arraste e solte os currículos ou clique para selecionar. Aceita PDF, TXT e DOCX (máx. 3MB).
+          Arraste e solte os currículos ou clique para selecionar. Aceita PDF e TXT (máx. 3MB).
         </p>
 
         {/* Drop Zone */}
@@ -315,7 +311,7 @@ export function InputSection({ onAnalyze, onSaveDraft, isLoading, maxFiles, avai
             id="file-input"
             type="file"
             multiple
-            accept=".pdf,.txt,.docx"
+            accept=".pdf,.txt"
             onChange={handleFileInput}
             className="hidden"
             disabled={!canAddMoreFiles}
