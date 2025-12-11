@@ -5,6 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoMarq from "@/assets/logo-marq-blue.png";
 
+// Declaração de tipo para Google Tag Manager dataLayer
+declare global {
+  interface Window {
+    dataLayer: Record<string, unknown>[];
+  }
+}
+
 // List of blocked personal email domains
 const BLOCKED_EMAIL_DOMAINS = [
   // pessoais comuns
@@ -174,6 +181,12 @@ export default function Auth() {
           if (updateError) {
             console.error("Error updating referred_by_code:", updateError);
           }
+        }
+
+        // Disparar evento para Google Tag Manager
+        if (typeof window !== 'undefined') {
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({ 'event': 'cadastroCompareCV' });
         }
 
         toast.success("Conta criada com sucesso!");
