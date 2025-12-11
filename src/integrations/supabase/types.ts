@@ -22,6 +22,7 @@ export type Database = {
           job_description: string
           job_title: string | null
           results: Json | null
+          status: string
           tokens_used: number | null
           user_id: string
         }
@@ -32,6 +33,7 @@ export type Database = {
           job_description: string
           job_title?: string | null
           results?: Json | null
+          status?: string
           tokens_used?: number | null
           user_id: string
         }
@@ -42,6 +44,7 @@ export type Database = {
           job_description?: string
           job_title?: string | null
           results?: Json | null
+          status?: string
           tokens_used?: number | null
           user_id?: string
         }

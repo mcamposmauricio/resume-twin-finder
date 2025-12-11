@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Briefcase, Users, ArrowRight, Plus, FileText, Calendar } from "lucide-react";
+import { Briefcase, Users, ArrowRight, Plus, FileText, Calendar, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -8,6 +8,7 @@ interface DashboardProps {
   user: any;
   onNewAnalysis: () => void;
   onViewAnalysis: (analysisId: string) => void;
+  onContinueDraft: (analysisId: string) => void;
 }
 
 interface Analysis {
@@ -16,9 +17,10 @@ interface Analysis {
   job_description: string;
   candidates: any;
   created_at: string;
+  status: string;
 }
 
-export function Dashboard({ user, onNewAnalysis, onViewAnalysis }: DashboardProps) {
+export function Dashboard({ user, onNewAnalysis, onViewAnalysis, onContinueDraft }: DashboardProps) {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalAnalyses: 0, totalCandidates: 0 });
@@ -66,8 +68,10 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis }: DashboardProp
       const analysesData = data || [];
       setAnalyses(analysesData);
 
-      const totalAnalyses = analysesData.length;
-      const totalCandidates = analysesData.reduce((acc, analysis) => {
+      // Only count completed analyses for stats
+      const completedAnalyses = analysesData.filter(a => a.status === 'completed');
+      const totalAnalyses = completedAnalyses.length;
+      const totalCandidates = completedAnalyses.reduce((acc, analysis) => {
         const candidates = Array.isArray(analysis.candidates) ? analysis.candidates : [];
         return acc + candidates.length;
       }, 0);
@@ -189,22 +193,34 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis }: DashboardProp
           <div className="space-y-2 sm:space-y-3">
             {analyses.slice(0, 5).map((analysis) => {
               const candidateCount = Array.isArray(analysis.candidates) ? analysis.candidates.length : 0;
+              const isDraft = analysis.status === 'draft';
               
               return (
                 <button
                   key={analysis.id}
-                  onClick={() => onViewAnalysis(analysis.id)}
+                  onClick={() => isDraft ? onContinueDraft(analysis.id) : onViewAnalysis(analysis.id)}
                   className="w-full card-hover text-left group p-3 sm:p-4 md:p-6"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0">
-                        <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${isDraft ? 'bg-amber-100' : 'bg-primary/10'}`}>
+                        {isDraft ? (
+                          <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+                        ) : (
+                          <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm sm:text-base font-medium text-foreground truncate">
-                          {getAnalysisTitle(analysis)}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm sm:text-base font-medium text-foreground truncate">
+                            {getAnalysisTitle(analysis)}
+                          </h3>
+                          {isDraft && (
+                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium shrink-0">
+                              Rascunho
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                           <span className="flex items-center gap-1">
                             <Users className="w-3 h-3 sm:w-4 sm:h-4" />

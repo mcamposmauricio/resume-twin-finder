@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { Upload, FileText, X, AlertCircle, ArrowRight, Info } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { Upload, FileText, X, AlertCircle, ArrowRight, Info, Save } from "lucide-react";
 import { UploadedFile } from "@/types";
 
 const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB em bytes
@@ -10,19 +10,51 @@ interface FileProcessResult {
   fileName: string;
 }
 
+interface DraftData {
+  files: UploadedFile[];
+  jobTitle: string;
+  jobDescription: string;
+}
+
 interface InputSectionProps {
   onAnalyze: (files: UploadedFile[], jobDescription: string, jobTitle?: string) => void;
+  onSaveDraft: (files: UploadedFile[], jobDescription: string, jobTitle?: string) => void;
   isLoading: boolean;
   maxFiles: number;
   availableBalance: number;
+  initialDraft?: DraftData | null;
 }
 
-export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance }: InputSectionProps) {
-  const [files, setFiles] = useState<UploadedFile[]>([]);
-  const [jobTitle, setJobTitle] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
+export function InputSection({ onAnalyze, onSaveDraft, isLoading, maxFiles, availableBalance, initialDraft }: InputSectionProps) {
+  const [files, setFiles] = useState<UploadedFile[]>(initialDraft?.files || []);
+  const [jobTitle, setJobTitle] = useState(initialDraft?.jobTitle || "");
+  const [jobDescription, setJobDescription] = useState(initialDraft?.jobDescription || "");
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+  // Update state when initialDraft changes (e.g., loading a draft)
+  useEffect(() => {
+    if (initialDraft) {
+      setFiles(initialDraft.files);
+      setJobTitle(initialDraft.jobTitle);
+      setJobDescription(initialDraft.jobDescription);
+    }
+  }, [initialDraft]);
+
+  const handleSaveDraft = async () => {
+    if (files.length === 0 && !jobDescription.trim() && !jobTitle.trim()) {
+      setError("Adicione pelo menos alguma informação para salvar como rascunho.");
+      return;
+    }
+    setError(null);
+    setIsSavingDraft(true);
+    try {
+      await onSaveDraft(files, jobDescription, jobTitle.trim() || undefined);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
 
   const processFile = async (file: File): Promise<FileProcessResult> => {
     const allowedTypes = [
@@ -335,10 +367,10 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
       )}
 
       {/* Analyze Button */}
-      <div className="ml-0 sm:ml-9 md:ml-11">
+      <div className="ml-0 sm:ml-9 md:ml-11 space-y-3">
         <button
           onClick={handleSubmit}
-          disabled={isLoading || files.length === 0 || !jobDescription.trim()}
+          disabled={isLoading || isSavingDraft || files.length === 0 || !jobDescription.trim()}
           className="btn-primary w-full py-3 sm:py-4 text-sm sm:text-base"
         >
           {isLoading ? (
@@ -353,6 +385,28 @@ export function InputSection({ onAnalyze, isLoading, maxFiles, availableBalance 
             <>
               Analisar Candidatos
               <ArrowRight className="w-5 h-5" />
+            </>
+          )}
+        </button>
+        
+        {/* Save Draft Button */}
+        <button
+          onClick={handleSaveDraft}
+          disabled={isLoading || isSavingDraft || (files.length === 0 && !jobDescription.trim() && !jobTitle.trim())}
+          className="w-full py-2.5 sm:py-3 text-sm sm:text-base border border-border rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSavingDraft ? (
+            <span className="flex items-center gap-2">
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              Salvando...
+            </span>
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              Sair e Salvar Rascunho
             </>
           )}
         </button>
