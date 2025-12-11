@@ -207,9 +207,9 @@ export default function Auth() {
         </div>
       </header>
 
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 lg:px-12 py-24">
+      <div className="min-h-screen flex flex-col px-6 lg:px-12 py-24">
         {/* Top Hero Section - Centered */}
-        <div className="text-center mb-12 animate-fade-in">
+        <div className="text-center mb-12 animate-fade-in pt-8">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-blue-600 leading-tight mb-2">
             Triagem de currículos em segundos
           </h1>
@@ -219,7 +219,7 @@ export default function Auth() {
         </div>
 
         {/* Content row - Steps + Form */}
-        <div className="w-full flex flex-col lg:flex-row items-start justify-center gap-12 lg:gap-24">
+        <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24">
           {/* Left side - Content */}
           <div className="flex-1 max-w-xl animate-fade-in">
             <p className="text-lg text-slate-600 mb-10 leading-relaxed">
@@ -258,8 +258,7 @@ export default function Auth() {
                   <p className="text-sm text-slate-500">
                     Matriz visual, tabela comparativa e recomendação do candidato ideal.
                   </p>
-          </div>
-        </div>
+                </div>
               </div>
             </div>
           </div>
@@ -443,6 +442,7 @@ export default function Auth() {
             <span>© {new Date().getFullYear()} CompareCV powered by</span>
             <img src={logoMarq} alt="MarQ HR" className="h-4" />
           </div>
+        </div>
         </div>
       </div>
     </div>
