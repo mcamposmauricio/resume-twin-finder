@@ -54,7 +54,7 @@ export function MarqBanner({ userId }: MarqBannerProps) {
   return (
     <div 
       onClick={handleClick}
-      className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 text-white px-4 py-3 cursor-pointer group transition-all hover:shadow-lg"
+      className="relative overflow-hidden bg-gradient-to-r from-[#1e3a8a] via-[#2563eb] to-[#3b82f6] text-white px-4 py-3 cursor-pointer group transition-all hover:shadow-lg"
     >
       {/* Animated background effect */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
