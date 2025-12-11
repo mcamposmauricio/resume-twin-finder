@@ -211,7 +211,9 @@ export default function Auth() {
         {/* Left side - Content */}
         <div className="flex-1 max-w-xl animate-fade-in">
           <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-slate-900 leading-tight mb-6">
-            <span className="text-blue-600">Análise de currículos</span> com inteligência artificial
+            <span className="text-blue-600">Triagem de currículos em segundos</span>
+            <br />
+            com inteligência artificial
           </h1>
 
           <p className="text-lg text-slate-600 mb-10 leading-relaxed">
