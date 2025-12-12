@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -21,12 +21,50 @@ import { NineBoxChart } from "./NineBoxChart";
 import { Button } from "./ui/button";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ResultsSectionProps {
   results: AnalysisResult;
   tokensUsed: number;
   onNewAnalysis: () => void;
   onBack?: () => void;
+}
+
+// Truncated text with tooltip component
+function TruncatedText({ children, className }: { children: string; className?: string }) {
+  const [isTruncated, setIsTruncated] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const checkTruncation = () => {
+      if (textRef.current) {
+        setIsTruncated(textRef.current.scrollWidth > textRef.current.clientWidth);
+      }
+    };
+    checkTruncation();
+    window.addEventListener("resize", checkTruncation);
+    return () => window.removeEventListener("resize", checkTruncation);
+  }, [children]);
+
+  if (!isTruncated) {
+    return <p ref={textRef} className={className}>{children}</p>;
+  }
+
+  return (
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>
+        <p ref={textRef} className={className}>{children}</p>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs">
+        <span>{children}</span>
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 // Score badge component
@@ -121,7 +159,7 @@ function CulturalFitCard({ culturalFit }: { culturalFit: CandidateResult['cultur
   );
 }
 
-// Gap Analysis table
+// Gap Analysis table with progress bars
 function GapAnalysisTable({ gapAnalysis }: { gapAnalysis: CandidateResult['gap_analysis'] }) {
   const allSkills = [
     ...gapAnalysis.strong_match.map(s => ({ skill: s, level: 'Strong', impact: 'Baixo' })),
@@ -129,22 +167,22 @@ function GapAnalysisTable({ gapAnalysis }: { gapAnalysis: CandidateResult['gap_a
     ...gapAnalysis.weak_or_missing.map(s => ({ skill: s, level: 'Weak', impact: 'Alto' })),
   ].slice(0, 4);
 
-  const getLevelBadge = (level: string) => {
-    const colors = {
-      Strong: 'bg-green-100 text-green-700',
-      Medium: 'bg-yellow-100 text-yellow-700',
-      Weak: 'bg-red-100 text-red-700',
+  const getLevelConfig = (level: string) => {
+    const config = {
+      Strong: { width: '100%', color: 'bg-green-500', label: 'Forte' },
+      Medium: { width: '60%', color: 'bg-yellow-500', label: 'Médio' },
+      Weak: { width: '30%', color: 'bg-red-500', label: 'Fraco' },
     };
-    return colors[level as keyof typeof colors] || 'bg-muted text-muted-foreground';
+    return config[level as keyof typeof config] || config.Weak;
   };
 
-  const getImpactBadge = (impact: string) => {
-    const colors = {
-      Baixo: 'bg-green-100 text-green-700',
-      Médio: 'bg-yellow-100 text-yellow-700',
-      Alto: 'bg-red-100 text-red-700',
+  const getImpactConfig = (impact: string) => {
+    const config = {
+      Alto: { width: '100%', color: 'bg-red-500', label: 'Crítico' },
+      Médio: { width: '60%', color: 'bg-yellow-500', label: 'Moderado' },
+      Baixo: { width: '30%', color: 'bg-green-500', label: 'Baixo' },
     };
-    return colors[impact as keyof typeof colors] || 'bg-muted text-muted-foreground';
+    return config[impact as keyof typeof config] || config.Baixo;
   };
 
   return (
@@ -155,22 +193,43 @@ function GapAnalysisTable({ gapAnalysis }: { gapAnalysis: CandidateResult['gap_a
       </div>
       
       <div className="space-y-1">
-        <div className="grid grid-cols-3 gap-2 text-xs font-medium text-muted-foreground uppercase pb-2 border-b border-border">
+        <div className="grid grid-cols-[1fr_1fr_1fr] gap-3 text-xs font-medium text-muted-foreground uppercase pb-2 border-b border-border">
           <span>Skill</span>
           <span>Nível</span>
           <span>Impacto</span>
         </div>
-        {allSkills.map((item, idx) => (
-          <div key={idx} className="grid grid-cols-3 gap-2 py-2 text-sm">
-            <span className="text-foreground">{item.skill}</span>
-            <span className={`px-2 py-0.5 rounded text-xs font-medium w-fit ${getLevelBadge(item.level)}`}>
-              {item.level}
-            </span>
-            <span className={`px-2 py-0.5 rounded text-xs font-medium w-fit ${getImpactBadge(item.impact)}`}>
-              {item.impact}
-            </span>
-          </div>
-        ))}
+        {allSkills.map((item, idx) => {
+          const levelConfig = getLevelConfig(item.level);
+          const impactConfig = getImpactConfig(item.impact);
+          
+          return (
+            <div key={idx} className="grid grid-cols-[1fr_1fr_1fr] gap-3 py-2.5 items-center">
+              <span className="text-sm text-foreground truncate">{item.skill}</span>
+              
+              {/* Nível - Progress bar */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${levelConfig.color} rounded-full transition-all duration-500`} 
+                    style={{ width: levelConfig.width }} 
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground w-12 text-right">{levelConfig.label}</span>
+              </div>
+              
+              {/* Impacto - Progress bar */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${impactConfig.color} rounded-full transition-all duration-500`} 
+                    style={{ width: impactConfig.width }} 
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground w-14 text-right">{impactConfig.label}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -269,32 +328,34 @@ function CandidateCard({ candidate, rank }: { candidate: CandidateResult; rank: 
                 Inteligência de Dados
               </span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground mb-1">Pretensão (Est.)</p>
-                <p className="text-sm font-medium text-foreground truncate">
-                  {candidate.inferred_info?.estimated_salary_range || 'Sem dados'}
-                </p>
+            <TooltipProvider>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground mb-1">Pretensão (Est.)</p>
+                  <TruncatedText className="text-sm font-medium text-foreground truncate">
+                    {candidate.inferred_info?.estimated_salary_range || 'Sem dados'}
+                  </TruncatedText>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground mb-1">Tenure Médio</p>
+                  <TruncatedText className="text-sm font-medium text-foreground truncate">
+                    {candidate.inferred_info?.availability || 'N/A'}
+                  </TruncatedText>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground mb-1">Modelo Ideal</p>
+                  <TruncatedText className="text-sm font-medium text-foreground truncate">
+                    {candidate.inferred_info?.remote_work_compatibility || 'Sem dados'}
+                  </TruncatedText>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground mb-1">Senioridade Real</p>
+                  <TruncatedText className="text-sm font-medium text-foreground truncate">
+                    {candidate.inferred_info?.seniority_level || 'N/A'}
+                  </TruncatedText>
+                </div>
               </div>
-              <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground mb-1">Tenure Médio</p>
-                <p className="text-sm font-medium text-foreground truncate">
-                  {candidate.inferred_info?.availability || 'N/A'}
-                </p>
-              </div>
-              <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground mb-1">Modelo Ideal</p>
-                <p className="text-sm font-medium text-foreground truncate">
-                  {candidate.inferred_info?.remote_work_compatibility || 'Sem dados'}
-                </p>
-              </div>
-              <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground mb-1">Senioridade Real</p>
-                <p className="text-sm font-medium text-foreground truncate">
-                  {candidate.inferred_info?.seniority_level || 'N/A'}
-                </p>
-              </div>
-            </div>
+            </TooltipProvider>
           </div>
 
           {/* Professional Summary */}
