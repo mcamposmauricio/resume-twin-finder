@@ -1,11 +1,5 @@
 import { CandidateResult } from "@/types";
 import { useEffect, useRef, useState } from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface NineBoxChartProps {
   candidates: CandidateResult[];
@@ -25,6 +19,11 @@ const COLORS = [
 export function NineBoxChart({ candidates }: NineBoxChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [chartWidth, setChartWidth] = useState(900);
+  const [hoveredCandidate, setHoveredCandidate] = useState<{
+    candidate: CandidateResult;
+    x: number;
+    y: number;
+  } | null>(null);
 
   useEffect(() => {
     const updateSize = () => {
@@ -70,236 +69,246 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
   };
 
   return (
-    <TooltipProvider>
-      <div ref={containerRef} className="bg-card rounded-xl border border-border p-3 sm:p-6 w-full">
-        <h3 className="text-base sm:text-lg font-semibold text-foreground text-center mb-4 sm:mb-6">
-          Matriz de Adequação (9-Box)
-        </h3>
+    <div ref={containerRef} className="bg-card rounded-xl border border-border p-3 sm:p-6 w-full relative">
+      <h3 className="text-base sm:text-lg font-semibold text-foreground text-center mb-4 sm:mb-6">
+        Matriz de Adequação (9-Box)
+      </h3>
 
-        <div className="flex justify-center w-full">
-          <svg width={chartWidth} height={chartHeight} className="overflow-visible">
-            {/* Background zones */}
-            {zones.map((zone, i) => (
-              <rect
-                key={i}
-                x={getX(zone.x1)}
-                y={getY(zone.y2)}
-                width={getX(zone.x2) - getX(zone.x1)}
-                height={getY(zone.y1) - getY(zone.y2)}
-                fill={zone.color}
-                stroke={zone.highlight ? "hsl(142 50% 45%)" : "none"}
-                strokeWidth={zone.highlight ? 2 : 0}
+      <div className="flex justify-center w-full relative">
+        <svg width={chartWidth} height={chartHeight} className="overflow-visible">
+          {/* Background zones */}
+          {zones.map((zone, i) => (
+            <rect
+              key={i}
+              x={getX(zone.x1)}
+              y={getY(zone.y2)}
+              width={getX(zone.x2) - getX(zone.x1)}
+              height={getY(zone.y1) - getY(zone.y2)}
+              fill={zone.color}
+              stroke={zone.highlight ? "hsl(142 50% 45%)" : "none"}
+              strokeWidth={zone.highlight ? 2 : 0}
+            />
+          ))}
+
+          {/* Grid lines */}
+          {[40, 70].map((val) => (
+            <g key={`grid-${val}`}>
+              <line
+                x1={getX(val)}
+                y1={getY(100)}
+                x2={getX(val)}
+                y2={getY(0)}
+                stroke="hsl(var(--border))"
+                strokeWidth="1"
+                strokeDasharray="4 4"
               />
-            ))}
+              <line
+                x1={getX(0)}
+                y1={getY(val)}
+                x2={getX(100)}
+                y2={getY(val)}
+                stroke="hsl(var(--border))"
+                strokeWidth="1"
+                strokeDasharray="4 4"
+              />
+            </g>
+          ))}
 
-            {/* Grid lines */}
-            {[40, 70].map((val) => (
-              <g key={`grid-${val}`}>
-                <line
-                  x1={getX(val)}
-                  y1={getY(100)}
-                  x2={getX(val)}
-                  y2={getY(0)}
-                  stroke="hsl(var(--border))"
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
+          {/* Zona de Recomendação label */}
+          {!isMobile && (
+            <text
+              x={getX(85)}
+              y={getY(95)}
+              textAnchor="middle"
+              className="fill-emerald-600 text-xs font-semibold"
+            >
+              Zona de Recomendação
+            </text>
+          )}
+
+          {/* X-axis */}
+          <line
+            x1={getX(0)}
+            y1={getY(0)}
+            x2={getX(100) + 15}
+            y2={getY(0)}
+            stroke="hsl(var(--foreground))"
+            strokeWidth="2"
+          />
+          <polygon
+            points={`${getX(100) + 15},${getY(0)} ${getX(100) + 8},${getY(0) - 5} ${getX(100) + 8},${getY(0) + 5}`}
+            fill="hsl(var(--foreground))"
+          />
+
+          {/* Y-axis */}
+          <line
+            x1={getX(0)}
+            y1={getY(0)}
+            x2={getX(0)}
+            y2={getY(100) - 15}
+            stroke="hsl(var(--foreground))"
+            strokeWidth="2"
+          />
+          <polygon
+            points={`${getX(0)},${getY(100) - 15} ${getX(0) - 5},${getY(100) - 8} ${getX(0) + 5},${getY(100) - 8}`}
+            fill="hsl(var(--foreground))"
+          />
+
+          {/* X-axis labels */}
+          {[0, 40, 70, 100].map((val) => (
+            <text
+              key={`x-${val}`}
+              x={getX(val)}
+              y={getY(0) + (isMobile ? 14 : 20)}
+              textAnchor="middle"
+              className={`fill-muted-foreground ${fontSize.axis}`}
+            >
+              {val}%
+            </text>
+          ))}
+
+          {/* X-axis zone labels */}
+          <text x={getX(20)} y={getY(0) + (isMobile ? 28 : 38)} textAnchor="middle" className={`fill-muted-foreground ${fontSize.zone} font-medium`}>Baixo</text>
+          <text x={getX(55)} y={getY(0) + (isMobile ? 28 : 38)} textAnchor="middle" className={`fill-muted-foreground ${fontSize.zone} font-medium`}>Médio</text>
+          <text x={getX(85)} y={getY(0) + (isMobile ? 28 : 38)} textAnchor="middle" className={`fill-muted-foreground ${fontSize.zone} font-medium`}>Alto</text>
+
+          {/* Y-axis labels */}
+          {[0, 40, 70, 100].map((val) => (
+            <text
+              key={`y-${val}`}
+              x={getX(0) - (isMobile ? 8 : 12)}
+              y={getY(val) + 4}
+              textAnchor="end"
+              className={`fill-muted-foreground ${fontSize.axis}`}
+            >
+              {val}%
+            </text>
+          ))}
+
+          {/* Y-axis zone labels - hide on very small screens */}
+          {!isMobile && (
+            <>
+              <text
+                x={getX(0) - 40}
+                y={getY(20)}
+                textAnchor="middle"
+                className={`fill-muted-foreground ${fontSize.zone} font-medium`}
+                transform={`rotate(-90 ${getX(0) - 40} ${getY(20)})`}
+              >
+                Baixo
+              </text>
+              <text
+                x={getX(0) - 40}
+                y={getY(55)}
+                textAnchor="middle"
+                className={`fill-muted-foreground ${fontSize.zone} font-medium`}
+                transform={`rotate(-90 ${getX(0) - 40} ${getY(55)})`}
+              >
+                Médio
+              </text>
+              <text
+                x={getX(0) - 40}
+                y={getY(85)}
+                textAnchor="middle"
+                className={`fill-muted-foreground ${fontSize.zone} font-medium`}
+                transform={`rotate(-90 ${getX(0) - 40} ${getY(85)})`}
+              >
+                Alto
+              </text>
+            </>
+          )}
+
+          {/* Axis titles */}
+          <text
+            x={getX(50)}
+            y={getY(0) + (isMobile ? 45 : 55)}
+            textAnchor="middle"
+            className={`fill-foreground ${fontSize.title} font-semibold`}
+          >
+            Técnico / Hard Skills
+          </text>
+          <text
+            x={getX(0) - (isMobile ? 35 : 60)}
+            y={getY(50)}
+            textAnchor="middle"
+            className={`fill-foreground ${fontSize.title} font-semibold`}
+            transform={`rotate(-90 ${getX(0) - (isMobile ? 35 : 60)} ${getY(50)})`}
+          >
+            {isMobile ? "Potencial" : "Potencial / Soft Skills"}
+          </text>
+
+          {/* Candidate pins */}
+          {candidates.map((candidate, index) => {
+            const x = getX(candidate.technical_fit);
+            const y = getY(candidate.potential_fit);
+            const color = COLORS[index % COLORS.length];
+            const isTopCandidate = index === 0;
+            const firstName = candidate.candidate_name.split(" ")[0];
+            const pinRadius = isMobile ? (isTopCandidate ? 10 : 8) : (isTopCandidate ? 14 : 11);
+
+            return (
+              <g 
+                key={candidate.candidate_name} 
+                className="cursor-pointer"
+                onMouseEnter={() => setHoveredCandidate({ candidate, x, y })}
+                onMouseLeave={() => setHoveredCandidate(null)}
+              >
+                {/* Glow effect for top candidate */}
+                {isTopCandidate && (
+                  <circle cx={x} cy={y} r={pinRadius + 6} fill={color} opacity="0.2" />
+                )}
+                {/* Shadow */}
+                <circle cx={x + 1} cy={y + 1} r={pinRadius} fill="rgba(0,0,0,0.15)" />
+                {/* Main dot */}
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={pinRadius}
+                  fill={color}
+                  stroke="white"
+                  strokeWidth={isMobile ? 1.5 : 2}
+                  className="transition-transform"
                 />
-                <line
-                  x1={getX(0)}
-                  y1={getY(val)}
-                  x2={getX(100)}
-                  y2={getY(val)}
-                  stroke="hsl(var(--border))"
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
-                />
+                {/* Candidate name above pin */}
+                <text
+                  x={x}
+                  y={y - (isMobile ? (isTopCandidate ? 14 : 12) : (isTopCandidate ? 22 : 18))}
+                  textAnchor="middle"
+                  className={`fill-foreground ${fontSize.name} font-semibold pointer-events-none`}
+                  style={{
+                    textShadow: "1px 1px 2px white, -1px -1px 2px white, 1px -1px 2px white, -1px 1px 2px white",
+                  }}
+                >
+                  {firstName}
+                </text>
               </g>
-            ))}
+            );
+          })}
+        </svg>
 
-            {/* Zona de Recomendação label */}
-            {!isMobile && (
-              <text
-                x={getX(85)}
-                y={getY(95)}
-                textAnchor="middle"
-                className="fill-emerald-600 text-xs font-semibold"
-              >
-                Zona de Recomendação
-              </text>
-            )}
-
-            {/* X-axis */}
-            <line
-              x1={getX(0)}
-              y1={getY(0)}
-              x2={getX(100) + 15}
-              y2={getY(0)}
-              stroke="hsl(var(--foreground))"
-              strokeWidth="2"
-            />
-            <polygon
-              points={`${getX(100) + 15},${getY(0)} ${getX(100) + 8},${getY(0) - 5} ${getX(100) + 8},${getY(0) + 5}`}
-              fill="hsl(var(--foreground))"
-            />
-
-            {/* Y-axis */}
-            <line
-              x1={getX(0)}
-              y1={getY(0)}
-              x2={getX(0)}
-              y2={getY(100) - 15}
-              stroke="hsl(var(--foreground))"
-              strokeWidth="2"
-            />
-            <polygon
-              points={`${getX(0)},${getY(100) - 15} ${getX(0) - 5},${getY(100) - 8} ${getX(0) + 5},${getY(100) - 8}`}
-              fill="hsl(var(--foreground))"
-            />
-
-            {/* X-axis labels */}
-            {[0, 40, 70, 100].map((val) => (
-              <text
-                key={`x-${val}`}
-                x={getX(val)}
-                y={getY(0) + (isMobile ? 14 : 20)}
-                textAnchor="middle"
-                className={`fill-muted-foreground ${fontSize.axis}`}
-              >
-                {val}%
-              </text>
-            ))}
-
-            {/* X-axis zone labels */}
-            <text x={getX(20)} y={getY(0) + (isMobile ? 28 : 38)} textAnchor="middle" className={`fill-muted-foreground ${fontSize.zone} font-medium`}>Baixo</text>
-            <text x={getX(55)} y={getY(0) + (isMobile ? 28 : 38)} textAnchor="middle" className={`fill-muted-foreground ${fontSize.zone} font-medium`}>Médio</text>
-            <text x={getX(85)} y={getY(0) + (isMobile ? 28 : 38)} textAnchor="middle" className={`fill-muted-foreground ${fontSize.zone} font-medium`}>Alto</text>
-
-            {/* Y-axis labels */}
-            {[0, 40, 70, 100].map((val) => (
-              <text
-                key={`y-${val}`}
-                x={getX(0) - (isMobile ? 8 : 12)}
-                y={getY(val) + 4}
-                textAnchor="end"
-                className={`fill-muted-foreground ${fontSize.axis}`}
-              >
-                {val}%
-              </text>
-            ))}
-
-            {/* Y-axis zone labels - hide on very small screens */}
-            {!isMobile && (
-              <>
-                <text
-                  x={getX(0) - 40}
-                  y={getY(20)}
-                  textAnchor="middle"
-                  className={`fill-muted-foreground ${fontSize.zone} font-medium`}
-                  transform={`rotate(-90 ${getX(0) - 40} ${getY(20)})`}
-                >
-                  Baixo
-                </text>
-                <text
-                  x={getX(0) - 40}
-                  y={getY(55)}
-                  textAnchor="middle"
-                  className={`fill-muted-foreground ${fontSize.zone} font-medium`}
-                  transform={`rotate(-90 ${getX(0) - 40} ${getY(55)})`}
-                >
-                  Médio
-                </text>
-                <text
-                  x={getX(0) - 40}
-                  y={getY(85)}
-                  textAnchor="middle"
-                  className={`fill-muted-foreground ${fontSize.zone} font-medium`}
-                  transform={`rotate(-90 ${getX(0) - 40} ${getY(85)})`}
-                >
-                  Alto
-                </text>
-              </>
-            )}
-
-            {/* Axis titles */}
-            <text
-              x={getX(50)}
-              y={getY(0) + (isMobile ? 45 : 55)}
-              textAnchor="middle"
-              className={`fill-foreground ${fontSize.title} font-semibold`}
-            >
-              Técnico / Hard Skills
-            </text>
-            <text
-              x={getX(0) - (isMobile ? 35 : 60)}
-              y={getY(50)}
-              textAnchor="middle"
-              className={`fill-foreground ${fontSize.title} font-semibold`}
-              transform={`rotate(-90 ${getX(0) - (isMobile ? 35 : 60)} ${getY(50)})`}
-            >
-              {isMobile ? "Potencial" : "Potencial / Soft Skills"}
-            </text>
-
-            {/* Candidate pins with tooltips */}
-            {candidates.map((candidate, index) => {
-              const x = getX(candidate.technical_fit);
-              const y = getY(candidate.potential_fit);
-              const color = COLORS[index % COLORS.length];
-              const isTopCandidate = index === 0;
-              const firstName = candidate.candidate_name.split(" ")[0];
-              const pinRadius = isMobile ? (isTopCandidate ? 10 : 8) : (isTopCandidate ? 14 : 11);
-
-              return (
-                <Tooltip key={candidate.candidate_name} delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <g className="cursor-pointer">
-                      {/* Glow effect for top candidate */}
-                      {isTopCandidate && (
-                        <circle cx={x} cy={y} r={pinRadius + 6} fill={color} opacity="0.2" />
-                      )}
-                      {/* Shadow */}
-                      <circle cx={x + 1} cy={y + 1} r={pinRadius} fill="rgba(0,0,0,0.15)" />
-                      {/* Main dot */}
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r={pinRadius}
-                        fill={color}
-                        stroke="white"
-                        strokeWidth={isMobile ? 1.5 : 2}
-                        className="transition-transform hover:scale-110"
-                      />
-                      {/* Candidate name above pin */}
-                      <text
-                        x={x}
-                        y={y - (isMobile ? (isTopCandidate ? 14 : 12) : (isTopCandidate ? 22 : 18))}
-                        textAnchor="middle"
-                        className={`fill-foreground ${fontSize.name} font-semibold pointer-events-none`}
-                        style={{
-                          textShadow: "1px 1px 2px white, -1px -1px 2px white, 1px -1px 2px white, -1px 1px 2px white",
-                        }}
-                      >
-                        {firstName}
-                      </text>
-                    </g>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-popover text-popover-foreground border shadow-lg p-3">
-                    <div className="space-y-1">
-                      <p className="font-semibold text-sm">{candidate.candidate_name}</p>
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-blue-600 font-medium">Match: {candidate.match_score}%</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span>Técnico: <span className="font-medium text-foreground">{candidate.technical_fit}%</span></span>
-                        <span>Potencial: <span className="font-medium text-foreground">{candidate.potential_fit}%</span></span>
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </svg>
-        </div>
+        {/* Custom tooltip */}
+        {hoveredCandidate && (
+          <div 
+            className="absolute z-50 bg-popover text-popover-foreground border border-border shadow-lg rounded-md p-3 pointer-events-none"
+            style={{
+              left: hoveredCandidate.x,
+              top: hoveredCandidate.y - 80,
+              transform: 'translateX(-50%)',
+            }}
+          >
+            <div className="space-y-1">
+              <p className="font-semibold text-sm">{hoveredCandidate.candidate.candidate_name}</p>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-blue-600 font-medium">Match: {hoveredCandidate.candidate.match_score}%</span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span>Técnico: <span className="font-medium text-foreground">{hoveredCandidate.candidate.technical_fit}%</span></span>
+                <span>Potencial: <span className="font-medium text-foreground">{hoveredCandidate.candidate.potential_fit}%</span></span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </TooltipProvider>
+    </div>
   );
 }
