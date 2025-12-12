@@ -52,7 +52,7 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
   const zones = [
     { x1: 0, y1: 70, x2: 40, y2: 100, color: "hsl(220 14% 96% / 0.8)" },
     { x1: 40, y1: 70, x2: 70, y2: 100, color: "hsl(220 14% 94% / 0.6)" },
-    { x1: 70, y1: 70, x2: 100, y2: 100, color: "hsl(142 40% 90% / 0.9)", highlight: true },
+    { x1: 70, y1: 70, x2: 100, y2: 100, color: "hsl(142 40% 90% / 0.9)" },
     { x1: 0, y1: 40, x2: 40, y2: 70, color: "hsl(220 14% 96% / 0.6)" },
     { x1: 40, y1: 40, x2: 70, y2: 70, color: "hsl(220 14% 96% / 0.8)" },
     { x1: 70, y1: 40, x2: 100, y2: 70, color: "hsl(220 14% 94% / 0.6)" },
@@ -60,6 +60,9 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
     { x1: 40, y1: 0, x2: 70, y2: 40, color: "hsl(220 14% 96% / 0.6)" },
     { x1: 70, y1: 0, x2: 100, y2: 40, color: "hsl(220 14% 96% / 0.8)" },
   ];
+
+  // Zona de recomendação: candidatos com alto técnico E alto potencial (70-100 em ambos)
+  const recommendationZone = { x1: 70, y1: 70, x2: 100, y2: 100 };
 
   const fontSize = {
     axis: isMobile ? "text-[9px]" : "text-xs",
@@ -85,10 +88,19 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
               width={getX(zone.x2) - getX(zone.x1)}
               height={getY(zone.y1) - getY(zone.y2)}
               fill={zone.color}
-              stroke={zone.highlight ? "hsl(142 50% 45%)" : "none"}
-              strokeWidth={zone.highlight ? 2 : 0}
             />
           ))}
+
+          {/* Recommendation zone highlight border */}
+          <rect
+            x={getX(recommendationZone.x1)}
+            y={getY(recommendationZone.y2)}
+            width={getX(recommendationZone.x2) - getX(recommendationZone.x1)}
+            height={getY(recommendationZone.y1) - getY(recommendationZone.y2)}
+            fill="none"
+            stroke="hsl(142 50% 45%)"
+            strokeWidth={2}
+          />
 
           {/* Grid lines */}
           {[40, 70].map((val) => (
