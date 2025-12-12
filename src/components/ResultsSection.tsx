@@ -331,9 +331,9 @@ function CandidateCard({ candidate, rank }: { candidate: CandidateResult; rank: 
             <TooltipProvider>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground mb-1">Pretensão (Est.)</p>
+                  <p className="text-xs text-muted-foreground mb-1">Pretensão</p>
                   <TruncatedText className="text-sm font-medium text-foreground truncate">
-                    {candidate.inferred_info?.estimated_salary_range || 'Sem dados'}
+                    {candidate.inferred_info?.estimated_salary_range || 'Não informado'}
                   </TruncatedText>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-3">
