@@ -50,6 +50,45 @@ export type Database = {
         }
         Relationships: []
       }
+      analysis_jobs: {
+        Row: {
+          created_at: string | null
+          current_step: string | null
+          error_message: string | null
+          files_count: number
+          id: string
+          progress: number
+          result: Json | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_step?: string | null
+          error_message?: string | null
+          files_count?: number
+          id?: string
+          progress?: number
+          result?: Json | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_step?: string | null
+          error_message?: string | null
+          files_count?: number
+          id?: string
+          progress?: number
+          result?: Json | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       invites: {
         Row: {
           created_at: string
