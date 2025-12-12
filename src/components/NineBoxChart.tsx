@@ -64,14 +64,10 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
   // Zona de Alta Recomendação fixa: candidatos com alto técnico E alto potencial (70-100 em ambos)
   const highRecommendationZone = { x1: 70, y1: 70, x2: 100, y2: 100 };
 
-  // Zona de Recomendação dinâmica: bounding box de todos os candidatos com match >= 50%
-  const recommendedCandidates = candidates.filter(c => c.match_score >= 50);
-  const recommendationBounds = recommendedCandidates.length > 0 ? {
-    minX: Math.max(0, Math.min(...recommendedCandidates.map(c => c.technical_fit)) - 5),
-    maxX: Math.min(100, Math.max(...recommendedCandidates.map(c => c.technical_fit)) + 5),
-    minY: Math.max(0, Math.min(...recommendedCandidates.map(c => c.potential_fit)) - 5),
-    maxY: Math.min(100, Math.max(...recommendedCandidates.map(c => c.potential_fit)) + 5),
-  } : null;
+  // Set de candidatos recomendados (match >= 50%) para highlight
+  const recommendedCandidateNames = new Set(
+    candidates.filter(c => c.match_score >= 50).map(c => c.candidate_name)
+  );
 
   const fontSize = {
     axis: isMobile ? "text-[9px]" : "text-xs",
@@ -88,6 +84,15 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
 
       <div className="flex justify-center w-full relative">
         <svg width={chartWidth} height={chartHeight} className="overflow-visible">
+          {/* Gradient definition for high recommendation zone */}
+          <defs>
+            <radialGradient id="highRecommendationGradient" cx="100%" cy="0%" r="80%" fx="100%" fy="0%">
+              <stop offset="0%" stopColor="hsl(142 50% 70%)" stopOpacity="0.55" />
+              <stop offset="50%" stopColor="hsl(142 45% 80%)" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="hsl(142 40% 90%)" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+
           {/* Background zones */}
           {zones.map((zone, i) => (
             <rect
@@ -100,49 +105,21 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
             />
           ))}
 
-          {/* Zona de Recomendação dinâmica - borda tracejada */}
-          {recommendationBounds && (
-            <>
-              <rect
-                x={getX(recommendationBounds.minX)}
-                y={getY(recommendationBounds.maxY)}
-                width={getX(recommendationBounds.maxX) - getX(recommendationBounds.minX)}
-                height={getY(recommendationBounds.minY) - getY(recommendationBounds.maxY)}
-                fill="hsl(142 40% 95% / 0.4)"
-                stroke="hsl(142 50% 55%)"
-                strokeWidth={2}
-                strokeDasharray="8 4"
-                rx={8}
-              />
-              {!isMobile && (
-                <text
-                  x={getX(recommendationBounds.minX) + 8}
-                  y={getY(recommendationBounds.maxY) + 16}
-                  textAnchor="start"
-                  className="fill-emerald-600 text-[10px] font-medium"
-                >
-                  Zona de Recomendação
-                </text>
-              )}
-            </>
-          )}
-
-          {/* Zona de Alta Recomendação fixa - borda sólida sobreposta */}
+          {/* Zona de Alta Recomendação com degradê suave (sem bordas) */}
           <rect
             x={getX(highRecommendationZone.x1)}
             y={getY(highRecommendationZone.y2)}
             width={getX(highRecommendationZone.x2) - getX(highRecommendationZone.x1)}
             height={getY(highRecommendationZone.y1) - getY(highRecommendationZone.y2)}
-            fill="hsl(142 45% 88% / 0.5)"
-            stroke="hsl(142 55% 38%)"
-            strokeWidth={3}
+            fill="url(#highRecommendationGradient)"
+            stroke="none"
           />
           {!isMobile && (
             <text
               x={getX(85)}
               y={getY(95)}
               textAnchor="middle"
-              className="fill-emerald-700 text-xs font-bold"
+              className="fill-emerald-600/70 text-xs font-medium"
             >
               Alta Recomendação
             </text>
@@ -289,6 +266,7 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
             const y = getY(candidate.potential_fit);
             const color = COLORS[index % COLORS.length];
             const isTopCandidate = index === 0;
+            const isRecommended = recommendedCandidateNames.has(candidate.candidate_name);
             const firstName = candidate.candidate_name.split(" ")[0];
             const pinRadius = isMobile ? (isTopCandidate ? 10 : 8) : (isTopCandidate ? 14 : 11);
 
@@ -299,6 +277,18 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
                 onMouseEnter={() => setHoveredCandidate({ candidate, x, y })}
                 onMouseLeave={() => setHoveredCandidate(null)}
               >
+                {/* Green ring for recommended candidates (match >= 50%) */}
+                {isRecommended && (
+                  <circle 
+                    cx={x} 
+                    cy={y} 
+                    r={pinRadius + (isMobile ? 5 : 7)} 
+                    fill="none"
+                    stroke="hsl(142 60% 45%)"
+                    strokeWidth={isMobile ? 2 : 2.5}
+                    opacity={0.7}
+                  />
+                )}
                 {/* Glow effect for top candidate */}
                 {isTopCandidate && (
                   <circle cx={x} cy={y} r={pinRadius + 6} fill={color} opacity="0.2" />
