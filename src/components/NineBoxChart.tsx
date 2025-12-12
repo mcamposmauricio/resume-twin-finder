@@ -61,8 +61,17 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
     { x1: 70, y1: 0, x2: 100, y2: 40, color: "hsl(220 14% 96% / 0.8)" },
   ];
 
-  // Zona de recomendação: candidatos com alto técnico E alto potencial (70-100 em ambos)
-  const recommendationZone = { x1: 70, y1: 70, x2: 100, y2: 100 };
+  // Zona de Alta Recomendação fixa: candidatos com alto técnico E alto potencial (70-100 em ambos)
+  const highRecommendationZone = { x1: 70, y1: 70, x2: 100, y2: 100 };
+
+  // Zona de Recomendação dinâmica: bounding box de todos os candidatos com match >= 50%
+  const recommendedCandidates = candidates.filter(c => c.match_score >= 50);
+  const recommendationBounds = recommendedCandidates.length > 0 ? {
+    minX: Math.max(0, Math.min(...recommendedCandidates.map(c => c.technical_fit)) - 5),
+    maxX: Math.min(100, Math.max(...recommendedCandidates.map(c => c.technical_fit)) + 5),
+    minY: Math.max(0, Math.min(...recommendedCandidates.map(c => c.potential_fit)) - 5),
+    maxY: Math.min(100, Math.max(...recommendedCandidates.map(c => c.potential_fit)) + 5),
+  } : null;
 
   const fontSize = {
     axis: isMobile ? "text-[9px]" : "text-xs",
@@ -91,16 +100,53 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
             />
           ))}
 
-          {/* Recommendation zone highlight border */}
+          {/* Zona de Recomendação dinâmica - borda tracejada */}
+          {recommendationBounds && (
+            <>
+              <rect
+                x={getX(recommendationBounds.minX)}
+                y={getY(recommendationBounds.maxY)}
+                width={getX(recommendationBounds.maxX) - getX(recommendationBounds.minX)}
+                height={getY(recommendationBounds.minY) - getY(recommendationBounds.maxY)}
+                fill="hsl(142 40% 95% / 0.4)"
+                stroke="hsl(142 50% 55%)"
+                strokeWidth={2}
+                strokeDasharray="8 4"
+                rx={8}
+              />
+              {!isMobile && (
+                <text
+                  x={getX(recommendationBounds.minX) + 8}
+                  y={getY(recommendationBounds.maxY) + 16}
+                  textAnchor="start"
+                  className="fill-emerald-600 text-[10px] font-medium"
+                >
+                  Zona de Recomendação
+                </text>
+              )}
+            </>
+          )}
+
+          {/* Zona de Alta Recomendação fixa - borda sólida sobreposta */}
           <rect
-            x={getX(recommendationZone.x1)}
-            y={getY(recommendationZone.y2)}
-            width={getX(recommendationZone.x2) - getX(recommendationZone.x1)}
-            height={getY(recommendationZone.y1) - getY(recommendationZone.y2)}
-            fill="none"
-            stroke="hsl(142 50% 45%)"
-            strokeWidth={2}
+            x={getX(highRecommendationZone.x1)}
+            y={getY(highRecommendationZone.y2)}
+            width={getX(highRecommendationZone.x2) - getX(highRecommendationZone.x1)}
+            height={getY(highRecommendationZone.y1) - getY(highRecommendationZone.y2)}
+            fill="hsl(142 45% 88% / 0.5)"
+            stroke="hsl(142 55% 38%)"
+            strokeWidth={3}
           />
+          {!isMobile && (
+            <text
+              x={getX(85)}
+              y={getY(95)}
+              textAnchor="middle"
+              className="fill-emerald-700 text-xs font-bold"
+            >
+              Alta Recomendação
+            </text>
+          )}
 
           {/* Grid lines */}
           {[40, 70].map((val) => (
@@ -125,18 +171,6 @@ export function NineBoxChart({ candidates }: NineBoxChartProps) {
               />
             </g>
           ))}
-
-          {/* Zona de Recomendação label */}
-          {!isMobile && (
-            <text
-              x={getX(85)}
-              y={getY(95)}
-              textAnchor="middle"
-              className="fill-emerald-600 text-xs font-semibold"
-            >
-              Zona de Recomendação
-            </text>
-          )}
 
           {/* X-axis */}
           <line
