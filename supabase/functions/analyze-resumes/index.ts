@@ -1,4 +1,6 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,25 +39,78 @@ const SUMMARY_PROMPT = `Com base nas análises individuais dos candidatos abaixo
 
 Responda APENAS com JSON válido contendo: {"recommendation": "...", "comparison_summary": "..."}`;
 
-// Função para sanitizar erros e retornar mensagens amigáveis
-function getSanitizedError(error: string): string {
-  const errorMappings: Record<string, string> = {
-    "API key not configured": "Algo inesperado ocorreu durante a análise. Tente novamente.",
-    "Gemini API error": "Algo inesperado ocorreu durante a análise. Tente novamente.",
-    "No response from AI": "Algo inesperado ocorreu durante a análise. Tente novamente.",
-    "Failed to parse AI response": "Algo inesperado ocorreu durante a análise. Tente novamente.",
-  };
-  
-  for (const [key, message] of Object.entries(errorMappings)) {
-    if (error.includes(key)) {
-      return message;
-    }
+function getSanitizedErrorCode(error: string): string {
+  if (error.includes("API key") || error.includes("unauthorized")) {
+    return "CONFIG_ERROR";
   }
-  
-  return "Algo inesperado ocorreu durante a análise. Tente novamente.";
+  if (error.includes("timeout") || error.includes("DEADLINE_EXCEEDED")) {
+    return "ANALYSIS_ERROR";
+  }
+  return "ANALYSIS_ERROR";
 }
 
-// Process a batch of files
+interface AnalysisJob {
+  id: string;
+  files: any[];
+  jobDescription: string;
+  userId: string;
+}
+
+async function updateJobProgress(
+  supabase: any, 
+  jobId: string, 
+  progress: number, 
+  currentStep: string
+) {
+  const { error } = await supabase
+    .from("analysis_jobs")
+    .update({ progress, current_step: currentStep })
+    .eq("id", jobId);
+  
+  if (error) {
+    console.error(`Failed to update job progress: ${error.message}`);
+  }
+}
+
+async function completeJob(
+  supabase: any,
+  jobId: string,
+  result: any
+) {
+  const { error } = await supabase
+    .from("analysis_jobs")
+    .update({
+      status: "completed",
+      progress: 100,
+      current_step: "Análise concluída!",
+      result
+    })
+    .eq("id", jobId);
+  
+  if (error) {
+    console.error(`Failed to complete job: ${error.message}`);
+  }
+}
+
+async function failJob(
+  supabase: any,
+  jobId: string,
+  errorMessage: string
+) {
+  const { error } = await supabase
+    .from("analysis_jobs")
+    .update({
+      status: "error",
+      error_message: errorMessage,
+      current_step: "Erro na análise"
+    })
+    .eq("id", jobId);
+  
+  if (error) {
+    console.error(`Failed to update job error: ${error.message}`);
+  }
+}
+
 async function processBatch(
   batchFiles: any[],
   jobDescription: string,
@@ -65,21 +120,14 @@ async function processBatch(
 ): Promise<{ candidates: any[]; tokens: number }> {
   console.log(`Processing batch ${batchNumber}/${totalBatches} with ${batchFiles.length} files...`);
 
-  // Build the content parts for Gemini
   const parts: any[] = [
-    {
-      text: `DESCRIÇÃO DA VAGA:\n${jobDescription}\n\nCURRÍCULOS DOS CANDIDATOS:\n`
-    }
+    { text: `DESCRIÇÃO DA VAGA:\n${jobDescription}\n\nCURRÍCULOS DOS CANDIDATOS:\n` }
   ];
 
-  // Add each file as a part
   for (let i = 0; i < batchFiles.length; i++) {
     const file = batchFiles[i];
-    parts.push({
-      text: `\n--- CANDIDATO ${i + 1} (arquivo: ${file.name}) ---\n`
-    });
+    parts.push({ text: `\n--- CANDIDATO ${i + 1} (arquivo: ${file.name}) ---\n` });
 
-    // Handle different file types
     if (file.type === "application/pdf") {
       parts.push({
         inline_data: {
@@ -88,7 +136,6 @@ async function processBatch(
         }
       });
     } else if (file.type === "text/plain" || file.name.endsWith(".txt")) {
-      // Decode base64 for text files
       try {
         const decoded = atob(file.content);
         parts.push({ text: decoded });
@@ -98,32 +145,18 @@ async function processBatch(
     }
   }
 
-  parts.push({
-    text: "\n\nAgora analise todos os candidatos e retorne o JSON conforme especificado."
-  });
+  parts.push({ text: "\n\nAgora analise todos os candidatos e retorne o JSON conforme especificado." });
 
-  // Call Gemini API
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [
-          {
-            role: "user",
-            parts: [{ text: SYSTEM_PROMPT }]
-          },
-          {
-            role: "model",
-            parts: [{ text: "Entendido. Vou analisar os currículos e fornecer uma análise detalhada em JSON." }]
-          },
-          {
-            role: "user",
-            parts: parts
-          }
+          { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
+          { role: "model", parts: [{ text: "Entendido. Vou analisar os currículos e fornecer uma análise detalhada em JSON." }] },
+          { role: "user", parts: parts }
         ],
         generationConfig: {
           temperature: 0.5,
@@ -143,16 +176,11 @@ async function processBatch(
   }
 
   const data = await response.json();
-  console.log(`Batch ${batchNumber} - Gemini response received`);
-
-  // Extract the response text
   const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!responseText) {
-    console.error(`Batch ${batchNumber} - No response text:`, JSON.stringify(data));
     throw new Error("No response from AI");
   }
 
-  // Parse the JSON from the response
   const candidates = parseCandidatesFromResponse(responseText, batchNumber, batchFiles);
   const tokensUsed = data.usageMetadata?.totalTokenCount || 0;
 
@@ -160,20 +188,15 @@ async function processBatch(
   return { candidates, tokens: tokensUsed };
 }
 
-// Parse candidates from AI response
 function parseCandidatesFromResponse(responseText: string, batchNumber: number, batchFiles: any[]): any[] {
   try {
-    // Clean the response text
     let jsonStr = responseText.trim();
-    
-    // Remove markdown code blocks if present
     if (jsonStr.startsWith("```")) {
       jsonStr = jsonStr.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
     }
     
     const parsed = JSON.parse(jsonStr);
     
-    // Handle different response formats
     let candidates: any[];
     if (Array.isArray(parsed)) {
       candidates = parsed;
@@ -182,7 +205,6 @@ function parseCandidatesFromResponse(responseText: string, batchNumber: number, 
     } else if (parsed.candidates) {
       candidates = parsed.candidates;
     } else {
-      // Try to find candidates in any key
       const candidatesKey = Object.keys(parsed).find(k => Array.isArray(parsed[k]) && parsed[k].length > 0 && parsed[k][0].candidate_name);
       if (candidatesKey) {
         candidates = parsed[candidatesKey];
@@ -191,7 +213,6 @@ function parseCandidatesFromResponse(responseText: string, batchNumber: number, 
       }
     }
 
-    // Add file names to candidates if missing
     return candidates.map((c: any, idx: number) => ({
       ...c,
       file_name: c.file_name || batchFiles[idx]?.name || `Arquivo ${idx + 1}`
@@ -200,7 +221,6 @@ function parseCandidatesFromResponse(responseText: string, batchNumber: number, 
     console.error(`Batch ${batchNumber} - JSON parse error:`, parseError);
     console.error("First 500 chars:", responseText.substring(0, 500));
     
-    // Try to salvage partial JSON
     try {
       const arrayMatch = responseText.match(/\[\s*\{[\s\S]*"candidate_name"[\s\S]*\}\s*\]/);
       if (arrayMatch) {
@@ -210,30 +230,14 @@ function parseCandidatesFromResponse(responseText: string, batchNumber: number, 
           file_name: c.file_name || batchFiles[idx]?.name || `Arquivo ${idx + 1}`
         }));
       }
-      
-      const objMatch = responseText.match(/\{[\s\S]*"candidates(?:_analysis)?"\s*:\s*\[[\s\S]*\]/);
-      if (objMatch) {
-        let partial = objMatch[0];
-        if (!partial.endsWith("}")) {
-          partial += '}';
-        }
-        const parsed = JSON.parse(partial);
-        const candidates = parsed.candidates_analysis || parsed.candidates || [];
-        return candidates.map((c: any, idx: number) => ({
-          ...c,
-          file_name: c.file_name || batchFiles[idx]?.name || `Arquivo ${idx + 1}`
-        }));
-      }
-      
       throw new Error("Could not recover JSON structure");
     } catch (recoveryError) {
       console.error(`Batch ${batchNumber} - Recovery failed:`, recoveryError);
-      throw new Error("Failed to parse AI response - response may have been truncated");
+      throw new Error("Failed to parse AI response");
     }
   }
 }
 
-// Generate summary based on all candidates
 async function generateSummary(
   allCandidates: any[],
   jobDescription: string,
@@ -241,7 +245,6 @@ async function generateSummary(
 ): Promise<{ recommendation: string; comparison_summary: string; tokens: number }> {
   console.log("Generating summary for all candidates...");
 
-  // Create a simplified version of candidates for summary
   const candidateSummaries = allCandidates.map(c => ({
     name: c.candidate_name,
     match_score: c.match_score,
@@ -254,18 +257,14 @@ async function generateSummary(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ 
-              text: `${SUMMARY_PROMPT}\n\nDESCRIÇÃO DA VAGA:\n${jobDescription.substring(0, 500)}...\n\nCANDIDATOS ANALISADOS:\n${JSON.stringify(candidateSummaries, null, 2)}`
-            }]
-          }
-        ],
+        contents: [{
+          role: "user",
+          parts: [{ 
+            text: `${SUMMARY_PROMPT}\n\nDESCRIÇÃO DA VAGA:\n${jobDescription.substring(0, 500)}...\n\nCANDIDATOS ANALISADOS:\n${JSON.stringify(candidateSummaries, null, 2)}`
+          }]
+        }],
         generationConfig: {
           temperature: 0.5,
           maxOutputTokens: 1024,
@@ -308,84 +307,48 @@ async function generateSummary(
   }
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+async function processAnalysisInBackground(
+  supabase: any,
+  job: AnalysisJob,
+  apiKey: string
+) {
+  const { id: jobId, files, jobDescription } = job;
+  
   try {
-    const { files, jobDescription } = await req.json();
+    console.log(`Starting background processing for job ${jobId} with ${files.length} files`);
     
-    // Validar descrição da vaga
-    if (!jobDescription || jobDescription.trim().length < 50) {
-      return new Response(
-        JSON.stringify({ 
-          error_code: "INSUFFICIENT_JOB_DESC",
-          error: "A descrição da vaga não contém informações suficientes para análise." 
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Validar arquivos
-    if (!files || files.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          error_code: "NO_FILES",
-          error: "Por favor, adicione pelo menos um currículo para análise." 
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    const GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) {
-      console.error("GOOGLE_GEMINI_API_KEY not configured");
-      return new Response(
-        JSON.stringify({ 
-          error_code: "CONFIG_ERROR",
-          error: "Algo inesperado ocorreu durante a análise. Tente novamente." 
-        }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log(`Analyzing ${files.length} resumes in batches of ${BATCH_SIZE}...`);
-
-    // Split files into batches
     const batches: any[][] = [];
     for (let i = 0; i < files.length; i += BATCH_SIZE) {
       batches.push(files.slice(i, i + BATCH_SIZE));
     }
-
-    console.log(`Created ${batches.length} batch(es)`);
-
-    // Process batches in parallel (PARALLEL_BATCHES at a time)
+    
+    const totalBatches = batches.length;
+    console.log(`Created ${totalBatches} batch(es)`);
+    
     const allCandidates: any[] = [];
     let totalTokens = 0;
-
+    
     for (let i = 0; i < batches.length; i += PARALLEL_BATCHES) {
       const parallelRound = Math.floor(i / PARALLEL_BATCHES) + 1;
       const totalRounds = Math.ceil(batches.length / PARALLEL_BATCHES);
-      console.log(`Processing parallel round ${parallelRound}/${totalRounds}...`);
-
+      
+      const progress = Math.round(((i) / totalBatches) * 85);
+      await updateJobProgress(
+        supabase,
+        jobId,
+        progress,
+        `Analisando lote ${parallelRound} de ${totalRounds}...`
+      );
+      
       const batchPromises: Promise<{ candidates: any[]; tokens: number }>[] = [];
-
-      // Queue up to PARALLEL_BATCHES batches to run in parallel
+      
       for (let j = 0; j < PARALLEL_BATCHES && i + j < batches.length; j++) {
         const batchIndex = i + j;
         batchPromises.push(
-          processBatch(
-            batches[batchIndex],
-            jobDescription,
-            GEMINI_API_KEY,
-            batchIndex + 1,
-            batches.length
-          )
+          processBatch(batches[batchIndex], jobDescription, apiKey, batchIndex + 1, totalBatches)
         );
       }
-
+      
       try {
         const results = await Promise.all(batchPromises);
         for (const result of results) {
@@ -395,68 +358,139 @@ serve(async (req) => {
       } catch (parallelError) {
         console.error(`Parallel round ${parallelRound} had failures:`, parallelError);
         
-        // If we have some candidates already, continue with what we have
         if (allCandidates.length > 0) {
           console.log(`Continuing with ${allCandidates.length} candidates from previous rounds`);
           break;
         }
         
-        // If first round fails completely, try processing one by one
         if (i === 0) {
-          console.log("Retrying first batch individually...");
-          try {
-            const { candidates, tokens } = await processBatch(
-              batches[0],
-              jobDescription,
-              GEMINI_API_KEY,
-              1,
-              batches.length
-            );
-            allCandidates.push(...candidates);
-            totalTokens += tokens;
-          } catch (retryError) {
-            console.error("Individual retry failed:", retryError);
-            throw retryError;
-          }
+          throw parallelError;
         }
       }
     }
-
+    
     if (allCandidates.length === 0) {
-      throw new Error("No candidates were processed successfully");
+      throw new Error("Não foi possível processar nenhum currículo");
+    }
+    
+    await updateJobProgress(supabase, jobId, 90, "Gerando relatório final...");
+    
+    const { recommendation, comparison_summary, tokens: summaryTokens } = 
+      await generateSummary(allCandidates, jobDescription, apiKey);
+    
+    totalTokens += summaryTokens;
+    
+    const finalResult = {
+      candidates_analysis: allCandidates,
+      recommendation,
+      comparison_summary,
+      tokens_used: totalTokens
+    };
+    
+    await completeJob(supabase, jobId, finalResult);
+    console.log(`Job ${jobId} completed successfully. Total tokens: ${totalTokens}`);
+    
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error(`Job ${jobId} failed:`, errorMessage);
+    await failJob(supabase, jobId, errorMessage);
+  }
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { files, jobDescription, user_id } = await req.json();
+
+    if (!jobDescription || typeof jobDescription !== "string" || jobDescription.trim().length < 50) {
+      return new Response(
+        JSON.stringify({
+          error: "A descrição da vaga é muito curta ou está ausente.",
+          error_code: "INSUFFICIENT_JOB_DESC"
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    console.log(`Total candidates processed: ${allCandidates.length}`);
+    if (!files || !Array.isArray(files) || files.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: "Nenhum currículo foi enviado.",
+          error_code: "NO_FILES"
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Generate summary based on all candidates
-    const summary = await generateSummary(allCandidates, jobDescription, GEMINI_API_KEY);
-    totalTokens += summary.tokens;
+    const GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) {
+      console.error("GOOGLE_GEMINI_API_KEY not configured");
+      return new Response(
+        JSON.stringify({
+          error: "Serviço temporariamente indisponível.",
+          error_code: "CONFIG_ERROR"
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    console.log(`Analysis complete. Total tokens: ${totalTokens}`);
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
+    const { data: jobData, error: insertError } = await supabase
+      .from("analysis_jobs")
+      .insert({
+        user_id,
+        status: "processing",
+        progress: 0,
+        current_step: "Iniciando análise...",
+        files_count: files.length
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !jobData) {
+      console.error("Failed to create analysis job:", insertError);
+      return new Response(
+        JSON.stringify({
+          error: "Falha ao iniciar análise.",
+          error_code: "ANALYSIS_ERROR"
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const jobId = jobData.id;
+    console.log(`Created analysis job: ${jobId} for ${files.length} files`);
+
+    const job: AnalysisJob = {
+      id: jobId,
+      files,
+      jobDescription,
+      userId: user_id
+    };
+
+    // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
+    EdgeRuntime.waitUntil(processAnalysisInBackground(supabase, job, GEMINI_API_KEY));
+
+    return new Response(
+      JSON.stringify({ job_id: jobId }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Erro interno do servidor";
+    console.error("Error in analyze-resumes:", errorMessage);
     return new Response(
       JSON.stringify({
-        candidates_analysis: allCandidates,
-        recommendation: summary.recommendation,
-        comparison_summary: summary.comparison_summary,
-        tokens_used: totalTokens
+        error: errorMessage,
+        error_code: getSanitizedErrorCode(errorMessage)
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  } catch (error) {
-    console.error("Error in analyze-resumes function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return new Response(
-      JSON.stringify({ 
-        error_code: "ANALYSIS_ERROR",
-        error: getSanitizedError(errorMessage)
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

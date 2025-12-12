@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +30,9 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
   const [currentDraft, setCurrentDraft] = useState<DraftData | null>(null);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStep, setAnalysisStep] = useState("");
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
   const { availableResumes, maxPerAnalysis, loading: balanceLoading, refetch: refetchBalance } = useResumeBalance(user?.id);
   
@@ -52,6 +55,15 @@ export default function Index() {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -77,13 +89,130 @@ export default function Index() {
     return defaultMessage || "Algo inesperado ocorreu durante a análise. Tente novamente ou revise as informações enviadas.";
   };
 
+  const processAnalysisResult = async (data: any, files: UploadedFile[], jobDescription: string, jobTitle?: string) => {
+    console.log("Processing analysis result:", data);
+
+    let candidatesArray: any[] = [];
+    
+    if (data.candidates_analysis && Array.isArray(data.candidates_analysis)) {
+      candidatesArray = data.candidates_analysis;
+    } else if (data.candidates && Array.isArray(data.candidates)) {
+      candidatesArray = data.candidates;
+    } else {
+      const numericKeys = Object.keys(data).filter(key => !isNaN(Number(key))).sort((a, b) => Number(a) - Number(b));
+      if (numericKeys.length > 0) {
+        candidatesArray = numericKeys.map(key => data[key]);
+        console.log("Extracted candidates from numeric keys:", candidatesArray.length);
+      }
+    }
+
+    if (candidatesArray.length === 0) {
+      console.error("No candidates found in response:", data);
+      throw new Error("Não foi possível processar os currículos enviados. Verifique se os arquivos contêm informações válidas de candidatos.");
+    }
+
+    const normalizedData = {
+      candidates: candidatesArray.map((c: any, idx: number) => ({
+        candidate_name: c.candidate_name || c.name || `Candidato ${idx + 1}`,
+        file_name: c.file_name || `Arquivo ${idx + 1}`,
+        match_score: c.match_score ?? 0,
+        technical_fit: c.technical_fit ?? 0,
+        potential_fit: c.potential_fit ?? 0,
+        summary: c.summary || "",
+        years_experience: c.years_experience ?? 0,
+        soft_skills: Array.isArray(c.soft_skills) 
+          ? c.soft_skills.map((s: any) => {
+              if (s.name && typeof s.score === 'number') {
+                return s;
+              }
+              const key = Object.keys(s)[0];
+              return { name: key, score: s[key] };
+            })
+          : [],
+        cultural_fit: c.cultural_fit || {
+          results_orientation: 50,
+          process_orientation: 50,
+          people_orientation: 50,
+          innovation_orientation: 50,
+        },
+        red_flags: Array.isArray(c.red_flags) ? c.red_flags : [],
+        gap_analysis: c.gap_analysis || {
+          strong_match: [],
+          moderate_match: [],
+          weak_or_missing: [],
+        },
+        inferred_info: c.inferred_info || {
+          seniority_level: "N/A",
+          estimated_salary_range: "N/A",
+          tools_and_technologies: [],
+          industry_experience: [],
+          education_level: "N/A",
+          languages: [],
+          certifications: [],
+          leadership_experience: "N/A",
+          remote_work_compatibility: "N/A",
+          availability: "N/A",
+        },
+      })),
+      recommendation: data.recommendation || "Análise concluída. Revise os candidatos acima.",
+      comparison_summary: data.comparison_summary || "Todos os candidatos foram analisados com base na descrição da vaga.",
+    };
+
+    setResults(normalizedData);
+    setTokensUsed(data.tokens_used || 0);
+    setStep("results");
+
+    if (user) {
+      if (currentDraft?.id) {
+        // Update existing draft to completed
+        const { error: updateError } = await supabase
+          .from("analyses")
+          .update({
+            job_title: jobTitle || null,
+            job_description: jobDescription,
+            candidates: files.map((f) => ({ name: f.name })),
+            results: data,
+            tokens_used: data.tokens_used || 0,
+            status: "completed",
+          })
+          .eq("id", currentDraft.id);
+        
+        if (updateError) {
+          console.error("Error updating analysis:", updateError);
+        } else {
+          refetchBalance();
+          setCurrentDraft(null);
+        }
+      } else {
+        // Create new analysis
+        const { error: saveError } = await supabase.from("analyses").insert({
+          user_id: user.id,
+          job_title: jobTitle || null,
+          job_description: jobDescription,
+          candidates: files.map((f) => ({ name: f.name })),
+          results: data,
+          tokens_used: data.tokens_used || 0,
+          status: "completed",
+        });
+        if (saveError) {
+          console.error("Error saving analysis:", saveError);
+        } else {
+          refetchBalance();
+        }
+      }
+    }
+  };
+
   const handleAnalyze = async (files: UploadedFile[], jobDescription: string, jobTitle?: string) => {
     setStep("loading");
     setCurrentJobTitle(jobTitle);
+    setAnalysisProgress(0);
+    setAnalysisStep("Iniciando análise...");
     
     try {
+      // Call the edge function to start analysis
       const { data, error } = await supabase.functions.invoke("analyze-resumes", {
-        body: { files, jobDescription },
+        body: { files, jobDescription, user_id: user?.id },
       });
 
       if (error) {
@@ -95,131 +224,86 @@ export default function Index() {
         throw new Error(getFriendlyErrorMessage(data.error_code, data.error));
       }
 
-      console.log("Raw AI response:", data);
+      // Check if we got a job_id (async mode) or direct results (fallback)
+      if (data.job_id) {
+        console.log("Analysis started with job_id:", data.job_id);
+        
+        // Start polling for status
+        const jobId = data.job_id;
+        
+        pollingIntervalRef.current = setInterval(async () => {
+          try {
+            const { data: statusData, error: statusError } = await supabase.functions.invoke(
+              "check-analysis-status",
+              { body: { job_id: jobId } }
+            );
 
-      let candidatesArray: any[] = [];
-      
-      if (data.candidates_analysis && Array.isArray(data.candidates_analysis)) {
-        candidatesArray = data.candidates_analysis;
-      } else if (data.candidates && Array.isArray(data.candidates)) {
-        candidatesArray = data.candidates;
+            if (statusError) {
+              console.error("Status check error:", statusError);
+              return;
+            }
+
+            console.log("Status update:", statusData);
+            
+            setAnalysisProgress(statusData.progress || 0);
+            setAnalysisStep(statusData.current_step || "Processando...");
+
+            if (statusData.status === "completed") {
+              // Stop polling
+              if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
+              }
+              
+              // Process results
+              await processAnalysisResult(statusData.result, files, jobDescription, jobTitle);
+            } else if (statusData.status === "error") {
+              // Stop polling
+              if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
+              }
+              
+              setErrorMessage(getFriendlyErrorMessage(undefined, statusData.error_message));
+              setStep("error");
+            }
+          } catch (pollError) {
+            console.error("Polling error:", pollError);
+          }
+        }, 3000); // Poll every 3 seconds
       } else {
-        const numericKeys = Object.keys(data).filter(key => !isNaN(Number(key))).sort((a, b) => Number(a) - Number(b));
-        if (numericKeys.length > 0) {
-          candidatesArray = numericKeys.map(key => data[key]);
-          console.log("Extracted candidates from numeric keys:", candidatesArray.length);
-        }
-      }
-
-      if (candidatesArray.length === 0) {
-        console.error("No candidates found in response:", data);
-        throw new Error("Não foi possível processar os currículos enviados. Verifique se os arquivos contêm informações válidas de candidatos.");
-      }
-
-      const normalizedData = {
-        candidates: candidatesArray.map((c: any, idx: number) => ({
-          candidate_name: c.candidate_name || c.name || `Candidato ${idx + 1}`,
-          file_name: c.file_name || `Arquivo ${idx + 1}`,
-          match_score: c.match_score ?? 0,
-          technical_fit: c.technical_fit ?? 0,
-          potential_fit: c.potential_fit ?? 0,
-          summary: c.summary || "",
-          years_experience: c.years_experience ?? 0,
-          soft_skills: Array.isArray(c.soft_skills) 
-            ? c.soft_skills.map((s: any) => {
-                if (s.name && typeof s.score === 'number') {
-                  return s;
-                }
-                const key = Object.keys(s)[0];
-                return { name: key, score: s[key] };
-              })
-            : [],
-          cultural_fit: c.cultural_fit || {
-            results_orientation: 50,
-            process_orientation: 50,
-            people_orientation: 50,
-            innovation_orientation: 50,
-          },
-          red_flags: Array.isArray(c.red_flags) ? c.red_flags : [],
-          gap_analysis: c.gap_analysis || {
-            strong_match: [],
-            moderate_match: [],
-            weak_or_missing: [],
-          },
-          inferred_info: c.inferred_info || {
-            seniority_level: "N/A",
-            estimated_salary_range: "N/A",
-            tools_and_technologies: [],
-            industry_experience: [],
-            education_level: "N/A",
-            languages: [],
-            certifications: [],
-            leadership_experience: "N/A",
-            remote_work_compatibility: "N/A",
-            availability: "N/A",
-          },
-        })),
-        recommendation: data.recommendation || "Análise concluída. Revise os candidatos acima.",
-        comparison_summary: data.comparison_summary || "Todos os candidatos foram analisados com base na descrição da vaga.",
-      };
-
-      setResults(normalizedData);
-      setTokensUsed(data.tokens_used || 0);
-      setStep("results");
-
-      if (user) {
-        if (currentDraft?.id) {
-          // Update existing draft to completed
-          const { error: updateError } = await supabase
-            .from("analyses")
-            .update({
-              job_title: jobTitle || null,
-              job_description: jobDescription,
-              candidates: files.map((f) => ({ name: f.name })),
-              results: data,
-              tokens_used: data.tokens_used || 0,
-              status: "completed",
-            })
-            .eq("id", currentDraft.id);
-          
-          if (updateError) {
-            console.error("Error updating analysis:", updateError);
-          } else {
-            refetchBalance();
-            setCurrentDraft(null);
-          }
-        } else {
-          // Create new analysis
-          const { error: saveError } = await supabase.from("analyses").insert({
-            user_id: user.id,
-            job_title: jobTitle || null,
-            job_description: jobDescription,
-            candidates: files.map((f) => ({ name: f.name })),
-            results: data,
-            tokens_used: data.tokens_used || 0,
-            status: "completed",
-          });
-          if (saveError) {
-            console.error("Error saving analysis:", saveError);
-          } else {
-            refetchBalance();
-          }
-        }
+        // Direct results (fallback for backward compatibility)
+        await processAnalysisResult(data, files, jobDescription, jobTitle);
       }
     } catch (error: any) {
       console.error("Analysis error:", error);
+      
+      // Stop polling if active
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      
       setErrorMessage(error.message || "Algo inesperado ocorreu durante a análise. Tente novamente ou revise as informações enviadas.");
       setStep("error");
     }
   };
 
   const handleNewAnalysis = () => {
+    // Stop any active polling
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    
     setStep("input");
     setResults(null);
     setTokensUsed(0);
     setErrorMessage("");
     setSelectedAnalysisId(null);
     setCurrentDraft(null);
+    setAnalysisProgress(0);
+    setAnalysisStep("");
   };
 
   const handleSaveDraft = async (files: UploadedFile[], jobDescription: string, jobTitle?: string) => {
@@ -296,8 +380,16 @@ export default function Index() {
   };
 
   const handleRetry = () => {
+    // Stop any active polling
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    
     setStep("input");
     setErrorMessage("");
+    setAnalysisProgress(0);
+    setAnalysisStep("");
   };
 
   const handleViewAnalysis = async (analysisId: string) => {
@@ -334,10 +426,18 @@ export default function Index() {
   };
 
   const handleBackToDashboard = () => {
+    // Stop any active polling
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    
     setStep("welcome");
     setResults(null);
     setSelectedAnalysisId(null);
     setCurrentDraft(null);
+    setAnalysisProgress(0);
+    setAnalysisStep("");
   };
 
   if (loading) {
@@ -414,7 +514,12 @@ export default function Index() {
             />
           </div>
         )}
-        {step === "loading" && <LoadingScreen />}
+        {step === "loading" && (
+          <LoadingScreen 
+            progress={analysisProgress} 
+            currentStep={analysisStep}
+          />
+        )}
         {step === "results" && results && (
           <ResultsSection
             results={results}

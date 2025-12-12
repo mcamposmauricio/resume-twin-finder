@@ -1,1 +1,7 @@
 project_id = "yuzioyvuvbuyftgxrczx"
+
+[functions.analyze-resumes]
+verify_jwt = false
+
+[functions.check-analysis-status]
+verify_jwt = false

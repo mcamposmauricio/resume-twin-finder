@@ -7,17 +7,33 @@ const loadingSteps = [
   { icon: BarChart3, text: "Gerando relatório..." },
 ];
 
-export function LoadingScreen() {
-  const [currentStep, setCurrentStep] = useState(0);
+interface LoadingScreenProps {
+  progress?: number;
+  currentStep?: string;
+}
+
+export function LoadingScreen({ progress = 0, currentStep }: LoadingScreenProps) {
+  const [animatedStep, setAnimatedStep] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentStep((prev) => (prev + 1) % loadingSteps.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, []);
+    // Only use animated steps if no real progress is provided
+    if (progress === 0) {
+      const interval = setInterval(() => {
+        setAnimatedStep((prev) => (prev + 1) % loadingSteps.length);
+      }, 2500);
+      return () => clearInterval(interval);
+    }
+  }, [progress]);
 
-  const CurrentIcon = loadingSteps[currentStep].icon;
+  // Determine which icon to show based on progress
+  const getIconForProgress = () => {
+    if (progress < 30) return FileSearch;
+    if (progress < 85) return Brain;
+    return BarChart3;
+  };
+
+  const CurrentIcon = progress > 0 ? getIconForProgress() : loadingSteps[animatedStep].icon;
+  const displayText = currentStep || loadingSteps[animatedStep].text;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 animate-fade-in">
@@ -34,25 +50,50 @@ export function LoadingScreen() {
         Analisando Candidatos
       </h2>
 
-      <p className="text-lg text-muted-foreground mb-8">
-        {loadingSteps[currentStep].text}
+      {/* Real Progress Bar */}
+      <div className="w-full max-w-md mb-4">
+        <div className="bg-muted rounded-full h-4 overflow-hidden shadow-inner">
+          <div
+            className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500 ease-out rounded-full"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Percentage */}
+      <p className="text-3xl font-bold text-primary mb-2">
+        {progress}%
       </p>
 
-      {/* Progress dots */}
+      {/* Current step text */}
+      <p className="text-lg text-muted-foreground mb-8">
+        {displayText}
+      </p>
+
+      {/* Progress dots for visual feedback */}
       <div className="flex gap-2">
-        {loadingSteps.map((_, index) => (
-          <div
-            key={index}
-            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-              index === currentStep ? "bg-primary w-6" : "bg-muted"
-            }`}
-          />
-        ))}
+        {[0, 1, 2].map((index) => {
+          const stepProgress = progress > 0 ? progress : (animatedStep / 3) * 100;
+          const isActive = progress > 0 
+            ? (index === 0 && progress < 30) || 
+              (index === 1 && progress >= 30 && progress < 85) || 
+              (index === 2 && progress >= 85)
+            : index === animatedStep;
+          
+          return (
+            <div
+              key={index}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                isActive ? "bg-primary w-6" : "bg-muted"
+              }`}
+            />
+          );
+        })}
       </div>
 
       <p className="text-muted-foreground mt-10 max-w-md text-sm">
         Nossa IA está analisando cada currículo em profundidade.
-        Isso pode levar alguns segundos...
+        {progress > 0 && progress < 100 && " Aguarde..."}
       </p>
     </div>
   );
