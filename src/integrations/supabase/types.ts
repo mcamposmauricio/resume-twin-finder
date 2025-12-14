@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           candidates: Json
           created_at: string
+          duration_seconds: number | null
           id: string
           job_description: string
           job_title: string | null
@@ -29,6 +30,7 @@ export type Database = {
         Insert: {
           candidates?: Json
           created_at?: string
+          duration_seconds?: number | null
           id?: string
           job_description: string
           job_title?: string | null
@@ -40,6 +42,7 @@ export type Database = {
         Update: {
           candidates?: Json
           created_at?: string
+          duration_seconds?: number | null
           id?: string
           job_description?: string
           job_title?: string | null
@@ -54,6 +57,7 @@ export type Database = {
         Row: {
           created_at: string | null
           current_step: string | null
+          duration_seconds: number | null
           error_message: string | null
           files_count: number
           id: string
@@ -66,6 +70,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           current_step?: string | null
+          duration_seconds?: number | null
           error_message?: string | null
           files_count?: number
           id?: string
@@ -78,6 +83,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           current_step?: string | null
+          duration_seconds?: number | null
           error_message?: string | null
           files_count?: number
           id?: string

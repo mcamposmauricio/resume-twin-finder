@@ -24,7 +24,7 @@ import logoMarq from "@/assets/logo-marq-blue.png";
 export default function Index() {
   const [step, setStep] = useState<AppStep>("welcome");
   const [results, setResults] = useState<AnalysisResult | null>(null);
-  const [tokensUsed, setTokensUsed] = useState(0);
+  const [durationSeconds, setDurationSeconds] = useState<number | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState("");
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -159,7 +159,7 @@ export default function Index() {
     };
 
     setResults(normalizedData);
-    setTokensUsed(data.tokens_used || 0);
+    setDurationSeconds(data.duration_seconds);
     setStep("results");
 
     if (user) {
@@ -298,7 +298,7 @@ export default function Index() {
     
     setStep("input");
     setResults(null);
-    setTokensUsed(0);
+    setDurationSeconds(undefined);
     setErrorMessage("");
     setSelectedAnalysisId(null);
     setCurrentDraft(null);
@@ -415,7 +415,7 @@ export default function Index() {
         };
         
         setResults(normalizedResults);
-        setTokensUsed(data.tokens_used || 0);
+        setDurationSeconds((rawResults as any).duration_seconds);
         setSelectedAnalysisId(analysisId);
         setStep("results");
       }
@@ -523,7 +523,7 @@ export default function Index() {
         {step === "results" && results && (
           <ResultsSection
             results={results}
-            tokensUsed={tokensUsed}
+            durationSeconds={durationSeconds}
             onNewAnalysis={handleNewAnalysis}
             onBack={handleBackToDashboard}
           />

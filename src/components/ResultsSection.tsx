@@ -30,7 +30,7 @@ import {
 
 interface ResultsSectionProps {
   results: AnalysisResult;
-  tokensUsed: number;
+  durationSeconds?: number;
   onNewAnalysis: () => void;
   onBack?: () => void;
 }
@@ -542,7 +542,7 @@ function ComparisonTable({ candidates }: { candidates: CandidateResult[] }) {
 
 export function ResultsSection({
   results,
-  tokensUsed,
+  durationSeconds,
   onNewAnalysis,
   onBack,
 }: ResultsSectionProps) {
@@ -716,9 +716,12 @@ export function ResultsSection({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-center pt-4 text-sm text-muted-foreground">
-        <span>Tokens utilizados: {tokensUsed.toLocaleString()}</span>
-      </div>
+      {durationSeconds && (
+        <div className="flex items-center justify-center pt-4 text-sm text-muted-foreground">
+          <Clock className="w-4 h-4 mr-2" />
+          <span>Análise concluída em {durationSeconds < 60 ? `${durationSeconds}s` : `${Math.floor(durationSeconds / 60)}m ${durationSeconds % 60}s`}</span>
+        </div>
+      )}
     </div>
   );
 }
