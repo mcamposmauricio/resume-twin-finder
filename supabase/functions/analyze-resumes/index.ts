@@ -75,7 +75,8 @@ async function updateJobProgress(
 async function completeJob(
   supabase: any,
   jobId: string,
-  result: any
+  result: any,
+  durationSeconds?: number
 ) {
   const { error } = await supabase
     .from("analysis_jobs")
@@ -83,7 +84,8 @@ async function completeJob(
       status: "completed",
       progress: 100,
       current_step: "Análise concluída!",
-      result
+      result,
+      duration_seconds: durationSeconds
     })
     .eq("id", jobId);
   
@@ -313,6 +315,7 @@ async function processAnalysisInBackground(
   apiKey: string
 ) {
   const { id: jobId, files, jobDescription } = job;
+  const startTime = Date.now();
   
   try {
     console.log(`Starting background processing for job ${jobId} with ${files.length} files`);
@@ -380,15 +383,19 @@ async function processAnalysisInBackground(
     
     totalTokens += summaryTokens;
     
+    // Calculate duration in seconds
+    const durationSeconds = Math.round((Date.now() - startTime) / 1000);
+    
     const finalResult = {
       candidates_analysis: allCandidates,
       recommendation,
       comparison_summary,
-      tokens_used: totalTokens
+      tokens_used: totalTokens,
+      duration_seconds: durationSeconds
     };
     
-    await completeJob(supabase, jobId, finalResult);
-    console.log(`Job ${jobId} completed successfully. Total tokens: ${totalTokens}`);
+    await completeJob(supabase, jobId, finalResult, durationSeconds);
+    console.log(`Job ${jobId} completed successfully. Duration: ${durationSeconds}s, Tokens: ${totalTokens}`);
     
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
