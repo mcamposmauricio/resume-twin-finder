@@ -215,7 +215,9 @@ export default function Auth() {
           </span>
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-slate-500 font-medium">powered by</span>
-            <img src={logoMarq} alt="MarQ HR" className="h-5" />
+            <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
+              <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
+            </a>
           </div>
         </div>
       </header>
@@ -453,7 +455,9 @@ export default function Auth() {
 
           <div className="text-center text-slate-400 text-sm mt-6 flex items-center justify-center gap-2">
             <span>© {new Date().getFullYear()} CompareCV powered by</span>
-            <img src={logoMarq} alt="MarQ HR" className="h-4" />
+            <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
+              <img src={logoMarq} alt="MarQ HR" className="h-4 hover:scale-105 transition-transform cursor-pointer" />
+            </a>
           </div>
         </div>
         </div>

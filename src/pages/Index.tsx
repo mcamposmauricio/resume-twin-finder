@@ -463,7 +463,9 @@ export default function Index() {
               </span>
               <div className="hidden sm:flex items-center gap-1.5">
                 <span className="text-xs text-muted-foreground font-medium">powered by</span>
-                <img src={logoMarq} alt="MarQ HR" className="h-5 group-hover:scale-105 transition-transform" />
+                <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                  <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
+                </a>
               </div>
             </div>
           </button>
@@ -537,7 +539,9 @@ export default function Index() {
       <footer className="py-6 text-center text-sm text-muted-foreground border-t border-border bg-card">
         <div className="flex items-center justify-center gap-2">
           <span>CompareCV powered by</span>
-          <img src={logoMarq} alt="MarQ HR" className="h-5" />
+          <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
+            <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
+          </a>
           <span>© {new Date().getFullYear()}</span>
         </div>
       </footer>
