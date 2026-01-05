@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
-import { Upload, FileText, X, AlertCircle, ArrowRight, Info, Save } from "lucide-react";
+import { Upload, FileText, X, AlertCircle, ArrowRight, Info, Save, Phone, Check, Loader2 } from "lucide-react";
 import { UploadedFile } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB em bytes
 
@@ -23,15 +25,18 @@ interface InputSectionProps {
   maxFiles: number;
   availableBalance: number;
   initialDraft?: DraftData | null;
+  userId?: string;
 }
 
-export function InputSection({ onAnalyze, onSaveDraft, isLoading, maxFiles, availableBalance, initialDraft }: InputSectionProps) {
+export function InputSection({ onAnalyze, onSaveDraft, isLoading, maxFiles, availableBalance, initialDraft, userId }: InputSectionProps) {
   const [files, setFiles] = useState<UploadedFile[]>(initialDraft?.files || []);
   const [jobTitle, setJobTitle] = useState(initialDraft?.jobTitle || "");
   const [jobDescription, setJobDescription] = useState(initialDraft?.jobDescription || "");
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isRequestingContact, setIsRequestingContact] = useState(false);
+  const [contactRequested, setContactRequested] = useState(false);
 
   // Update state when initialDraft changes (e.g., loading a draft)
   useEffect(() => {
@@ -204,6 +209,27 @@ export function InputSection({ onAnalyze, onSaveDraft, isLoading, maxFiles, avai
   const canAddMoreFiles = files.length < maxFiles && maxFiles > 0;
   const hasNoBalance = availableBalance <= 0;
 
+  const handleRequestContact = async () => {
+    if (!userId || contactRequested) return;
+    
+    setIsRequestingContact(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-lead-to-marq', {
+        body: { userId, leadSource: 'saldo_esgotado' }
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Solicitação enviada! Entraremos em contato em breve.");
+      setContactRequested(true);
+    } catch (err) {
+      console.error("Error requesting contact:", err);
+      toast.error("Erro ao enviar solicitação. Tente novamente.");
+    } finally {
+      setIsRequestingContact(false);
+    }
+  };
+
   if (hasNoBalance) {
     return (
       <div className="max-w-3xl mx-auto p-6 md:p-8 animate-fade-in">
@@ -212,9 +238,32 @@ export function InputSection({ onAnalyze, onSaveDraft, isLoading, maxFiles, avai
             <AlertCircle className="w-8 h-8 text-muted-foreground" />
           </div>
           <h2 className="text-xl font-semibold text-foreground mb-2">Saldo Esgotado</h2>
-          <p className="text-muted-foreground">
-            Você não possui currículos disponíveis para análise. Entre em contato com o administrador para adquirir mais créditos.
+          <p className="text-muted-foreground mb-6">
+            Você não possui currículos disponíveis para análise.
           </p>
+          
+          <button
+            onClick={handleRequestContact}
+            disabled={isRequestingContact || contactRequested || !userId}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRequestingContact ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Enviando...
+              </>
+            ) : contactRequested ? (
+              <>
+                <Check className="w-4 h-4" />
+                Solicitação enviada
+              </>
+            ) : (
+              <>
+                <Phone className="w-4 h-4" />
+                Receber contato do time
+              </>
+            )}
+          </button>
         </div>
       </div>
     );

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Gift, Mail, Copy, Check, Send, Users } from "lucide-react";
+import { Gift, Mail, Copy, Check, Send, Users, Phone, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,8 @@ export function ReferralDialog({ userId }: ReferralDialogProps) {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [invitesSent, setInvitesSent] = useState(0);
+  const [isRequestingContact, setIsRequestingContact] = useState(false);
+  const [contactRequested, setContactRequested] = useState(false);
 
   useEffect(() => {
     fetchReferralCode();
@@ -109,6 +111,27 @@ Acesse https://comparecv.marqhr.com/ e coloca meu código ${referralCode} para t
       toast.error("Erro ao enviar convites");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRequestContact = async () => {
+    if (contactRequested) return;
+    
+    setIsRequestingContact(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-lead-to-marq', {
+        body: { userId, leadSource: 'modal_indicacao' }
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Solicitação enviada! Entraremos em contato em breve.");
+      setContactRequested(true);
+    } catch (err) {
+      console.error("Error requesting contact:", err);
+      toast.error("Erro ao enviar solicitação. Tente novamente.");
+    } finally {
+      setIsRequestingContact(false);
     }
   };
 
@@ -221,6 +244,36 @@ Acesse https://comparecv.marqhr.com/ e coloca meu código ${referralCode} para t
                 </Button>
               </div>
             )}
+          </div>
+
+          {/* Contact Team Section */}
+          <div className="pt-4 border-t border-slate-200">
+            <p className="text-sm font-medium text-slate-700 mb-3">
+              Quer aumentar seu saldo de outra forma?
+            </p>
+            <Button
+              onClick={handleRequestContact}
+              disabled={isRequestingContact || contactRequested}
+              variant="outline"
+              className="w-full gap-2"
+            >
+              {isRequestingContact ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : contactRequested ? (
+                <>
+                  <Check className="w-4 h-4 text-green-500" />
+                  Solicitação enviada
+                </>
+              ) : (
+                <>
+                  <Phone className="w-4 h-4" />
+                  Receber contato do time
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </DialogContent>
