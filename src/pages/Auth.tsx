@@ -189,6 +189,23 @@ export default function Auth() {
           window.dataLayer.push({ 'event': 'cadastroCompareCV' });
         }
 
+        // Send lead data to MarQ webhook
+        if (signUpData?.user) {
+          try {
+            const { error: leadError } = await supabase.functions.invoke('send-lead-to-marq', {
+              body: {
+                userId: signUpData.user.id,
+                leadSource: 'comparecv_signup',
+              },
+            });
+            if (leadError) {
+              console.error('Error sending lead to MarQ:', leadError);
+            }
+          } catch (leadErr) {
+            console.error('Failed to send lead:', leadErr);
+          }
+        }
+
         toast.success("Conta criada com sucesso!");
       }
     } catch (error: any) {
