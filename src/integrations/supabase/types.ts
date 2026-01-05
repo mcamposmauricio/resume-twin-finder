@@ -136,6 +136,7 @@ export type Database = {
           id: string
           lead_source: string | null
           name: string | null
+          phone: string | null
           referral_code: string | null
           referred_by_code: string | null
           show_marq_banner: boolean
@@ -151,6 +152,7 @@ export type Database = {
           id?: string
           lead_source?: string | null
           name?: string | null
+          phone?: string | null
           referral_code?: string | null
           referred_by_code?: string | null
           show_marq_banner?: boolean
@@ -166,6 +168,7 @@ export type Database = {
           id?: string
           lead_source?: string | null
           name?: string | null
+          phone?: string | null
           referral_code?: string | null
           referred_by_code?: string | null
           show_marq_banner?: boolean
