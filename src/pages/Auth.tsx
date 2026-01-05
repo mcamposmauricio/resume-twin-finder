@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, ArrowRight, Upload, Brain, CheckCircle, User, Building2, Users } from "lucide-react";
+import { Mail, Lock, ArrowRight, Upload, Brain, CheckCircle, User, Building2, Users, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoMarq from "@/assets/logo-marq-blue.png";
@@ -98,6 +98,7 @@ export default function Auth() {
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [employeeCount, setEmployeeCount] = useState("");
+  const [phone, setPhone] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [showInviteField, setShowInviteField] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -166,6 +167,7 @@ export default function Auth() {
               name: name.trim() || null,
               company_name: companyName.trim() || null,
               employee_count: employeeCount || null,
+              phone: phone.trim() || null,
             },
           },
         });
@@ -392,6 +394,21 @@ export default function Auth() {
                         <option value="201-500">201-500 funcionários</option>
                         <option value="501+">Mais de 500 funcionários</option>
                       </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Telefone</label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="(11) 99999-9999"
+                        required
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
                     </div>
                   </div>
                 </>

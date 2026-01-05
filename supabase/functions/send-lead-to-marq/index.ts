@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     // Fetch user profile data
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("email, name, company_name, employee_count, lead_source, created_at")
+      .select("email, name, company_name, employee_count, lead_source, created_at, phone")
       .eq("user_id", userId)
       .single();
 
@@ -69,6 +69,7 @@ Deno.serve(async (req) => {
       responsible_name: profile.name,
       company_name: profile.company_name,
       employees_count: profile.employee_count,
+      phone: profile.phone,
       lead_source: leadSource || profile.lead_source || "comparecv",
       trigger_source: "compareCV",
       notes: "Solicitação de contato via CompareCV",
