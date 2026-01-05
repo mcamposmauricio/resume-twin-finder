@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.check-analysis-status]
 verify_jwt = false
+
+[functions.send-lead-to-marq]
+verify_jwt = false
