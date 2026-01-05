@@ -513,6 +513,7 @@ export default function Index() {
               maxFiles={maxPerAnalysis}
               availableBalance={availableResumes}
               initialDraft={currentDraft}
+              userId={user?.id}
             />
           </div>
         )}
