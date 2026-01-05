@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     // Fetch user profile data
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("email, name, company_name, employee_count, lead_source")
+      .select("email, name, company_name, employee_count, lead_source, created_at")
       .eq("user_id", userId)
       .single();
 
@@ -62,22 +62,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Prepare lead data for MarQ webhook
+    // Prepare lead data for MarQ API (format as specified)
     const leadData = {
       email: profile.email,
-      name: profile.name,
+      created_at: profile.created_at,
+      responsible_name: profile.name,
       company_name: profile.company_name,
-      employee_count: profile.employee_count,
-      lead_source: leadSource || profile.lead_source || "direct",
-      timestamp: new Date().toISOString(),
+      employees_count: profile.employee_count,
+      lead_source: leadSource || profile.lead_source || "comparecv",
+      trigger_source: "compareCV",
+      notes: "Solicitação de contato via CompareCV",
     };
 
-    console.log("Sending lead data to MarQ:", JSON.stringify(leadData));
+    console.log("Sending lead data to MarQ API:", JSON.stringify(leadData));
 
-    // Send to MarQ webhook
-    const webhookUrl = "https://hook.us2.make.com/3bmvw7w3b1ixmkbv18nkx15eou3xrp8o";
+    // Send to MarQ API
+    const apiUrl = "https://marqponto-api-dev.azurewebsites.net/v1/internal/email";
     
-    const webhookResponse = await fetch(webhookUrl, {
+    const apiResponse = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -85,16 +87,16 @@ Deno.serve(async (req) => {
       body: JSON.stringify(leadData),
     });
 
-    if (!webhookResponse.ok) {
-      const errorText = await webhookResponse.text();
-      console.error(`Webhook failed with status ${webhookResponse.status}: ${errorText}`);
+    if (!apiResponse.ok) {
+      const errorText = await apiResponse.text();
+      console.error(`MarQ API failed with status ${apiResponse.status}: ${errorText}`);
       return new Response(
         JSON.stringify({ error: "Failed to send lead to MarQ", details: errorText }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Lead successfully sent to MarQ webhook");
+    console.log("Lead successfully sent to MarQ API");
 
     return new Response(
       JSON.stringify({ success: true, message: "Lead sent successfully" }),

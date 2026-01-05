@@ -134,6 +134,7 @@ export type Database = {
           email: string | null
           employee_count: string | null
           id: string
+          lead_source: string | null
           name: string | null
           referral_code: string | null
           referred_by_code: string | null
@@ -148,6 +149,7 @@ export type Database = {
           email?: string | null
           employee_count?: string | null
           id?: string
+          lead_source?: string | null
           name?: string | null
           referral_code?: string | null
           referred_by_code?: string | null
@@ -162,6 +164,7 @@ export type Database = {
           email?: string | null
           employee_count?: string | null
           id?: string
+          lead_source?: string | null
           name?: string | null
           referral_code?: string | null
           referred_by_code?: string | null
