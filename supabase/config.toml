@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.send-lead-to-marq]
 verify_jwt = false
+
+[functions.hr-hub-webhook]
+verify_jwt = false
+
+[functions.hub-login]
+verify_jwt = false
+
+[functions.exchange-hub-token]
+verify_jwt = false
