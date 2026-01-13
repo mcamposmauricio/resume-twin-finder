@@ -129,10 +129,12 @@ export type Database = {
       }
       profiles: {
         Row: {
+          cargo: string | null
           company_name: string | null
           created_at: string
           email: string | null
           employee_count: string | null
+          hr_hub_user_id: string | null
           id: string
           lead_source: string | null
           name: string | null
@@ -140,15 +142,18 @@ export type Database = {
           referral_code: string | null
           referred_by_code: string | null
           show_marq_banner: boolean
+          source: string | null
           total_resumes: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          cargo?: string | null
           company_name?: string | null
           created_at?: string
           email?: string | null
           employee_count?: string | null
+          hr_hub_user_id?: string | null
           id?: string
           lead_source?: string | null
           name?: string | null
@@ -156,15 +161,18 @@ export type Database = {
           referral_code?: string | null
           referred_by_code?: string | null
           show_marq_banner?: boolean
+          source?: string | null
           total_resumes?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          cargo?: string | null
           company_name?: string | null
           created_at?: string
           email?: string | null
           employee_count?: string | null
+          hr_hub_user_id?: string | null
           id?: string
           lead_source?: string | null
           name?: string | null
@@ -172,6 +180,7 @@ export type Database = {
           referral_code?: string | null
           referred_by_code?: string | null
           show_marq_banner?: boolean
+          source?: string | null
           total_resumes?: number
           updated_at?: string
           user_id?: string
@@ -184,7 +193,12 @@ export type Database = {
     }
     Functions: {
       generate_referral_code: { Args: never; Returns: string }
+      get_user_password_hash: { Args: { p_user_id: string }; Returns: string }
       is_corporate_email: { Args: { email: string }; Returns: boolean }
+      update_user_password_hash: {
+        Args: { p_password_hash: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
