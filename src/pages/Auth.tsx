@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, ArrowRight, Upload, Brain, CheckCircle, User, Building2, Users, Phone } from "lucide-react";
+import { Mail, Lock, ArrowRight, Upload, Brain, CheckCircle, User, Building2, Users, Phone, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { centralHubClient, TOOL_SOURCE, employeeRangeToNumber } from "@/lib/centralHubClient";
 import { toast } from "sonner";
 import logoMarq from "@/assets/logo-marq-blue.png";
 
@@ -91,10 +92,30 @@ const isPersonalEmail = (email: string): boolean => {
   return BLOCKED_EMAIL_DOMAINS.includes(domain);
 };
 
+// Error message helper for Central Hub signup
+const getSignupErrorMessage = (error: any): string => {
+  const message = error?.message?.toLowerCase() || '';
+  
+  if (message.includes('already registered') || message.includes('already exists')) {
+    return 'Este email já está cadastrado. Tente fazer login.';
+  }
+  if (message.includes('invalid email')) {
+    return 'Email inválido.';
+  }
+  if (message.includes('password')) {
+    return 'A senha deve ter no mínimo 6 caracteres.';
+  }
+  
+  return 'Erro ao criar conta. Tente novamente.';
+};
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [employeeCount, setEmployeeCount] = useState("");
@@ -103,6 +124,7 @@ export default function Auth() {
   const [showInviteField, setShowInviteField] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -137,6 +159,16 @@ export default function Auth() {
     }
   };
 
+  // Validate password confirmation
+  const handleConfirmPasswordChange = (value: string) => {
+    setConfirmPassword(value);
+    if (value && password && value !== password) {
+      setPasswordError("As senhas não coincidem.");
+    } else {
+      setPasswordError("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -146,10 +178,33 @@ export default function Auth() {
       return;
     }
 
+    // Validate password confirmation for signup
+    if (!isLogin && password !== confirmPassword) {
+      toast.error("As senhas não coincidem.");
+      return;
+    }
+
+    // Validate required fields for signup
+    if (!isLogin) {
+      if (!name.trim() || name.trim().length < 2) {
+        toast.error("Nome deve ter no mínimo 2 caracteres.");
+        return;
+      }
+      if (!companyName.trim() || companyName.trim().length < 2) {
+        toast.error("Nome da empresa deve ter no mínimo 2 caracteres.");
+        return;
+      }
+      if (!employeeCount) {
+        toast.error("Selecione a quantidade de funcionários.");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
       if (isLogin) {
+        // Login still uses local Supabase
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -157,71 +212,99 @@ export default function Auth() {
         if (error) throw error;
         toast.success("Login realizado com sucesso!");
       } else {
-        const { data: signUpData, error } = await supabase.auth.signUp({
+        // SIGNUP: Create user in Central Hub
+        const { data: authData, error: signUpError } = await centralHubClient.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
             data: {
+              name: name.trim(),
+              company_name: companyName.trim(),
+              number_of_employees: employeeRangeToNumber[employeeCount] || 0,
+              phone: phone.trim() || '',
+              source: TOOL_SOURCE,
               referred_by_code: inviteCode.trim().toUpperCase() || null,
-              name: name.trim() || null,
-              company_name: companyName.trim() || null,
-              employee_count: employeeCount || null,
-              phone: phone.trim() || null,
             },
           },
         });
-        if (error) throw error;
 
-        // If invite code was provided, update the profile with it
-        if (inviteCode.trim() && signUpData?.user) {
-          const { error: updateError } = await supabase
-            .from("profiles")
-            .update({ referred_by_code: inviteCode.trim().toUpperCase() })
-            .eq("user_id", signUpData.user.id);
+        if (signUpError) {
+          throw signUpError;
+        }
 
-          if (updateError) {
-            console.error("Error updating referred_by_code:", updateError);
+        // Dispatch webhook to sync with tools
+        if (authData.user && authData.session) {
+          try {
+            await fetch('https://pijbrphradettztsguqd.supabase.co/functions/v1/dispatch-webhook', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authData.session.access_token}`,
+              },
+              body: JSON.stringify({
+                user_id: authData.user.id,
+                event_type: 'user.created',
+                password: password, // For hash at destination
+              }),
+            });
+          } catch (webhookError) {
+            // Don't block the flow if webhook fails
+            console.error('Webhook dispatch failed:', webhookError);
           }
         }
 
-        // Disparar evento para Google Tag Manager
+        // Trigger event for Google Tag Manager
         if (typeof window !== 'undefined') {
           window.dataLayer = window.dataLayer || [];
           window.dataLayer.push({ 'event': 'cadastroCompareCV' });
         }
 
-        // Send lead data to MarQ webhook
-        if (signUpData?.user) {
+        // Send lead data to MarQ webhook (if user was created)
+        if (authData?.user) {
           try {
-            const { error: leadError } = await supabase.functions.invoke('send-lead-to-marq', {
+            await supabase.functions.invoke('send-lead-to-marq', {
               body: {
-                userId: signUpData.user.id,
+                userId: authData.user.id,
                 leadSource: 'comparecv_signup',
+                name: name.trim(),
+                email: email,
+                companyName: companyName.trim(),
+                employeeCount: employeeCount,
+                phone: phone.trim(),
               },
             });
-            if (leadError) {
-              console.error('Error sending lead to MarQ:', leadError);
-            }
           } catch (leadErr) {
             console.error('Failed to send lead:', leadErr);
           }
         }
 
-        toast.success("Conta criada com sucesso!");
+        toast.success("Conta criada com sucesso! Você agora tem acesso a todas as ferramentas do Hub.");
+        
+        // Redirect to LoginHub for login
+        navigate("/LoginHub");
       }
     } catch (error: any) {
       console.error("Auth error:", error);
-      if (error.message.includes("User already registered")) {
-        toast.error("Este email já está cadastrado. Faça login.");
-      } else if (error.message.includes("Invalid login credentials")) {
-        toast.error("Email ou senha incorretos.");
+      if (isLogin) {
+        if (error.message.includes("Invalid login credentials")) {
+          toast.error("Email ou senha incorretos.");
+        } else {
+          toast.error(error.message || "Erro ao fazer login.");
+        }
       } else {
-        toast.error(error.message || "Erro ao processar solicitação.");
+        toast.error(getSignupErrorMessage(error));
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Reset form when switching modes
+  const handleModeSwitch = () => {
+    setIsLogin(!isLogin);
+    setConfirmPassword("");
+    setPasswordError("");
+    setEmailError("");
   };
 
   return (
@@ -333,16 +416,52 @@ export default function Auth() {
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
                     minLength={6}
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
+
+              {/* Confirm Password - Only for signup */}
+              {!isLogin && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Confirmar Senha</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                      className={`w-full pl-12 pr-12 py-3.5 bg-slate-50 border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                        passwordError ? "border-red-400 bg-red-50/50" : "border-slate-200"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {passwordError && <p className="text-sm text-red-500 mt-1.5">{passwordError}</p>}
+                </div>
+              )}
 
               {/* Additional signup fields */}
               {!isLogin && (
@@ -357,6 +476,7 @@ export default function Auth() {
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Nome completo"
                         required
+                        minLength={2}
                         className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
                     </div>
@@ -372,6 +492,7 @@ export default function Auth() {
                         onChange={(e) => setCompanyName(e.target.value)}
                         placeholder="Sua empresa"
                         required
+                        minLength={2}
                         className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
                     </div>
@@ -392,13 +513,13 @@ export default function Auth() {
                         <option value="11-50">11-50 funcionários</option>
                         <option value="51-200">51-200 funcionários</option>
                         <option value="201-500">201-500 funcionários</option>
-                        <option value="501+">Mais de 500 funcionários</option>
+                        <option value="500+">Mais de 500 funcionários</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Telefone</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Telefone <span className="text-slate-400 font-normal">(opcional)</span></label>
                     <div className="relative">
                       <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                       <input
@@ -406,7 +527,6 @@ export default function Auth() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="(11) 99999-9999"
-                        required
                         className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
                     </div>
@@ -445,8 +565,8 @@ export default function Auth() {
 
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full py-4 text-base bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/30"
+                disabled={loading || (!isLogin && !!passwordError)}
+                className="w-full py-4 text-base bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -479,7 +599,7 @@ export default function Auth() {
 
             <div className="mt-6 text-center">
               <button
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={handleModeSwitch}
                 className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
               >
                 {isLogin ? "Não tem conta? Criar agora" : "Já tem conta? Faça login"}
