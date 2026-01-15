@@ -212,17 +212,17 @@ export default function Auth() {
         if (error) throw error;
         toast.success("Login realizado com sucesso!");
       } else {
-        // SIGNUP: Create user in Central Hub
-        const { data: authData, error: signUpError } = await centralHubClient.auth.signUp({
+        // SIGNUP: Create user LOCALLY first (immediate login)
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
+            emailRedirectTo: window.location.origin,
             data: {
               name: name.trim(),
               company_name: companyName.trim(),
-              number_of_employees: employeeRangeToNumber[employeeCount] || 0,
+              employee_count: employeeCount,
               phone: phone.trim() || '',
-              source: TOOL_SOURCE,
               referred_by_code: inviteCode.trim().toUpperCase() || null,
             },
           },
@@ -230,27 +230,6 @@ export default function Auth() {
 
         if (signUpError) {
           throw signUpError;
-        }
-
-        // Dispatch webhook to sync with tools
-        if (authData.user && authData.session) {
-          try {
-            await fetch('https://pijbrphradettztsguqd.supabase.co/functions/v1/dispatch-webhook', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authData.session.access_token}`,
-              },
-              body: JSON.stringify({
-                user_id: authData.user.id,
-                event_type: 'user.created',
-                password: password, // For hash at destination
-              }),
-            });
-          } catch (webhookError) {
-            // Don't block the flow if webhook fails
-            console.error('Webhook dispatch failed:', webhookError);
-          }
         }
 
         // Trigger event for Google Tag Manager
@@ -278,10 +257,44 @@ export default function Auth() {
           }
         }
 
-        toast.success("Conta criada com sucesso! Você agora tem acesso a todas as ferramentas do Hub.");
-        
-        // Redirect to LoginHub for login
-        navigate("/LoginHub");
+        // SYNC with Central Hub in background (fire-and-forget)
+        if (authData?.user) {
+          centralHubClient.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                name: name.trim(),
+                company_name: companyName.trim(),
+                number_of_employees: employeeRangeToNumber[employeeCount] || 0,
+                phone: phone.trim() || '',
+                source: TOOL_SOURCE,
+                referred_by_code: inviteCode.trim().toUpperCase() || null,
+              },
+            },
+          }).then(({ data: hubData }) => {
+            // Dispatch webhook after Central Hub signup
+            if (hubData?.user && hubData?.session) {
+              fetch('https://pijbrphradettztsguqd.supabase.co/functions/v1/dispatch-webhook', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${hubData.session.access_token}`,
+                },
+                body: JSON.stringify({
+                  user_id: hubData.user.id,
+                  event_type: 'user.created',
+                  password: password,
+                }),
+              }).catch(err => console.log('Webhook dispatch:', err?.message));
+            }
+          }).catch(err => {
+            // Don't block - user is already registered locally
+            console.log('Central Hub sync:', err?.message);
+          });
+        }
+
+        toast.success("Conta criada com sucesso!");
       }
     } catch (error: any) {
       console.error("Auth error:", error);
