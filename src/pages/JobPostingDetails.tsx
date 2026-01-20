@@ -4,8 +4,6 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   ArrowLeft,
-  Copy,
-  ExternalLink,
   Pause,
   Play,
   XCircle,
@@ -25,6 +23,7 @@ import { ApplicationList } from '@/components/jobs/ApplicationList';
 import { CloseJobDialog } from '@/components/jobs/CloseJobDialog';
 import { SendToAnalysisDialog } from '@/components/jobs/SendToAnalysisDialog';
 import { ApplicationDetailsDialog } from '@/components/jobs/ApplicationDetailsDialog';
+import { ShareJobLink } from '@/components/jobs/ShareJobLink';
 import { useToast } from '@/hooks/use-toast';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -87,12 +86,6 @@ export default function JobPostingDetails() {
     }
   };
 
-  const handleCopyLink = () => {
-    if (!job) return;
-    const url = `${window.location.origin}/apply/${job.public_slug}`;
-    navigator.clipboard.writeText(url);
-    toast({ title: 'Link copiado!' });
-  };
 
   const handleCloseJob = async () => {
     if (!job) return;
@@ -265,21 +258,13 @@ export default function JobPostingDetails() {
           <CardContent className="py-4">
             <div className="flex items-center justify-between flex-wrap gap-4">
               {job.status === 'active' && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Link público:</span>
-                  <code className="text-sm bg-muted px-2 py-1 rounded">
-                    /apply/{job.public_slug}
-                  </code>
-                  <Button variant="ghost" size="icon" onClick={handleCopyLink}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => window.open(`/apply/${job.public_slug}`, '_blank')}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
+                <div className="flex-1">
+                  <ShareJobLink 
+                    slug={job.public_slug} 
+                    jobTitle={job.title}
+                    companyName={job.company_name || undefined}
+                    variant="full"
+                  />
                 </div>
               )}
 
