@@ -54,6 +54,8 @@ interface AnalysisJob {
   files: any[];
   jobDescription: string;
   userId: string;
+  jobTitle?: string;
+  jobPostingId?: string;
 }
 
 async function updateJobProgress(
@@ -314,7 +316,7 @@ async function processAnalysisInBackground(
   job: AnalysisJob,
   apiKey: string
 ) {
-  const { id: jobId, files, jobDescription } = job;
+  const { id: jobId, files, jobDescription, userId, jobTitle, jobPostingId } = job;
   const startTime = Date.now();
   
   try {
@@ -397,6 +399,27 @@ async function processAnalysisInBackground(
     await completeJob(supabase, jobId, finalResult, durationSeconds);
     console.log(`Job ${jobId} completed successfully. Duration: ${durationSeconds}s, Tokens: ${totalTokens}`);
     
+    // Save to analyses table for history with job_title and job_posting_id
+    const { error: analysisError } = await supabase
+      .from("analyses")
+      .insert({
+        user_id: userId,
+        job_description: jobDescription,
+        job_title: jobTitle || null,
+        job_posting_id: jobPostingId || null,
+        candidates: allCandidates,
+        results: finalResult,
+        tokens_used: totalTokens,
+        duration_seconds: durationSeconds,
+        status: "completed"
+      });
+    
+    if (analysisError) {
+      console.error("Failed to save analysis to history:", analysisError);
+    } else {
+      console.log(`Analysis saved to history with title: ${jobTitle || 'N/A'}`);
+    }
+    
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
     console.error(`Job ${jobId} failed:`, errorMessage);
@@ -410,7 +433,7 @@ serve(async (req) => {
   }
 
   try {
-    const { files, jobDescription, user_id } = await req.json();
+    const { files, jobDescription, user_id, job_title, job_posting_id } = await req.json();
 
     if (!jobDescription || typeof jobDescription !== "string" || jobDescription.trim().length < 50) {
       return new Response(
@@ -478,7 +501,9 @@ serve(async (req) => {
       id: jobId,
       files,
       jobDescription,
-      userId: user_id
+      userId: user_id,
+      jobTitle: job_title,
+      jobPostingId: job_posting_id
     };
 
     // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions

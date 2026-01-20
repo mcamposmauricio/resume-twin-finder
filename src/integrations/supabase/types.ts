@@ -21,6 +21,7 @@ export type Database = {
           duration_seconds: number | null
           id: string
           job_description: string
+          job_posting_id: string | null
           job_title: string | null
           results: Json | null
           status: string
@@ -33,6 +34,7 @@ export type Database = {
           duration_seconds?: number | null
           id?: string
           job_description: string
+          job_posting_id?: string | null
           job_title?: string | null
           results?: Json | null
           status?: string
@@ -45,13 +47,22 @@ export type Database = {
           duration_seconds?: number | null
           id?: string
           job_description?: string
+          job_posting_id?: string | null
           job_title?: string | null
           results?: Json | null
           status?: string
           tokens_used?: number | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "analyses_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       analysis_jobs: {
         Row: {
