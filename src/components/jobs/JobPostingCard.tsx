@@ -4,7 +4,6 @@ import {
   MapPin,
   Users,
   Calendar,
-  ExternalLink,
   MoreVertical,
   Eye,
   Pencil,
@@ -26,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { JobPosting, JobStatus, STATUS_LABELS, WORK_TYPE_LABELS } from '@/types/jobs';
+import { ShareJobLink } from '@/components/jobs/ShareJobLink';
 
 interface JobPostingCardProps {
   job: JobPosting;
@@ -197,23 +197,13 @@ export function JobPostingCard({
         </div>
 
         {job.status === 'active' && (
-          <div className="flex items-center gap-2 pt-2 border-t">
-            <span className="text-xs text-muted-foreground">Link público:</span>
-            <code className="text-xs bg-muted px-2 py-1 rounded">
-              /apply/{job.public_slug}
-            </code>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  `${window.location.origin}/apply/${job.public_slug}`
-                );
-              }}
-            >
-              <ExternalLink className="h-3 w-3" />
-            </Button>
+          <div className="pt-2 border-t">
+            <ShareJobLink 
+              slug={job.public_slug} 
+              jobTitle={job.title}
+              companyName={job.company_name || undefined}
+              variant="compact"
+            />
           </div>
         )}
 

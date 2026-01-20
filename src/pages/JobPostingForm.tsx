@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Send, Sparkles, Copy, Link } from 'lucide-react';
+import { ArrowLeft, Save, Send, Sparkles } from 'lucide-react';
+import { ShareJobLink } from '@/components/jobs/ShareJobLink';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { useFormTemplates } from '@/hooks/useFormTemplates';
@@ -139,16 +140,6 @@ Responsabilidades:
     }
   };
 
-  const copyPublicLink = () => {
-    if (currentJob?.public_slug) {
-      const link = `${window.location.origin}/apply/${currentJob.public_slug}`;
-      navigator.clipboard.writeText(link);
-      toast({
-        title: 'Link copiado!',
-        description: 'O link público foi copiado para a área de transferência.',
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -175,21 +166,15 @@ Responsabilidades:
           {currentJob?.status === 'active' && currentJob?.public_slug && (
             <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
               <CardContent className="py-4">
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 text-green-800 dark:text-green-200 mb-1">
-                      <Link className="h-4 w-4" />
-                      <span className="font-medium">Vaga Publicada!</span>
-                    </div>
-                    <code className="text-sm bg-white dark:bg-green-900 px-2 py-1 rounded block truncate">
-                      {window.location.origin}/apply/{currentJob.public_slug}
-                    </code>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={copyPublicLink}>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copiar Link
-                  </Button>
+                <div className="flex items-center gap-2 text-green-800 dark:text-green-200 mb-3">
+                  <span className="font-medium">✅ Vaga Publicada!</span>
                 </div>
+                <ShareJobLink 
+                  slug={currentJob.public_slug} 
+                  jobTitle={currentJob.title}
+                  companyName={companyName || undefined}
+                  variant="compact"
+                />
               </CardContent>
             </Card>
           )}
