@@ -117,6 +117,11 @@ export default function JobPostings() {
                 onEdit={() => navigate(`/vagas/${job.id}/editar`)}
                 onDelete={() => setDeleteId(job.id)}
                 onChangeStatus={(status) => changeStatus(job.id, status)}
+                onSendToAnalysis={
+                  job.status === 'closed' && (job.applications_count || 0) > 0
+                    ? () => navigate(`/vagas/${job.id}?openAnalysis=true`)
+                    : undefined
+                }
               />
             ))}
           </div>

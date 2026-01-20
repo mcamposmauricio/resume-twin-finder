@@ -1,6 +1,20 @@
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { MapPin, Users, Calendar, ExternalLink, MoreVertical } from 'lucide-react';
+import {
+  MapPin,
+  Users,
+  Calendar,
+  ExternalLink,
+  MoreVertical,
+  Eye,
+  Pencil,
+  Send,
+  Trash2,
+  FileEdit,
+  CheckCircle,
+  PauseCircle,
+  XCircle,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +22,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { JobPosting, JobStatus, STATUS_LABELS, WORK_TYPE_LABELS } from '@/types/jobs';
@@ -18,6 +33,7 @@ interface JobPostingCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onChangeStatus: (status: JobStatus) => void;
+  onSendToAnalysis?: () => void;
 }
 
 const STATUS_COLORS: Record<JobStatus, string> = {
@@ -27,13 +43,23 @@ const STATUS_COLORS: Record<JobStatus, string> = {
   closed: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 };
 
+const STATUS_ICONS: Record<JobStatus, React.ReactNode> = {
+  draft: <FileEdit className="h-3 w-3" />,
+  active: <CheckCircle className="h-3 w-3" />,
+  paused: <PauseCircle className="h-3 w-3" />,
+  closed: <XCircle className="h-3 w-3" />,
+};
+
 export function JobPostingCard({
   job,
   onView,
   onEdit,
   onDelete,
   onChangeStatus,
+  onSendToAnalysis,
 }: JobPostingCardProps) {
+  const canEdit = job.status === 'draft' || job.status === 'paused';
+
   const getAvailableStatusActions = (): { status: JobStatus; label: string }[] => {
     switch (job.status) {
       case 'draft':
@@ -55,6 +81,8 @@ export function JobPostingCard({
     }
   };
 
+  const statusActions = getAvailableStatusActions();
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
@@ -67,7 +95,8 @@ export function JobPostingCard({
               {job.title}
             </h3>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <Badge className={STATUS_COLORS[job.status]}>
+              <Badge className={`${STATUS_COLORS[job.status]} flex items-center gap-1`}>
+                {STATUS_ICONS[job.status]}
                 {STATUS_LABELS[job.status]}
               </Badge>
               {job.work_type && (
@@ -85,20 +114,45 @@ export function JobPostingCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onView}>Ver detalhes</DropdownMenuItem>
-              <DropdownMenuItem onClick={onEdit}>Editar</DropdownMenuItem>
-              {getAvailableStatusActions().map(({ status, label }) => (
-                <DropdownMenuItem
-                  key={status}
-                  onClick={() => onChangeStatus(status)}
-                >
-                  {label}
+              <DropdownMenuItem onClick={onView}>
+                <Eye className="h-4 w-4 mr-2" />
+                Ver detalhes
+              </DropdownMenuItem>
+
+              {canEdit && (
+                <DropdownMenuItem onClick={onEdit}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar
                 </DropdownMenuItem>
-              ))}
+              )}
+
+              {job.status === 'closed' && (job.applications_count || 0) > 0 && onSendToAnalysis && (
+                <DropdownMenuItem onClick={onSendToAnalysis}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Enviar para Análise
+                </DropdownMenuItem>
+              )}
+
+              {statusActions.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  {statusActions.map(({ status, label }) => (
+                    <DropdownMenuItem
+                      key={status}
+                      onClick={() => onChangeStatus(status)}
+                    >
+                      {label}
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
+
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={onDelete}
                 className="text-destructive focus:text-destructive"
               >
+                <Trash2 className="h-4 w-4 mr-2" />
                 Excluir
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -148,6 +202,15 @@ export function JobPostingCard({
             >
               <ExternalLink className="h-3 w-3" />
             </Button>
+          </div>
+        )}
+
+        {job.status === 'closed' && (job.applications_count || 0) > 0 && (
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <Badge variant="outline" className="text-blue-600 border-blue-600 dark:text-blue-400 dark:border-blue-400">
+              <Send className="h-3 w-3 mr-1" />
+              Pronto para análise
+            </Badge>
           </div>
         )}
       </CardContent>
