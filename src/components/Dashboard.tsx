@@ -1,8 +1,15 @@
 import { useState, useEffect } from "react";
-import { Briefcase, Users, ArrowRight, Plus, FileText, Calendar, Clock, Settings, UserPlus } from "lucide-react";
+import { Briefcase, Users, ArrowRight, Plus, FileText, Calendar, Clock, UserPlus, Palette } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 interface DashboardProps {
   user: any;
@@ -174,22 +181,32 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis, onContinueDraft
             {userName}
           </h1>
         </div>
-        <div className="flex flex-wrap gap-2 sm:gap-3">
-          <button
-            onClick={onNewAnalysis}
-            className="btn-primary text-sm sm:text-base py-2.5 sm:py-3"
-          >
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-            Nova Análise
-          </button>
-          <button
-            onClick={onNewJobPosting}
-            className="inline-flex items-center gap-2 px-4 sm:px-6 rounded-xl font-medium transition-all duration-200 bg-secondary text-secondary-foreground hover:bg-secondary/80 text-sm sm:text-base py-2.5 sm:py-3"
-          >
-            <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
-            Nova Vaga
-          </button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105">
+              <Plus className="w-6 h-6 sm:w-7 sm:h-7" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={onNewAnalysis} className="cursor-pointer py-3">
+              <FileText className="w-4 h-4 mr-3 text-primary" />
+              <span>Nova Análise</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onNewJobPosting} className="cursor-pointer py-3">
+              <Briefcase className="w-4 h-4 mr-3 text-blue-600" />
+              <span>Nova Vaga</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onNavigateToForms} className="cursor-pointer py-3">
+              <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
+              <span>Modelos de Formulário</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onNavigateToJobs} className="cursor-pointer py-3">
+              <Palette className="w-4 h-4 mr-3 text-muted-foreground" />
+              <span>Gerenciar Vagas</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Stats Cards */}
@@ -316,16 +333,6 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis, onContinueDraft
         )}
       </div>
 
-      {/* Quick Links */}
-      <div className="flex flex-wrap gap-2 sm:gap-3 mb-8 sm:mb-12">
-        <button
-          onClick={onNavigateToForms}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors text-sm font-medium"
-        >
-          <Settings className="w-4 h-4" />
-          Configurar Formulários
-        </button>
-      </div>
 
       {/* Recent Analyses */}
       <div>
