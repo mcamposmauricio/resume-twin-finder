@@ -216,7 +216,10 @@ export type Database = {
       }
       job_postings: {
         Row: {
+          brand_color: string | null
           closed_at: string | null
+          company_logo_url: string | null
+          company_name: string | null
           created_at: string
           description: string
           expires_at: string | null
@@ -233,7 +236,10 @@ export type Database = {
           work_type: string | null
         }
         Insert: {
+          brand_color?: string | null
           closed_at?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
           created_at?: string
           description: string
           expires_at?: string | null
@@ -250,7 +256,10 @@ export type Database = {
           work_type?: string | null
         }
         Update: {
+          brand_color?: string | null
           closed_at?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
           created_at?: string
           description?: string
           expires_at?: string | null

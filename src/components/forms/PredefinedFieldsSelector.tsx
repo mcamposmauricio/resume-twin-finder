@@ -12,7 +12,7 @@ export function PredefinedFieldsSelector({
   onToggle,
 }: PredefinedFieldsSelectorProps) {
   const isSelected = (label: string) =>
-    selectedFields.some(f => f.label === label && f.predefined);
+    selectedFields.some(f => f.label === label);
 
   return (
     <div className="space-y-4">

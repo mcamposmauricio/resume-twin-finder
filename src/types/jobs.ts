@@ -53,6 +53,9 @@ export interface JobPosting {
   created_at: string;
   updated_at: string;
   applications_count?: number;
+  company_name?: string;
+  company_logo_url?: string;
+  brand_color?: string;
 }
 
 export interface JobApplication {

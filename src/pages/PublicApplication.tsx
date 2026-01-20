@@ -6,7 +6,6 @@ import { JobPosting, FormField, WorkType, JobStatus } from '@/types/jobs';
 import { WORK_TYPE_LABELS } from '@/types/jobs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { DynamicFormRenderer } from '@/components/forms/DynamicFormRenderer';
@@ -46,6 +45,9 @@ export default function PublicApplication() {
             ...data,
             work_type: data.work_type as WorkType | undefined,
             status: data.status as JobStatus,
+            company_name: data.company_name || undefined,
+            company_logo_url: data.company_logo_url || undefined,
+            brand_color: data.brand_color || '#3B82F6',
             form_template: data.form_template
               ? {
                   ...data.form_template,
@@ -196,13 +198,35 @@ export default function PublicApplication() {
   }
 
   const fields = job.form_template?.fields || [];
+  const brandColor = job.brand_color || '#3B82F6';
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-card">
+      <header 
+        className="border-b bg-card"
+        style={{ borderBottomColor: brandColor }}
+      >
         <div className="container mx-auto px-4 py-4">
-          <img src={logoBlue} alt="Logo" className="h-8" />
+          {job.company_logo_url ? (
+            <img 
+              src={job.company_logo_url} 
+              alt={job.company_name || 'Logo'} 
+              className="h-10 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : job.company_name ? (
+            <span 
+              className="text-xl font-bold"
+              style={{ color: brandColor }}
+            >
+              {job.company_name}
+            </span>
+          ) : (
+            <img src={logoBlue} alt="Logo" className="h-8" />
+          )}
         </div>
       </header>
 
@@ -211,6 +235,14 @@ export default function PublicApplication() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="text-2xl">{job.title}</CardTitle>
+            {job.company_name && (
+              <p 
+                className="text-sm font-medium"
+                style={{ color: brandColor }}
+              >
+                {job.company_name}
+              </p>
+            )}
             <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap mt-2">
               {job.location && (
                 <div className="flex items-center gap-1">
@@ -268,7 +300,12 @@ export default function PublicApplication() {
                 <Label htmlFor="resume">
                   Currículo <span className="text-destructive">*</span>
                 </Label>
-                <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors">
+                <div 
+                  className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors"
+                  style={{ 
+                    borderColor: resumeFile ? brandColor : undefined,
+                  }}
+                >
                   <input
                     type="file"
                     id="resume"
@@ -295,7 +332,12 @@ export default function PublicApplication() {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={submitting}>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={submitting}
+                style={{ backgroundColor: brandColor }}
+              >
                 {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Enviar Candidatura
               </Button>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Briefcase, Filter } from 'lucide-react';
+import { Plus, Briefcase, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { JobStatus } from '@/types/jobs';
@@ -67,8 +67,11 @@ export default function JobPostings() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <div className="flex items-center justify-between mb-8">
-          <div>
+        <div className="flex items-center gap-4 mb-8">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold">Vagas</h1>
             <p className="text-muted-foreground">
               Gerencie suas vagas e candidaturas
@@ -99,13 +102,9 @@ export default function JobPostings() {
                   ? 'Nenhuma vaga criada'
                   : `Nenhuma vaga ${statusFilter === 'active' ? 'ativa' : statusFilter === 'draft' ? 'em rascunho' : statusFilter === 'paused' ? 'pausada' : 'encerrada'}`}
               </h3>
-              <p className="text-muted-foreground text-center mb-4">
-                Crie sua primeira vaga para começar a receber candidaturas.
+              <p className="text-muted-foreground text-center">
+                Crie sua primeira vaga usando o botão acima.
               </p>
-              <Button onClick={() => navigate('/vagas/nova')}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Vaga
-              </Button>
             </CardContent>
           </Card>
         ) : (
