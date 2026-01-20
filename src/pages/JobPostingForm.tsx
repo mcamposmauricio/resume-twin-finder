@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Send } from 'lucide-react';
+import { ArrowLeft, Save, Send, Sparkles, Copy, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { useFormTemplates } from '@/hooks/useFormTemplates';
-import { WorkType, JobStatus } from '@/types/jobs';
+import { WorkType, JobStatus, JobPosting } from '@/types/jobs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,7 @@ export default function JobPostingForm() {
   const { toast } = useToast();
   const [userId, setUserId] = useState<string>();
   const [saving, setSaving] = useState(false);
+  const [currentJob, setCurrentJob] = useState<JobPosting | null>(null);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -33,8 +34,11 @@ export default function JobPostingForm() {
   const [salaryRange, setSalaryRange] = useState('');
   const [workType, setWorkType] = useState<WorkType | ''>('');
   const [formTemplateId, setFormTemplateId] = useState<string>('');
+  const [companyName, setCompanyName] = useState('');
+  const [companyLogoUrl, setCompanyLogoUrl] = useState('');
+  const [brandColor, setBrandColor] = useState('#3B82F6');
 
-  const { jobPostings, createJobPosting, updateJobPosting, getJobById } = useJobPostings(userId);
+  const { createJobPosting, updateJobPosting, getJobById } = useJobPostings(userId);
   const { templates } = useFormTemplates(userId);
 
   useEffect(() => {
@@ -51,6 +55,7 @@ export default function JobPostingForm() {
     if (id && userId) {
       getJobById(id).then((job) => {
         if (job) {
+          setCurrentJob(job);
           setTitle(job.title);
           setDescription(job.description);
           setRequirements(job.requirements || '');
@@ -58,10 +63,33 @@ export default function JobPostingForm() {
           setSalaryRange(job.salary_range || '');
           setWorkType(job.work_type || '');
           setFormTemplateId(job.form_template_id || '');
+          setCompanyName(job.company_name || '');
+          setCompanyLogoUrl(job.company_logo_url || '');
+          setBrandColor(job.brand_color || '#3B82F6');
         }
       });
     }
   }, [id, userId]);
+
+  const fillTestData = () => {
+    setTitle('Desenvolvedor Full Stack Senior');
+    setDescription(`Estamos buscando um Desenvolvedor Full Stack Senior para se juntar à nossa equipe de tecnologia.
+
+Responsabilidades:
+• Desenvolver e manter aplicações web escaláveis
+• Colaborar com o time de produto e design
+• Participar de code reviews e mentoria de desenvolvedores júnior
+• Propor soluções técnicas inovadoras`);
+    setRequirements(`• 5+ anos de experiência com desenvolvimento web
+• Conhecimento sólido em React, Node.js e TypeScript
+• Experiência com bancos de dados SQL e NoSQL
+• Familiaridade com metodologias ágeis
+• Boa comunicação e trabalho em equipe
+• Inglês intermediário/avançado`);
+    setLocation('São Paulo, SP');
+    setSalaryRange('R$ 12.000 - R$ 18.000');
+    setWorkType('remote');
+  };
 
   const handleSave = async (status: JobStatus) => {
     if (!title.trim() || !description.trim()) {
@@ -92,6 +120,9 @@ export default function JobPostingForm() {
         salary_range: salaryRange || undefined,
         work_type: workType || undefined,
         form_template_id: formTemplateId || undefined,
+        company_name: companyName || undefined,
+        company_logo_url: companyLogoUrl || undefined,
+        brand_color: brandColor || undefined,
         status,
       };
 
@@ -103,6 +134,17 @@ export default function JobPostingForm() {
       navigate('/vagas');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const copyPublicLink = () => {
+    if (currentJob?.public_slug) {
+      const link = `${window.location.origin}/apply/${currentJob.public_slug}`;
+      navigator.clipboard.writeText(link);
+      toast({
+        title: 'Link copiado!',
+        description: 'O link público foi copiado para a área de transferência.',
+      });
     }
   };
 
@@ -118,9 +160,38 @@ export default function JobPostingForm() {
               {id ? 'Editar Vaga' : 'Nova Vaga'}
             </h1>
           </div>
+          {!id && (
+            <Button variant="outline" size="sm" onClick={fillTestData}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              Preencher Exemplo
+            </Button>
+          )}
         </div>
 
         <div className="space-y-6">
+          {/* Public Link Card - only show for active jobs */}
+          {currentJob?.status === 'active' && currentJob?.public_slug && (
+            <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 text-green-800 dark:text-green-200 mb-1">
+                      <Link className="h-4 w-4" />
+                      <span className="font-medium">Vaga Publicada!</span>
+                    </div>
+                    <code className="text-sm bg-white dark:bg-green-900 px-2 py-1 rounded block truncate">
+                      {window.location.origin}/apply/{currentJob.public_slug}
+                    </code>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={copyPublicLink}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copiar Link
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Informações da Vaga</CardTitle>
@@ -231,6 +302,59 @@ export default function JobPostingForm() {
                     Crie um novo
                   </Button>
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Personalização da Página</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Personalize a página pública de candidatura com a identidade da sua empresa.
+              </p>
+              
+              <div className="space-y-2">
+                <Label htmlFor="companyName">Nome da empresa</Label>
+                <Input
+                  id="companyName"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="Ex: Minha Empresa LTDA"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="companyLogoUrl">URL do logo</Label>
+                <Input
+                  id="companyLogoUrl"
+                  value={companyLogoUrl}
+                  onChange={(e) => setCompanyLogoUrl(e.target.value)}
+                  placeholder="https://exemplo.com/logo.png"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Cole a URL de uma imagem do logo da empresa (recomendado: PNG ou SVG transparente)
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="brandColor">Cor principal</Label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    id="brandColor"
+                    value={brandColor}
+                    onChange={(e) => setBrandColor(e.target.value)}
+                    className="w-12 h-10 rounded border cursor-pointer"
+                  />
+                  <Input
+                    value={brandColor}
+                    onChange={(e) => setBrandColor(e.target.value)}
+                    placeholder="#3B82F6"
+                    className="flex-1"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

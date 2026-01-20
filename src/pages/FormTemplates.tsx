@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, Copy, Trash2, Pencil } from 'lucide-react';
+import { Plus, FileText, Copy, Trash2, Pencil, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFormTemplates } from '@/hooks/useFormTemplates';
 import { Button } from '@/components/ui/button';
@@ -53,8 +53,11 @@ export default function FormTemplates() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-center justify-between mb-8">
-          <div>
+        <div className="flex items-center gap-4 mb-8">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold">Modelos de Formulário</h1>
             <p className="text-muted-foreground">
               Gerencie os formulários de candidatura para suas vagas
@@ -71,13 +74,9 @@ export default function FormTemplates() {
             <CardContent className="flex flex-col items-center justify-center py-12">
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="font-semibold mb-2">Nenhum modelo criado</h3>
-              <p className="text-muted-foreground text-center mb-4">
-                Crie seu primeiro modelo de formulário para usar em suas vagas.
+              <p className="text-muted-foreground text-center">
+                Crie seu primeiro modelo usando o botão acima.
               </p>
-              <Button onClick={() => navigate('/formularios/novo')}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Modelo
-              </Button>
             </CardContent>
           </Card>
         ) : (
