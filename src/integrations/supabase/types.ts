@@ -95,6 +95,39 @@ export type Database = {
         }
         Relationships: []
       }
+      form_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          fields: Json
+          id: string
+          is_default: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_default?: boolean | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invites: {
         Row: {
           created_at: string
@@ -124,6 +157,122 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      job_applications: {
+        Row: {
+          analysis_id: string | null
+          applicant_email: string | null
+          applicant_name: string | null
+          created_at: string
+          form_data: Json
+          id: string
+          job_posting_id: string
+          resume_filename: string | null
+          resume_url: string | null
+          status: string
+        }
+        Insert: {
+          analysis_id?: string | null
+          applicant_email?: string | null
+          applicant_name?: string | null
+          created_at?: string
+          form_data?: Json
+          id?: string
+          job_posting_id: string
+          resume_filename?: string | null
+          resume_url?: string | null
+          status?: string
+        }
+        Update: {
+          analysis_id?: string | null
+          applicant_email?: string | null
+          applicant_name?: string | null
+          created_at?: string
+          form_data?: Json
+          id?: string
+          job_posting_id?: string
+          resume_filename?: string | null
+          resume_url?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_postings: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          description: string
+          expires_at: string | null
+          form_template_id: string | null
+          id: string
+          location: string | null
+          public_slug: string
+          requirements: string | null
+          salary_range: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          work_type: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          description: string
+          expires_at?: string | null
+          form_template_id?: string | null
+          id?: string
+          location?: string | null
+          public_slug: string
+          requirements?: string | null
+          salary_range?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          work_type?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          description?: string
+          expires_at?: string | null
+          form_template_id?: string | null
+          id?: string
+          location?: string | null
+          public_slug?: string
+          requirements?: string | null
+          salary_range?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          work_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_postings_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
           },
         ]
       }
