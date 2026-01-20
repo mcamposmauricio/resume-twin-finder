@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Save, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFormTemplates } from '@/hooks/useFormTemplates';
 import { FormField, PREDEFINED_FIELDS } from '@/types/jobs';
@@ -28,6 +28,7 @@ export default function FormTemplateEditor() {
   const [editingField, setEditingField] = useState<FormField | null>(null);
   const [showFieldDialog, setShowFieldDialog] = useState(false);
   const [previewValues, setPreviewValues] = useState<Record<string, any>>({});
+  const initialized = useRef(false);
 
   const { templates, createTemplate, updateTemplate, getDefaultFields } = useFormTemplates(userId);
 
@@ -42,18 +43,21 @@ export default function FormTemplateEditor() {
   }, [navigate]);
 
   useEffect(() => {
+    if (!userId) return;
+
     if (id && templates.length > 0) {
       const template = templates.find((t) => t.id === id);
       if (template) {
         setName(template.name);
         setDescription(template.description || '');
         setFields(template.fields);
+        initialized.current = true;
       }
-    } else if (!id) {
-      // New template: add default fields
+    } else if (!id && !initialized.current) {
       setFields(getDefaultFields());
+      initialized.current = true;
     }
-  }, [id, templates, getDefaultFields]);
+  }, [id, templates, userId, getDefaultFields]);
 
   const handleTogglePredefined = (
     field: Omit<FormField, 'id' | 'order'>,
@@ -94,6 +98,20 @@ export default function FormTemplateEditor() {
     setFields(fields.filter((f) => f.id !== fieldId));
   };
 
+  const handleMoveField = (fieldId: string, direction: 'up' | 'down') => {
+    const sortedFields = [...fields].sort((a, b) => a.order - b.order);
+    const index = sortedFields.findIndex((f) => f.id === fieldId);
+    if (index < 0) return;
+
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= sortedFields.length) return;
+
+    const newFields = [...sortedFields];
+    [newFields[index], newFields[newIndex]] = [newFields[newIndex], newFields[index]];
+
+    setFields(newFields.map((f, i) => ({ ...f, order: i })));
+  };
+
   const handleSave = async () => {
     if (!name.trim()) {
       toast({
@@ -106,7 +124,6 @@ export default function FormTemplateEditor() {
 
     setSaving(true);
     try {
-      // Reorder fields
       const orderedFields = fields.map((f, i) => ({ ...f, order: i }));
 
       if (id) {
@@ -120,7 +137,7 @@ export default function FormTemplateEditor() {
     }
   };
 
-  const customFields = fields.filter((f) => !f.predefined);
+  const sortedFields = [...fields].sort((a, b) => a.order - b.order);
 
   return (
     <div className="min-h-screen bg-background">
@@ -184,7 +201,7 @@ export default function FormTemplateEditor() {
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium">Campos Personalizados</h3>
+                    <h3 className="text-sm font-medium">Adicionar Campo Personalizado</h3>
                     <Button
                       variant="outline"
                       size="sm"
@@ -194,26 +211,58 @@ export default function FormTemplateEditor() {
                       }}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Adicionar Campo
+                      Novo Campo
                     </Button>
                   </div>
+                </div>
 
-                  {customFields.length === 0 ? (
+                <Separator />
+
+                {/* Unified field list with reordering */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Ordem dos Campos</h3>
+                  {sortedFields.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      Nenhum campo personalizado adicionado.
+                      Nenhum campo adicionado. Ative campos acima ou adicione um personalizado.
                     </p>
                   ) : (
                     <div className="space-y-2">
-                      {customFields.map((field) => (
-                        <FormFieldEditor
+                      {sortedFields.map((field, index) => (
+                        <div
                           key={field.id}
-                          field={field}
-                          onEdit={() => {
-                            setEditingField(field);
-                            setShowFieldDialog(true);
-                          }}
-                          onDelete={() => handleDeleteField(field.id)}
-                        />
+                          className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border"
+                        >
+                          <div className="flex flex-col gap-0.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              disabled={index === 0}
+                              onClick={() => handleMoveField(field.id, 'up')}
+                            >
+                              <ChevronUp className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              disabled={index === sortedFields.length - 1}
+                              onClick={() => handleMoveField(field.id, 'down')}
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <FormFieldEditor
+                            field={field}
+                            onEdit={() => {
+                              if (!field.predefined) {
+                                setEditingField(field);
+                                setShowFieldDialog(true);
+                              }
+                            }}
+                            onDelete={() => handleDeleteField(field.id)}
+                          />
+                        </div>
                       ))}
                     </div>
                   )}

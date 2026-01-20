@@ -2,7 +2,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { FormField, PREDEFINED_FIELDS } from '@/types/jobs';
-import { User, Mail, Phone, FileText, DollarSign, Briefcase, Link, MapPin } from 'lucide-react';
+import { User, Mail, Phone, FileText, DollarSign, Link, MapPin, Clock, Hash, MessageSquare } from 'lucide-react';
 
 interface PredefinedFieldsSelectorProps {
   selectedFields: FormField[];
@@ -13,11 +13,12 @@ const FIELD_ICONS: Record<string, React.ReactNode> = {
   'Nome completo': <User className="h-4 w-4" />,
   'Email': <Mail className="h-4 w-4" />,
   'Telefone': <Phone className="h-4 w-4" />,
-  'Currículo': <FileText className="h-4 w-4" />,
-  'Pretensão salarial': <DollarSign className="h-4 w-4" />,
-  'Experiência': <Briefcase className="h-4 w-4" />,
   'LinkedIn': <Link className="h-4 w-4" />,
-  'Cidade': <MapPin className="h-4 w-4" />,
+  'Pretensão salarial': <DollarSign className="h-4 w-4" />,
+  'Disponibilidade para início': <Clock className="h-4 w-4" />,
+  'Anos de experiência': <Hash className="h-4 w-4" />,
+  'Cidade/Estado': <MapPin className="h-4 w-4" />,
+  'Por que quer trabalhar conosco?': <MessageSquare className="h-4 w-4" />,
 };
 
 export function PredefinedFieldsSelector({
@@ -70,6 +71,7 @@ export function PredefinedFieldsSelector({
                     {field.type === 'textarea' && 'Área de texto expandida'}
                     {field.type === 'currency' && 'Valor em moeda'}
                     {field.type === 'select' && 'Lista de opções'}
+                    {field.type === 'number' && 'Campo numérico'}
                   </p>
                 </div>
               </div>

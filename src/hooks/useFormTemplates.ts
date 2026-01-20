@@ -158,13 +158,13 @@ export function useFormTemplates(userId?: string) {
     );
   };
 
-  const getDefaultFields = (): FormField[] => {
+  const getDefaultFields = useCallback((): FormField[] => {
     return PREDEFINED_FIELDS.slice(0, 3).map((field, index) => ({
       ...field,
       id: crypto.randomUUID(),
       order: index,
     }));
-  };
+  }, []);
 
   return {
     templates,
