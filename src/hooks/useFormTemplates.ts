@@ -63,7 +63,7 @@ export function useFormTemplates(userId?: string) {
           user_id: userId,
           name,
           description,
-          fields: fields as unknown as Record<string, unknown>[],
+          fields: JSON.parse(JSON.stringify(fields)),
           is_default: isDefault,
         }])
         .select()
@@ -98,7 +98,7 @@ export function useFormTemplates(userId?: string) {
       const updateData: Record<string, unknown> = {};
       if (updates.name !== undefined) updateData.name = updates.name;
       if (updates.description !== undefined) updateData.description = updates.description;
-      if (updates.fields !== undefined) updateData.fields = updates.fields as unknown as Record<string, unknown>[];
+      if (updates.fields !== undefined) updateData.fields = JSON.parse(JSON.stringify(updates.fields));
       if (updates.is_default !== undefined) updateData.is_default = updates.is_default;
 
       const { error } = await supabase

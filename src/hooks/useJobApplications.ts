@@ -64,12 +64,21 @@ export function useJobApplications(jobPostingId?: string) {
         .single();
 
       if (error) throw error;
-      return {
-        ...newApp,
-        form_data: (newApp.form_data as Record<string, any>) || {},
+      const result: JobApplication = {
+        id: newApp.id,
+        job_posting_id: newApp.job_posting_id,
+        form_data: typeof newApp.form_data === 'object' && newApp.form_data !== null && !Array.isArray(newApp.form_data)
+          ? (newApp.form_data as Record<string, any>)
+          : {},
+        resume_url: newApp.resume_url || undefined,
+        resume_filename: newApp.resume_filename || undefined,
+        applicant_email: newApp.applicant_email || undefined,
+        applicant_name: newApp.applicant_name || undefined,
         status: newApp.status as ApplicationStatus,
+        analysis_id: newApp.analysis_id || undefined,
+        created_at: newApp.created_at,
       };
-      return newApp;
+      return result;
     } catch (error: any) {
       console.error('Error creating application:', error);
       toast({
