@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ export default function Index() {
   const [analysisStep, setAnalysisStep] = useState("");
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { availableResumes, maxPerAnalysis, loading: balanceLoading, refetch: refetchBalance } = useResumeBalance(user?.id);
   
   useEffect(() => {
@@ -55,6 +56,19 @@ export default function Index() {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Store pending analysis job ID for processing after functions are defined
+  const [pendingAnalysisJobId, setPendingAnalysisJobId] = useState<string | null>(null);
+
+  // Handle URL-based analysis job polling (from JobPostingDetails redirect)
+  useEffect(() => {
+    const analysisJobId = searchParams.get("analysisJobId");
+    if (analysisJobId && user) {
+      // Clear the URL parameter
+      setSearchParams({});
+      setPendingAnalysisJobId(analysisJobId);
+    }
+  }, [searchParams, user]);
 
   // Cleanup polling on unmount
   useEffect(() => {
@@ -87,6 +101,190 @@ export default function Index() {
     }
 
     return defaultMessage || "Algo inesperado ocorreu durante a análise. Tente novamente ou revise as informações enviadas.";
+  };
+
+  // Function to link job applications to analysis after completion
+  const linkApplicationsToAnalysis = async (analysisId: string) => {
+    const pendingAppIds = sessionStorage.getItem('pendingAnalysisApplicationIds');
+    const pendingJobPostingId = sessionStorage.getItem('pendingAnalysisJobPostingId');
+    
+    if (pendingAppIds && pendingJobPostingId) {
+      try {
+        const applicationIds = JSON.parse(pendingAppIds) as string[];
+        
+        // Update applications with analysis_id
+        const { error } = await supabase
+          .from('job_applications')
+          .update({ analysis_id: analysisId, status: 'analyzed' })
+          .in('id', applicationIds);
+
+        if (error) {
+          console.error('Error linking applications to analysis:', error);
+        } else {
+          console.log('Successfully linked applications to analysis:', applicationIds.length);
+        }
+      } catch (e) {
+        console.error('Error parsing pending application IDs:', e);
+      } finally {
+        // Clean up sessionStorage
+        sessionStorage.removeItem('pendingAnalysisApplicationIds');
+        sessionStorage.removeItem('pendingAnalysisJobPostingId');
+      }
+    }
+  };
+
+  // Polling function for job-based analysis (used by both direct and URL-redirect flows)
+  const startPollingForJob = (jobId: string, files?: UploadedFile[], jobDescription?: string, jobTitle?: string) => {
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const { data: statusData, error: statusError } = await supabase.functions.invoke(
+          "check-analysis-status",
+          { body: { job_id: jobId } }
+        );
+
+        if (statusError) {
+          console.error("Status check error:", statusError);
+          return;
+        }
+
+        console.log("Status update:", statusData);
+        
+        setAnalysisProgress(statusData.progress || 0);
+        setAnalysisStep(statusData.current_step || "Processando...");
+
+        if (statusData.status === "completed") {
+          // Stop polling
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          
+          // Process and save results
+          await processAnalysisResultFromJob(statusData.result, jobId);
+        } else if (statusData.status === "error") {
+          // Stop polling
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          
+          // Clean up pending data
+          sessionStorage.removeItem('pendingAnalysisApplicationIds');
+          sessionStorage.removeItem('pendingAnalysisJobPostingId');
+          
+          setErrorMessage(getFriendlyErrorMessage(undefined, statusData.error_message));
+          setStep("error");
+        }
+      } catch (pollError) {
+        console.error("Polling error:", pollError);
+      }
+    }, 3000); // Poll every 3 seconds
+  };
+
+  // Effect to start polling when pendingAnalysisJobId is set (after redirect from JobPostingDetails)
+  useEffect(() => {
+    if (pendingAnalysisJobId) {
+      setStep("loading");
+      setAnalysisProgress(0);
+      setAnalysisStep("Continuando análise...");
+      startPollingForJob(pendingAnalysisJobId);
+      setPendingAnalysisJobId(null);
+    }
+  }, [pendingAnalysisJobId]);
+
+  // Process results from job-based analysis (from URL redirect)
+  const processAnalysisResultFromJob = async (data: any, jobId: string) => {
+    console.log("Processing analysis result from job:", data);
+
+    let candidatesArray: any[] = [];
+    
+    if (data.candidates_analysis && Array.isArray(data.candidates_analysis)) {
+      candidatesArray = data.candidates_analysis;
+    } else if (data.candidates && Array.isArray(data.candidates)) {
+      candidatesArray = data.candidates;
+    } else {
+      const numericKeys = Object.keys(data).filter(key => !isNaN(Number(key))).sort((a, b) => Number(a) - Number(b));
+      if (numericKeys.length > 0) {
+        candidatesArray = numericKeys.map(key => data[key]);
+      }
+    }
+
+    if (candidatesArray.length === 0) {
+      console.error("No candidates found in response:", data);
+      setErrorMessage("Não foi possível processar os currículos enviados.");
+      setStep("error");
+      return;
+    }
+
+    const normalizedData = {
+      candidates: candidatesArray.map((c: any, idx: number) => ({
+        candidate_name: c.candidate_name || c.name || `Candidato ${idx + 1}`,
+        file_name: c.file_name || `Arquivo ${idx + 1}`,
+        match_score: c.match_score ?? 0,
+        technical_fit: c.technical_fit ?? 0,
+        potential_fit: c.potential_fit ?? 0,
+        summary: c.summary || "",
+        years_experience: c.years_experience ?? 0,
+        soft_skills: Array.isArray(c.soft_skills) 
+          ? c.soft_skills.map((s: any) => {
+              if (s.name && typeof s.score === 'number') return s;
+              const key = Object.keys(s)[0];
+              return { name: key, score: s[key] };
+            })
+          : [],
+        cultural_fit: c.cultural_fit || {
+          results_orientation: 50,
+          process_orientation: 50,
+          people_orientation: 50,
+          innovation_orientation: 50,
+        },
+        red_flags: Array.isArray(c.red_flags) ? c.red_flags : [],
+        gap_analysis: c.gap_analysis || {
+          strong_match: [],
+          moderate_match: [],
+          weak_or_missing: [],
+        },
+        inferred_info: c.inferred_info || {
+          seniority_level: "N/A",
+          estimated_salary_range: "N/A",
+          tools_and_technologies: [],
+          industry_experience: [],
+          education_level: "N/A",
+          languages: [],
+          certifications: [],
+          leadership_experience: "N/A",
+          remote_work_compatibility: "N/A",
+          availability: "N/A",
+        },
+      })),
+      recommendation: data.recommendation || "Análise concluída. Revise os candidatos acima.",
+      comparison_summary: data.comparison_summary || "Todos os candidatos foram analisados com base na descrição da vaga.",
+    };
+
+    setResults(normalizedData);
+    setDurationSeconds(data.duration_seconds);
+    setStep("results");
+
+    // Save analysis to database
+    if (user) {
+      const { data: savedAnalysis, error: saveError } = await supabase.from("analyses").insert({
+        user_id: user.id,
+        job_title: null,
+        job_description: "Análise de candidatos de vaga",
+        candidates: candidatesArray.map((c: any) => ({ name: c.candidate_name || c.name || "Candidato" })),
+        results: data,
+        tokens_used: data.tokens_used || 0,
+        status: "completed",
+      }).select().single();
+
+      if (saveError) {
+        console.error("Error saving analysis:", saveError);
+      } else if (savedAnalysis) {
+        // Link applications to the saved analysis
+        await linkApplicationsToAnalysis(savedAnalysis.id);
+        refetchBalance();
+      }
+    }
   };
 
   const processAnalysisResult = async (data: any, files: UploadedFile[], jobDescription: string, jobTitle?: string) => {
