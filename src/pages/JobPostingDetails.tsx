@@ -99,14 +99,99 @@ export default function JobPostingDetails() {
     setJob({ ...job, status: newStatus });
   };
 
-  const handleSendToAnalysis = async (applicationIds: string[]) => {
-    // This will be implemented to send resumes to the analyze-resumes function
-    toast({
-      title: 'Análise iniciada',
-      description: `${applicationIds.length} currículos enviados para análise.`,
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
     });
-    refetchApplications();
-    setShowAnalysisDialog(false);
+  };
+
+  const handleSendToAnalysis = async (applicationIds: string[]) => {
+    try {
+      // 1. Filter selected applications
+      const selectedApps = applications.filter((a) => applicationIds.includes(a.id));
+
+      // 2. Download resumes from storage and convert to base64
+      const filesPromises = selectedApps.map(async (app) => {
+        if (!app.resume_url) return null;
+
+        const { data, error } = await supabase.storage
+          .from('resumes')
+          .download(app.resume_url);
+
+        if (error || !data) {
+          console.error('Error downloading resume:', error);
+          return null;
+        }
+
+        const base64 = await blobToBase64(data);
+        return {
+          name: app.resume_filename || 'resume.pdf',
+          content: base64,
+          type: data.type || 'application/pdf',
+        };
+      });
+
+      const files = await Promise.all(filesPromises);
+      const validFiles = files.filter(Boolean);
+
+      if (validFiles.length === 0) {
+        throw new Error('Não foi possível carregar os currículos selecionados.');
+      }
+
+      // 3. Build complete job description
+      const jobDescription = `${job?.title || ''}\n\n${job?.description || ''}\n\nRequisitos:\n${job?.requirements || 'Não especificado'}`;
+
+      // 4. Call analyze-resumes edge function
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke(
+        'analyze-resumes',
+        {
+          body: {
+            files: validFiles,
+            jobDescription,
+            user_id: userId,
+          },
+        }
+      );
+
+      if (analysisError) throw analysisError;
+
+      if (analysisData.error) {
+        throw new Error(analysisData.error);
+      }
+
+      // 5. If returned job_id, redirect to Index with polling
+      if (analysisData.job_id) {
+        toast({
+          title: 'Análise iniciada',
+          description: 'Você será redirecionado para acompanhar o progresso.',
+        });
+        
+        // Store application IDs in sessionStorage to link after completion
+        sessionStorage.setItem('pendingAnalysisApplicationIds', JSON.stringify(applicationIds));
+        sessionStorage.setItem('pendingAnalysisJobPostingId', job?.id || '');
+        
+        // Redirect to Index with job_id for polling
+        navigate(`/?analysisJobId=${analysisData.job_id}`);
+      } else {
+        // Direct results (fallback)
+        toast({
+          title: 'Análise concluída',
+          description: `${applicationIds.length} currículos analisados com sucesso.`,
+        });
+        refetchApplications();
+        setShowAnalysisDialog(false);
+      }
+    } catch (error: any) {
+      console.error('Error sending to analysis:', error);
+      toast({
+        title: 'Erro ao enviar para análise',
+        description: error.message || 'Tente novamente.',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (loading) {
