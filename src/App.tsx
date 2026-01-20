@@ -7,6 +7,12 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import LoginHub from "./pages/LoginHub";
 import NotFound from "./pages/NotFound";
+import FormTemplates from "./pages/FormTemplates";
+import FormTemplateEditor from "./pages/FormTemplateEditor";
+import JobPostings from "./pages/JobPostings";
+import JobPostingForm from "./pages/JobPostingForm";
+import JobPostingDetails from "./pages/JobPostingDetails";
+import PublicApplication from "./pages/PublicApplication";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +26,21 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/LoginHub" element={<LoginHub />} />
+          
+          {/* Form Templates */}
+          <Route path="/formularios" element={<FormTemplates />} />
+          <Route path="/formularios/novo" element={<FormTemplateEditor />} />
+          <Route path="/formularios/:id" element={<FormTemplateEditor />} />
+          
+          {/* Job Postings */}
+          <Route path="/vagas" element={<JobPostings />} />
+          <Route path="/vagas/nova" element={<JobPostingForm />} />
+          <Route path="/vagas/:id" element={<JobPostingDetails />} />
+          <Route path="/vagas/:id/editar" element={<JobPostingForm />} />
+          
+          {/* Public Application */}
+          <Route path="/apply/:slug" element={<PublicApplication />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

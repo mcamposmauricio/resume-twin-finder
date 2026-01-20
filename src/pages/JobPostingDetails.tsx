@@ -1,0 +1,313 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import {
+  ArrowLeft,
+  Copy,
+  ExternalLink,
+  Pause,
+  Play,
+  XCircle,
+  Send,
+  Pencil,
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useJobPostings } from '@/hooks/useJobPostings';
+import { useJobApplications } from '@/hooks/useJobApplications';
+import { useResumeBalance } from '@/hooks/useResumeBalance';
+import { JobPosting, JobApplication, STATUS_LABELS, WORK_TYPE_LABELS } from '@/types/jobs';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { ApplicationList } from '@/components/jobs/ApplicationList';
+import { CloseJobDialog } from '@/components/jobs/CloseJobDialog';
+import { SendToAnalysisDialog } from '@/components/jobs/SendToAnalysisDialog';
+import { ApplicationDetailsDialog } from '@/components/jobs/ApplicationDetailsDialog';
+import { useToast } from '@/hooks/use-toast';
+
+const STATUS_COLORS: Record<string, string> = {
+  draft: 'bg-muted text-muted-foreground',
+  active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  paused: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  closed: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+};
+
+export default function JobPostingDetails() {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const [userId, setUserId] = useState<string>();
+  const [job, setJob] = useState<JobPosting | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
+  const [viewingApplication, setViewingApplication] = useState<JobApplication | null>(null);
+
+  const { changeStatus, getJobById } = useJobPostings(userId);
+  const { applications, getResumeUrl, refetch: refetchApplications } = useJobApplications(id);
+  const resumeBalance = useResumeBalance(userId);
+  const balance = resumeBalance.availableResumes;
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate('/auth');
+      } else {
+        setUserId(session.user.id);
+      }
+    });
+  }, [navigate]);
+
+  useEffect(() => {
+    if (id && userId) {
+      setLoading(true);
+      getJobById(id)
+        .then((data) => setJob(data))
+        .finally(() => setLoading(false));
+    }
+  }, [id, userId]);
+
+  const handleViewResume = async (app: JobApplication) => {
+    if (!app.resume_url) return;
+    const url = await getResumeUrl(app.resume_url);
+    if (url) {
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!job) return;
+    const url = `${window.location.origin}/apply/${job.public_slug}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: 'Link copiado!' });
+  };
+
+  const handleCloseJob = async () => {
+    if (!job) return;
+    await changeStatus(job.id, 'closed');
+    setJob({ ...job, status: 'closed', closed_at: new Date().toISOString() });
+    setShowCloseDialog(false);
+  };
+
+  const handlePauseResume = async () => {
+    if (!job) return;
+    const newStatus = job.status === 'paused' ? 'active' : 'paused';
+    await changeStatus(job.id, newStatus);
+    setJob({ ...job, status: newStatus });
+  };
+
+  const handleSendToAnalysis = async (applicationIds: string[]) => {
+    // This will be implemented to send resumes to the analyze-resumes function
+    toast({
+      title: 'Análise iniciada',
+      description: `${applicationIds.length} currículos enviados para análise.`,
+    });
+    refetchApplications();
+    setShowAnalysisDialog(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!job) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Vaga não encontrada</h2>
+          <Button onClick={() => navigate('/vagas')}>Voltar para Vagas</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Header */}
+        <div className="flex items-start gap-4 mb-8">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/vagas')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl font-bold">{job.title}</h1>
+              <Badge className={STATUS_COLORS[job.status]}>
+                {STATUS_LABELS[job.status]}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+              {job.location && <span>{job.location}</span>}
+              {job.work_type && <span>{WORK_TYPE_LABELS[job.work_type]}</span>}
+              <span>
+                Criada em{' '}
+                {format(new Date(job.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <Card className="mb-6">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              {job.status === 'active' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Link público:</span>
+                  <code className="text-sm bg-muted px-2 py-1 rounded">
+                    /apply/{job.public_slug}
+                  </code>
+                  <Button variant="ghost" size="icon" onClick={handleCopyLink}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => window.open(`/apply/${job.public_slug}`, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 ml-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/vagas/${job.id}/editar`)}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+
+                {(job.status === 'active' || job.status === 'paused') && (
+                  <>
+                    <Button variant="outline" onClick={handlePauseResume}>
+                      {job.status === 'paused' ? (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Reativar
+                        </>
+                      ) : (
+                        <>
+                          <Pause className="h-4 w-4 mr-2" />
+                          Pausar
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowCloseDialog(true)}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Encerrar
+                    </Button>
+                  </>
+                )}
+
+                {job.status === 'closed' && applications.length > 0 && (
+                  <Button onClick={() => setShowAnalysisDialog(true)}>
+                    <Send className="h-4 w-4 mr-2" />
+                    Enviar para Análise
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Job Details */}
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Descrição</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="whitespace-pre-wrap">{job.description}</p>
+              {job.requirements && (
+                <>
+                  <Separator className="my-4" />
+                  <h4 className="font-medium mb-2">Requisitos</h4>
+                  <p className="whitespace-pre-wrap text-muted-foreground">
+                    {job.requirements}
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {job.salary_range && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Faixa salarial</p>
+                  <p className="font-medium">{job.salary_range}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-sm text-muted-foreground">Candidaturas</p>
+                <p className="font-medium">{applications.length}</p>
+              </div>
+              {job.closed_at && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Encerrada em</p>
+                  <p className="font-medium">
+                    {format(new Date(job.closed_at), 'dd/MM/yyyy', { locale: ptBR })}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Applications */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Candidaturas ({applications.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ApplicationList
+              applications={applications}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              onViewResume={handleViewResume}
+              onViewDetails={setViewingApplication}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Dialogs */}
+        <CloseJobDialog
+          open={showCloseDialog}
+          onOpenChange={setShowCloseDialog}
+          onConfirm={handleCloseJob}
+          jobTitle={job.title}
+        />
+
+        <SendToAnalysisDialog
+          open={showAnalysisDialog}
+          onOpenChange={setShowAnalysisDialog}
+          applications={applications}
+          balance={balance}
+          onConfirm={handleSendToAnalysis}
+        />
+
+        <ApplicationDetailsDialog
+          open={!!viewingApplication}
+          onOpenChange={() => setViewingApplication(null)}
+          application={viewingApplication}
+          formFields={job.form_template?.fields || []}
+        />
+      </div>
+    </div>
+  );
+}
