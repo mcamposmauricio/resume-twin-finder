@@ -227,6 +227,7 @@ export type Database = {
       }
       job_postings: {
         Row: {
+          analyzed_at: string | null
           brand_color: string | null
           closed_at: string | null
           company_logo_url: string | null
@@ -247,6 +248,7 @@ export type Database = {
           work_type: string | null
         }
         Insert: {
+          analyzed_at?: string | null
           brand_color?: string | null
           closed_at?: string | null
           company_logo_url?: string | null
@@ -267,6 +269,7 @@ export type Database = {
           work_type?: string | null
         }
         Update: {
+          analyzed_at?: string | null
           brand_color?: string | null
           closed_at?: string | null
           company_logo_url?: string | null

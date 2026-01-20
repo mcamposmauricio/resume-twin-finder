@@ -104,6 +104,11 @@ export function JobPostingCard({
                   {WORK_TYPE_LABELS[job.work_type]}
                 </Badge>
               )}
+              {job.analyzed_at && (
+                <Badge variant="outline" className="text-primary border-primary">
+                  Analisado
+                </Badge>
+              )}
             </div>
           </div>
 
@@ -126,10 +131,17 @@ export function JobPostingCard({
                 </DropdownMenuItem>
               )}
 
-              {job.status === 'closed' && (job.applications_count || 0) > 0 && onSendToAnalysis && (
+              {job.status === 'closed' && (job.applications_count || 0) > 0 && !job.analyzed_at && onSendToAnalysis && (
                 <DropdownMenuItem onClick={onSendToAnalysis}>
                   <Send className="h-4 w-4 mr-2" />
                   Enviar para Análise
+                </DropdownMenuItem>
+              )}
+
+              {job.status === 'closed' && job.analyzed_at && (
+                <DropdownMenuItem disabled className="text-muted-foreground">
+                  <Send className="h-4 w-4 mr-2" />
+                  Já analisado
                 </DropdownMenuItem>
               )}
 
@@ -205,7 +217,7 @@ export function JobPostingCard({
           </div>
         )}
 
-        {job.status === 'closed' && (job.applications_count || 0) > 0 && (
+        {job.status === 'closed' && (job.applications_count || 0) > 0 && !job.analyzed_at && (
           <div className="flex items-center gap-2 pt-2 border-t">
             <Badge variant="outline" className="text-blue-600 border-blue-600 dark:text-blue-400 dark:border-blue-400">
               <Send className="h-3 w-3 mr-1" />

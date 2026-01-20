@@ -418,6 +418,20 @@ async function processAnalysisInBackground(
       console.error("Failed to save analysis to history:", analysisError);
     } else {
       console.log(`Analysis saved to history with title: ${jobTitle || 'N/A'}`);
+      
+      // Mark job posting as analyzed
+      if (jobPostingId) {
+        const { error: updateError } = await supabase
+          .from("job_postings")
+          .update({ analyzed_at: new Date().toISOString() })
+          .eq("id", jobPostingId);
+        
+        if (updateError) {
+          console.error("Failed to update job_posting analyzed_at:", updateError);
+        } else {
+          console.log(`Job posting ${jobPostingId} marked as analyzed`);
+        }
+      }
     }
     
   } catch (error: unknown) {
