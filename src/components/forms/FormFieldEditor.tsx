@@ -1,4 +1,4 @@
-import { GripVertical, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FormField, FieldType } from '@/types/jobs';
@@ -26,17 +26,9 @@ export function FormFieldEditor({
   field,
   onEdit,
   onDelete,
-  dragHandleProps,
 }: FormFieldEditorProps) {
   return (
-    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
-      <div
-        {...dragHandleProps}
-        className="cursor-grab text-muted-foreground hover:text-foreground"
-      >
-        <GripVertical className="h-5 w-5" />
-      </div>
-
+    <div className="flex items-center gap-3 flex-1 min-w-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-medium truncate">{field.label}</span>
@@ -60,9 +52,11 @@ export function FormFieldEditor({
       </div>
 
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" onClick={onEdit}>
-          <Pencil className="h-4 w-4" />
-        </Button>
+        {!field.predefined && (
+          <Button variant="ghost" size="icon" onClick={onEdit}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
         <Button variant="ghost" size="icon" onClick={onDelete}>
           <Trash2 className="h-4 w-4" />
         </Button>
