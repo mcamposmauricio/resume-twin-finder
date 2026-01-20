@@ -70,6 +70,15 @@ export default function JobPostingDetails() {
     }
   }, [id, userId]);
 
+  // Open analysis dialog if URL has openAnalysis=true
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('openAnalysis') === 'true' && job?.status === 'closed') {
+      setShowAnalysisDialog(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [job]);
+
   const handleViewResume = async (app: JobApplication) => {
     if (!app.resume_url) return;
     const url = await getResumeUrl(app.resume_url);
@@ -270,13 +279,15 @@ export default function JobPostingDetails() {
               )}
 
               <div className="flex items-center gap-2 ml-auto">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate(`/vagas/${job.id}/editar`)}
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
+                {(job.status === 'draft' || job.status === 'paused') && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/vagas/${job.id}/editar`)}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                )}
 
                 {(job.status === 'active' || job.status === 'paused') && (
                   <>
