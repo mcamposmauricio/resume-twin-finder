@@ -1,11 +1,24 @@
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { FormField, PREDEFINED_FIELDS } from '@/types/jobs';
+import { User, Mail, Phone, FileText, DollarSign, Briefcase, Link, MapPin } from 'lucide-react';
 
 interface PredefinedFieldsSelectorProps {
   selectedFields: FormField[];
   onToggle: (field: Omit<FormField, 'id' | 'order'>, enabled: boolean) => void;
 }
+
+const FIELD_ICONS: Record<string, React.ReactNode> = {
+  'Nome completo': <User className="h-4 w-4" />,
+  'Email': <Mail className="h-4 w-4" />,
+  'Telefone': <Phone className="h-4 w-4" />,
+  'Currículo': <FileText className="h-4 w-4" />,
+  'Pretensão salarial': <DollarSign className="h-4 w-4" />,
+  'Experiência': <Briefcase className="h-4 w-4" />,
+  'LinkedIn': <Link className="h-4 w-4" />,
+  'Cidade': <MapPin className="h-4 w-4" />,
+};
 
 export function PredefinedFieldsSelector({
   selectedFields,
@@ -16,24 +29,58 @@ export function PredefinedFieldsSelector({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-foreground">Campos Pré-definidos</h3>
-      <div className="grid grid-cols-2 gap-3">
-        {PREDEFINED_FIELDS.map((field) => (
-          <div key={field.label} className="flex items-center space-x-2">
-            <Checkbox
-              id={`predefined-${field.label}`}
-              checked={isSelected(field.label)}
-              onCheckedChange={(checked) => onToggle(field, !!checked)}
-            />
-            <Label
-              htmlFor={`predefined-${field.label}`}
-              className="text-sm font-normal cursor-pointer"
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">Campos Disponíveis</h3>
+        <Badge variant="outline" className="text-xs">
+          {selectedFields.filter(f => f.predefined).length} de {PREDEFINED_FIELDS.length} ativos
+        </Badge>
+      </div>
+      <div className="space-y-2">
+        {PREDEFINED_FIELDS.map((field) => {
+          const selected = isSelected(field.label);
+          return (
+            <div
+              key={field.label}
+              className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                selected 
+                  ? 'bg-primary/5 border-primary/30' 
+                  : 'bg-muted/30 border-transparent hover:border-muted'
+              }`}
             >
-              {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
-            </Label>
-          </div>
-        ))}
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-md ${selected ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                  {FIELD_ICONS[field.label] || <FileText className="h-4 w-4" />}
+                </div>
+                <div>
+                  <Label
+                    htmlFor={`switch-${field.label}`}
+                    className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                  >
+                    {field.label}
+                    {field.required && (
+                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                        Obrigatório
+                      </Badge>
+                    )}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {field.type === 'email' && 'Campo de email com validação'}
+                    {field.type === 'phone' && 'Número de telefone'}
+                    {field.type === 'text' && 'Campo de texto simples'}
+                    {field.type === 'textarea' && 'Área de texto expandida'}
+                    {field.type === 'currency' && 'Valor em moeda'}
+                    {field.type === 'select' && 'Lista de opções'}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id={`switch-${field.label}`}
+                checked={selected}
+                onCheckedChange={(checked) => onToggle(field, checked)}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
