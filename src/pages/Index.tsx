@@ -502,6 +502,9 @@ export default function Index() {
             onNewAnalysis={handleNewAnalysis} 
             onViewAnalysis={handleViewAnalysis}
             onContinueDraft={handleContinueDraft}
+            onNavigateToJobs={() => navigate("/vagas")}
+            onNewJobPosting={() => navigate("/vagas/nova")}
+            onNavigateToForms={() => navigate("/formularios")}
           />
         )}
         {step === "input" && (
