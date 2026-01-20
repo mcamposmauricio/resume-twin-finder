@@ -112,7 +112,7 @@ Responsabilidades:
 
     setSaving(true);
     try {
-      const data = {
+      const data: any = {
         title,
         description,
         requirements: requirements || undefined,
@@ -127,6 +127,8 @@ Responsabilidades:
       };
 
       if (id) {
+        // Reset analyzed_at when editing a job (allows re-analysis)
+        data.analyzed_at = null;
         await updateJobPosting(id, data);
       } else {
         await createJobPosting(data);

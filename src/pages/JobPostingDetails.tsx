@@ -238,11 +238,16 @@ export default function JobPostingDetails() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
               <h1 className="text-2xl font-bold">{job.title}</h1>
               <Badge className={STATUS_COLORS[job.status]}>
                 {STATUS_LABELS[job.status]}
               </Badge>
+              {job.analyzed_at && (
+                <Badge variant="outline" className="text-primary border-primary">
+                  Analisado
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
               {job.location && <span>{job.location}</span>}
@@ -314,10 +319,17 @@ export default function JobPostingDetails() {
                   </>
                 )}
 
-                {job.status === 'closed' && applications.length > 0 && (
+                {job.status === 'closed' && applications.length > 0 && !job.analyzed_at && (
                   <Button onClick={() => setShowAnalysisDialog(true)}>
                     <Send className="h-4 w-4 mr-2" />
                     Enviar para Análise
+                  </Button>
+                )}
+
+                {job.status === 'closed' && job.analyzed_at && (
+                  <Button variant="outline" disabled>
+                    <Send className="h-4 w-4 mr-2" />
+                    Já Analisado
                   </Button>
                 )}
               </div>

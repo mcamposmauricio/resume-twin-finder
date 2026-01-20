@@ -50,6 +50,7 @@ export interface JobPosting {
   public_slug: string;
   expires_at?: string;
   closed_at?: string;
+  analyzed_at?: string;
   created_at: string;
   updated_at: string;
   applications_count?: number;
