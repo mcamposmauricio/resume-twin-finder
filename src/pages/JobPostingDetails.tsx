@@ -149,7 +149,7 @@ export default function JobPostingDetails() {
       // 3. Build complete job description
       const jobDescription = `${job?.title || ''}\n\n${job?.description || ''}\n\nRequisitos:\n${job?.requirements || 'Não especificado'}`;
 
-      // 4. Call analyze-resumes edge function
+      // 4. Call analyze-resumes edge function with job title and id
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke(
         'analyze-resumes',
         {
@@ -157,6 +157,8 @@ export default function JobPostingDetails() {
             files: validFiles,
             jobDescription,
             user_id: userId,
+            job_title: job?.title,
+            job_posting_id: job?.id,
           },
         }
       );

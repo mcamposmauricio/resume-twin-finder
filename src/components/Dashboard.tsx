@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Briefcase, Users, ArrowRight, Plus, FileText, Calendar, Clock, UserPlus, Palette } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Briefcase, Users, ArrowRight, Plus, FileText, Calendar, Clock, UserPlus, Palette, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,12 +26,14 @@ interface Analysis {
   id: string;
   job_title: string | null;
   job_description: string;
+  job_posting_id: string | null;
   candidates: any;
   created_at: string;
   status: string;
 }
 
 export function Dashboard({ user, onNewAnalysis, onViewAnalysis, onContinueDraft, onNavigateToJobs, onNewJobPosting, onNavigateToForms }: DashboardProps) {
+  const navigate = useNavigate();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [jobPostings, setJobPostings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -411,6 +414,18 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis, onContinueDraft
                             <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                             {formatDate(analysis.created_at)}
                           </span>
+                          {analysis.job_posting_id && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/vagas/${analysis.job_posting_id}`);
+                              }}
+                              className="flex items-center gap-1 text-primary hover:underline"
+                            >
+                              <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
+                              Ver vaga
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
