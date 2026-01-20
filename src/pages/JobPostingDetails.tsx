@@ -102,7 +102,12 @@ export default function JobPostingDetails() {
   const blobToBase64 = (blob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        // Remove o prefixo "data:...;base64," para obter apenas o base64 puro
+        const base64Content = result.split(',')[1] || result;
+        resolve(base64Content);
+      };
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
