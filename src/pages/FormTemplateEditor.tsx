@@ -65,14 +65,18 @@ export default function FormTemplateEditor() {
   ) => {
     if (enabled) {
       const newField: FormField = {
-        ...field,
-        predefined: true,
         id: crypto.randomUUID(),
+        label: field.label,
+        type: field.type,
+        required: field.required,
+        placeholder: field.placeholder,
+        options: field.options,
         order: fields.length,
+        predefined: true,
       };
-      setFields([...fields, newField]);
+      setFields((prev) => [...prev, newField]);
     } else {
-      setFields(fields.filter((f) => f.label !== field.label));
+      setFields((prev) => prev.filter((f) => f.label !== field.label));
     }
   };
 
