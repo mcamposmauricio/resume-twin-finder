@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { JobApplication, ApplicationStatus } from '@/types/jobs';
+import { JobApplication, ApplicationStatus, TriageStatus } from '@/types/jobs';
 import { useToast } from '@/hooks/use-toast';
 
 export function useJobApplications(jobPostingId?: string) {
@@ -28,6 +28,7 @@ export function useJobApplications(jobPostingId?: string) {
         ...a,
         form_data: (a.form_data as Record<string, any>) || {},
         status: a.status as ApplicationStatus,
+        triage_status: (a.triage_status as TriageStatus) || 'new',
       }));
       setApplications(parsed);
     } catch (error: any) {
@@ -75,6 +76,7 @@ export function useJobApplications(jobPostingId?: string) {
         applicant_email: newApp.applicant_email || undefined,
         applicant_name: newApp.applicant_name || undefined,
         status: newApp.status as ApplicationStatus,
+        triage_status: (newApp.triage_status as TriageStatus) || 'new',
         analysis_id: newApp.analysis_id || undefined,
         created_at: newApp.created_at,
       };
@@ -108,6 +110,33 @@ export function useJobApplications(jobPostingId?: string) {
       return true;
     } catch (error: any) {
       console.error('Error updating application status:', error);
+      toast({
+        title: 'Erro ao atualizar status',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
+  const updateTriageStatus = async (
+    id: string,
+    triageStatus: TriageStatus
+  ): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('job_applications')
+        .update({ triage_status: triageStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setApplications(prev =>
+        prev.map(a => (a.id === id ? { ...a, triage_status: triageStatus } : a))
+      );
+      return true;
+    } catch (error: any) {
+      console.error('Error updating triage status:', error);
       toast({
         title: 'Erro ao atualizar status',
         description: error.message,
@@ -205,6 +234,7 @@ export function useJobApplications(jobPostingId?: string) {
     loading,
     createApplication,
     updateApplicationStatus,
+    updateTriageStatus,
     linkToAnalysis,
     uploadResume,
     getResumeUrl,

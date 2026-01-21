@@ -183,6 +183,7 @@ export type Database = {
           resume_filename: string | null
           resume_url: string | null
           status: string
+          triage_status: string
         }
         Insert: {
           analysis_id?: string | null
@@ -195,6 +196,7 @@ export type Database = {
           resume_filename?: string | null
           resume_url?: string | null
           status?: string
+          triage_status?: string
         }
         Update: {
           analysis_id?: string | null
@@ -207,6 +209,7 @@ export type Database = {
           resume_filename?: string | null
           resume_url?: string | null
           status?: string
+          triage_status?: string
         }
         Relationships: [
           {
