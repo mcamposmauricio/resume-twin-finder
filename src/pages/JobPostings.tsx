@@ -143,14 +143,7 @@ export default function JobPostings() {
               <JobPostingCard
                 key={job.id}
                 job={job}
-                onView={() => {
-                  // For analyzed jobs, navigate to analysis if available
-                  if (statusFilter === 'analyzed') {
-                    navigate(`/vagas/${job.id}?showAnalysis=true`);
-                  } else {
-                    navigate(`/vagas/${job.id}`);
-                  }
-                }}
+                onView={() => navigate(`/vagas/${job.id}`)}
                 onEdit={() => navigate(`/vagas/${job.id}/editar`)}
                 onDelete={() => setDeleteId(job.id)}
                 onChangeStatus={(status) => changeStatus(job.id, status)}
@@ -160,6 +153,11 @@ export default function JobPostings() {
                     : undefined
                 }
                 isAnalyzedView={statusFilter === 'analyzed'}
+                onViewAnalysis={
+                  job.analysis_id
+                    ? () => navigate(`/?viewAnalysis=${job.analysis_id}`)
+                    : undefined
+                }
               />
             ))}
           </div>
