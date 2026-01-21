@@ -40,6 +40,7 @@ export function useJobPostings(userId?: string) {
       // Get application counts
       const jobIds = (data || []).map(j => j.id);
       let applicationCounts: Record<string, number> = {};
+      let analysisIds: Record<string, string> = {};
       
       if (jobIds.length > 0) {
         const { data: countData } = await supabase
@@ -53,6 +54,21 @@ export function useJobPostings(userId?: string) {
             return acc;
           }, {} as Record<string, number>);
         }
+
+        // Get analysis IDs for analyzed jobs
+        const { data: analysisData } = await supabase
+          .from('analyses')
+          .select('id, job_posting_id')
+          .in('job_posting_id', jobIds);
+        
+        if (analysisData) {
+          analysisIds = analysisData.reduce((acc, analysis) => {
+            if (analysis.job_posting_id) {
+              acc[analysis.job_posting_id] = analysis.id;
+            }
+            return acc;
+          }, {} as Record<string, string>);
+        }
       }
 
       const parsed: JobPosting[] = (data || []).map(j => ({
@@ -64,6 +80,7 @@ export function useJobPostings(userId?: string) {
           fields: (j.form_template.fields as unknown as FormField[]) || [],
         } : undefined,
         applications_count: applicationCounts[j.id] || 0,
+        analysis_id: analysisIds[j.id],
       }));
 
       setJobPostings(parsed);

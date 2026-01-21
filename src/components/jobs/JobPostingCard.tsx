@@ -36,6 +36,7 @@ interface JobPostingCardProps {
   onChangeStatus: (status: JobStatus) => void;
   onSendToAnalysis?: () => void;
   isAnalyzedView?: boolean;
+  onViewAnalysis?: () => void;
 }
 
 const STATUS_COLORS: Record<JobStatus, string> = {
@@ -60,6 +61,7 @@ export function JobPostingCard({
   onChangeStatus,
   onSendToAnalysis,
   isAnalyzedView,
+  onViewAnalysis,
 }: JobPostingCardProps) {
   const canEdit = job.status === 'draft' || job.status === 'paused';
 
@@ -219,12 +221,20 @@ export function JobPostingCard({
           </div>
         )}
 
-        {isAnalyzedView && job.analyzed_at && (
+        {isAnalyzedView && job.analyzed_at && onViewAnalysis && (
           <div className="flex items-center gap-2 pt-2 border-t">
-            <Badge className="bg-primary/10 text-primary border-primary">
-              <BarChart3 className="h-3 w-3 mr-1" />
-              Clique para ver análise
-            </Badge>
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewAnalysis();
+              }}
+              className="gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Ver Análise
+            </Button>
           </div>
         )}
       </CardContent>
