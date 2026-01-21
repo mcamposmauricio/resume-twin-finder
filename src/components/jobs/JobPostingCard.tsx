@@ -13,6 +13,7 @@ import {
   CheckCircle,
   PauseCircle,
   XCircle,
+  BarChart3,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ interface JobPostingCardProps {
   onDelete: () => void;
   onChangeStatus: (status: JobStatus) => void;
   onSendToAnalysis?: () => void;
+  isAnalyzedView?: boolean;
 }
 
 const STATUS_COLORS: Record<JobStatus, string> = {
@@ -57,6 +59,7 @@ export function JobPostingCard({
   onDelete,
   onChangeStatus,
   onSendToAnalysis,
+  isAnalyzedView,
 }: JobPostingCardProps) {
   const canEdit = job.status === 'draft' || job.status === 'paused';
 
@@ -209,9 +212,18 @@ export function JobPostingCard({
 
         {job.status === 'closed' && (job.applications_count || 0) > 0 && !job.analyzed_at && (
           <div className="flex items-center gap-2 pt-2 border-t">
-            <Badge variant="outline" className="text-blue-600 border-blue-600 dark:text-blue-400 dark:border-blue-400">
+            <Badge variant="outline" className="text-primary border-primary">
               <Send className="h-3 w-3 mr-1" />
               Pronto para análise
+            </Badge>
+          </div>
+        )}
+
+        {isAnalyzedView && job.analyzed_at && (
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <Badge className="bg-primary/10 text-primary border-primary">
+              <BarChart3 className="h-3 w-3 mr-1" />
+              Clique para ver análise
             </Badge>
           </div>
         )}

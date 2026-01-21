@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Briefcase, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
-import { JobStatus } from '@/types/jobs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { JobPostingCard } from '@/components/jobs/JobPostingCard';
+import { JobTimeline, TimelineStatus } from '@/components/jobs/JobTimeline';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +22,7 @@ export default function JobPostings() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<TimelineStatus>('draft');
   const { jobPostings, loading, deleteJobPosting, changeStatus } = useJobPostings(userId);
 
   useEffect(() => {
@@ -43,17 +42,49 @@ export default function JobPostings() {
     }
   };
 
+  // Filter jobs based on timeline status
   const filteredJobs = jobPostings.filter((job) => {
-    if (statusFilter === 'all') return true;
-    return job.status === statusFilter;
+    switch (statusFilter) {
+      case 'draft':
+        return job.status === 'draft';
+      case 'active':
+        return job.status === 'active';
+      case 'paused':
+        return job.status === 'paused';
+      case 'closed':
+        return job.status === 'closed' && !job.analyzed_at;
+      case 'analyzed':
+        return job.analyzed_at !== null;
+      default:
+        return true;
+    }
   });
 
+  // Calculate counts for each timeline step
   const counts = {
-    all: jobPostings.length,
-    active: jobPostings.filter((j) => j.status === 'active').length,
     draft: jobPostings.filter((j) => j.status === 'draft').length,
+    active: jobPostings.filter((j) => j.status === 'active').length,
     paused: jobPostings.filter((j) => j.status === 'paused').length,
-    closed: jobPostings.filter((j) => j.status === 'closed').length,
+    closed: jobPostings.filter((j) => j.status === 'closed' && !j.analyzed_at).length,
+    analyzed: jobPostings.filter((j) => j.analyzed_at !== null).length,
+  };
+
+  // Get empty state message based on current filter
+  const getEmptyMessage = () => {
+    switch (statusFilter) {
+      case 'draft':
+        return 'Nenhuma vaga em rascunho';
+      case 'active':
+        return 'Nenhuma vaga publicada';
+      case 'paused':
+        return 'Nenhuma vaga pausada';
+      case 'closed':
+        return 'Nenhuma vaga encerrada aguardando análise';
+      case 'analyzed':
+        return 'Nenhuma vaga foi analisada ainda';
+      default:
+        return 'Nenhuma vaga encontrada';
+    }
   };
 
   if (loading) {
@@ -67,14 +98,15 @@ export default function JobPostings() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <div className="flex items-center gap-4 mb-8">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold">Vagas</h1>
+            <h1 className="text-2xl font-bold">Acompanhamento de Vagas</h1>
             <p className="text-muted-foreground">
-              Gerencie suas vagas e candidaturas
+              Acompanhe o ciclo de vida das suas vagas
             </p>
           </div>
           <Button onClick={() => navigate('/vagas/nova')}>
@@ -83,27 +115,25 @@ export default function JobPostings() {
           </Button>
         </div>
 
-        <Tabs value={statusFilter} onValueChange={setStatusFilter} className="mb-6">
-          <TabsList>
-            <TabsTrigger value="all">Todas ({counts.all})</TabsTrigger>
-            <TabsTrigger value="active">Ativas ({counts.active})</TabsTrigger>
-            <TabsTrigger value="draft">Rascunhos ({counts.draft})</TabsTrigger>
-            <TabsTrigger value="paused">Pausadas ({counts.paused})</TabsTrigger>
-            <TabsTrigger value="closed">Encerradas ({counts.closed})</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Timeline */}
+        <div className="mb-8 p-4 bg-card rounded-lg border">
+          <JobTimeline
+            counts={counts}
+            activeStatus={statusFilter}
+            onStatusChange={setStatusFilter}
+          />
+        </div>
 
+        {/* Job listings */}
         {filteredJobs.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Briefcase className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="font-semibold mb-2">
-                {statusFilter === 'all'
-                  ? 'Nenhuma vaga criada'
-                  : `Nenhuma vaga ${statusFilter === 'active' ? 'ativa' : statusFilter === 'draft' ? 'em rascunho' : statusFilter === 'paused' ? 'pausada' : 'encerrada'}`}
-              </h3>
+              <h3 className="font-semibold mb-2">{getEmptyMessage()}</h3>
               <p className="text-muted-foreground text-center">
-                Crie sua primeira vaga usando o botão acima.
+                {statusFilter === 'draft' 
+                  ? 'Crie sua primeira vaga usando o botão acima.'
+                  : 'As vagas aparecerão aqui conforme avançam no ciclo.'}
               </p>
             </CardContent>
           </Card>
@@ -113,7 +143,14 @@ export default function JobPostings() {
               <JobPostingCard
                 key={job.id}
                 job={job}
-                onView={() => navigate(`/vagas/${job.id}`)}
+                onView={() => {
+                  // For analyzed jobs, navigate to analysis if available
+                  if (statusFilter === 'analyzed') {
+                    navigate(`/vagas/${job.id}?showAnalysis=true`);
+                  } else {
+                    navigate(`/vagas/${job.id}`);
+                  }
+                }}
                 onEdit={() => navigate(`/vagas/${job.id}/editar`)}
                 onDelete={() => setDeleteId(job.id)}
                 onChangeStatus={(status) => changeStatus(job.id, status)}
@@ -122,11 +159,13 @@ export default function JobPostings() {
                     ? () => navigate(`/vagas/${job.id}?openAnalysis=true`)
                     : undefined
                 }
+                isAnalyzedView={statusFilter === 'analyzed'}
               />
             ))}
           </div>
         )}
 
+        {/* Delete confirmation dialog */}
         <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
