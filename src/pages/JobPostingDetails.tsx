@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -19,10 +19,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ApplicationList } from '@/components/jobs/ApplicationList';
+import { ApplicationKanban } from '@/components/jobs/ApplicationKanban';
+import { ApplicationDetailPanel } from '@/components/jobs/ApplicationDetailPanel';
 import { CloseJobDialog } from '@/components/jobs/CloseJobDialog';
 import { SendToAnalysisDialog } from '@/components/jobs/SendToAnalysisDialog';
-import { ApplicationDetailsDialog } from '@/components/jobs/ApplicationDetailsDialog';
 import { ShareJobLink } from '@/components/jobs/ShareJobLink';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,7 +46,7 @@ export default function JobPostingDetails() {
   const [viewingApplication, setViewingApplication] = useState<JobApplication | null>(null);
 
   const { changeStatus, getJobById } = useJobPostings(userId);
-  const { applications, getResumeUrl, refetch: refetchApplications } = useJobApplications(id);
+  const { applications, getResumeUrl, updateTriageStatus, refetch: refetchApplications } = useJobApplications(id);
   const resumeBalance = useResumeBalance(userId);
   const balance = resumeBalance.availableResumes;
 
@@ -369,18 +369,17 @@ export default function JobPostingDetails() {
           </Card>
         </div>
 
-        {/* Applications */}
+        {/* Applications Kanban */}
         <Card>
           <CardHeader>
             <CardTitle>Candidaturas ({applications.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <ApplicationList
+            <ApplicationKanban
               applications={applications}
-              selectedIds={selectedIds}
-              onSelectionChange={setSelectedIds}
-              onViewResume={handleViewResume}
               onViewDetails={setViewingApplication}
+              onViewResume={handleViewResume}
+              onUpdateTriageStatus={updateTriageStatus}
             />
           </CardContent>
         </Card>
@@ -401,11 +400,22 @@ export default function JobPostingDetails() {
           onConfirm={handleSendToAnalysis}
         />
 
-        <ApplicationDetailsDialog
+        <ApplicationDetailPanel
           open={!!viewingApplication}
-          onOpenChange={() => setViewingApplication(null)}
+          onOpenChange={(open) => !open && setViewingApplication(null)}
           application={viewingApplication}
+          applications={applications}
           formFields={job.form_template?.fields || []}
+          onNavigate={(direction) => {
+            if (!viewingApplication) return;
+            const currentIndex = applications.findIndex(a => a.id === viewingApplication.id);
+            const nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+            if (nextIndex >= 0 && nextIndex < applications.length) {
+              setViewingApplication(applications[nextIndex]);
+            }
+          }}
+          onUpdateTriageStatus={updateTriageStatus}
+          getResumeUrl={getResumeUrl}
         />
       </div>
     </div>

@@ -34,6 +34,7 @@ export interface FormTemplate {
 export type WorkType = 'remote' | 'hybrid' | 'onsite';
 export type JobStatus = 'draft' | 'active' | 'paused' | 'closed';
 export type ApplicationStatus = 'pending' | 'reviewed' | 'shortlisted' | 'rejected' | 'analyzed';
+export type TriageStatus = 'new' | 'low_fit' | 'deserves_analysis';
 
 export interface JobPosting {
   id: string;
@@ -69,6 +70,7 @@ export interface JobApplication {
   applicant_email?: string;
   applicant_name?: string;
   status: ApplicationStatus;
+  triage_status: TriageStatus;
   analysis_id?: string;
   created_at: string;
   job_posting?: JobPosting;
@@ -105,4 +107,10 @@ export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
   shortlisted: 'Selecionado',
   rejected: 'Rejeitado',
   analyzed: 'Analisado',
+};
+
+export const TRIAGE_STATUS_LABELS: Record<TriageStatus, string> = {
+  new: 'Nova candidatura',
+  low_fit: 'Baixa aderência',
+  deserves_analysis: 'Merece análise',
 };
