@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { centralHubClient, TOOL_SOURCE, employeeRangeToNumber } from "@/lib/centralHubClient";
 import { toast } from "sonner";
 import logoMarq from "@/assets/logo-marq-blue.png";
+import { useUTMTracking } from "@/hooks/useUTMTracking";
+import { pushGTMEvent } from "@/hooks/useGTMEvent";
 
 // Declaração de tipo para Google Tag Manager dataLayer
 declare global {
@@ -126,6 +128,9 @@ export default function Auth() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const navigate = useNavigate();
+
+  // Initialize UTM tracking
+  const { getUTMParams } = useUTMTracking();
 
   useEffect(() => {
     const {
@@ -255,6 +260,27 @@ export default function Auth() {
           } catch (leadErr) {
             console.error('Failed to send lead:', leadErr);
           }
+        }
+
+        // [NEW] Send lead to RD Station (fire-and-forget)
+        if (authData?.user) {
+          const utmParams = getUTMParams();
+          supabase.functions.invoke('send-lead-to-rdstation', {
+            body: {
+              conversion_identifier: 'comparecv_signup',
+              email: email,
+              name: name.trim(),
+              personal_phone: phone.trim(),
+              company_name: companyName.trim(),
+              ...utmParams,
+            },
+          }).catch(err => console.log('RD Station sync:', err?.message));
+
+          // Push GTM form_submit_success event (with duplicate prevention)
+          pushGTMEvent('form_submit_success', { 
+            formId: 'signup-form', 
+            formName: 'Cadastro CompareCV' 
+          });
         }
 
         // SYNC with Central Hub in background (fire-and-forget)

@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.exchange-hub-token]
 verify_jwt = false
+
+[functions.send-lead-to-rdstation]
+verify_jwt = false

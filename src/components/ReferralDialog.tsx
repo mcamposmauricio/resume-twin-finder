@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getStoredUTMParams } from "@/hooks/useUTMTracking";
+import { pushGTMEvent } from "@/hooks/useGTMEvent";
 
 interface ReferralDialogProps {
   userId: string;
@@ -119,11 +121,40 @@ Acesse https://comparecv.marqhr.com/ e coloca meu código ${referralCode} para t
     
     setIsRequestingContact(true);
     try {
+      // [EXISTING] MarQ webhook
       const { error } = await supabase.functions.invoke('send-lead-to-marq', {
         body: { userId, leadSource: 'modal_indicacao' }
       });
       
       if (error) throw error;
+
+      // [NEW] Send to RD Station
+      const utmParams = getStoredUTMParams();
+      // Fetch user email from profile for RD Station
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email, name, phone, company_name')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (profile?.email) {
+        supabase.functions.invoke('send-lead-to-rdstation', {
+          body: {
+            conversion_identifier: 'comparecv_modal_indicacao',
+            email: profile.email,
+            name: profile.name || undefined,
+            personal_phone: profile.phone || undefined,
+            company_name: profile.company_name || undefined,
+            ...utmParams,
+          },
+        }).catch(err => console.log('RD Station:', err?.message));
+      }
+
+      // [NEW] Push GTM event
+      pushGTMEvent('form_submit_success', { 
+        formId: 'contact-request-referral', 
+        formName: 'Modal Indicação - Contato' 
+      });
       
       toast.success("Solicitação enviada! Entraremos em contato em breve.");
       setContactRequested(true);
