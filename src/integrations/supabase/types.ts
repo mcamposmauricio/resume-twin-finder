@@ -362,6 +362,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -369,14 +390,22 @@ export type Database = {
     Functions: {
       generate_referral_code: { Args: never; Returns: string }
       get_user_password_hash: { Args: { p_user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_corporate_email: { Args: { email: string }; Returns: boolean }
+      is_full_access: { Args: { _user_id: string }; Returns: boolean }
       update_user_password_hash: {
         Args: { p_password_hash: string; p_user_id: string }
         Returns: undefined
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "lead" | "full_access"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -503,6 +532,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["lead", "full_access"],
+    },
   },
 } as const

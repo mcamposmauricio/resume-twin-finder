@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, FileText, Copy, Trash2, Pencil, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFormTemplates } from '@/hooks/useFormTemplates';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +26,7 @@ export default function FormTemplates() {
   const [userId, setUserId] = useState<string>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { templates, loading, deleteTemplate, duplicateTemplate } = useFormTemplates(userId);
+  const { isFullAccess, loading: roleLoading } = useUserRole(userId);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -35,6 +38,14 @@ export default function FormTemplates() {
     });
   }, [navigate]);
 
+  // Redirect non-full-access users
+  useEffect(() => {
+    if (!roleLoading && userId && !isFullAccess) {
+      toast.error('Você não tem acesso a esta funcionalidade.');
+      navigate('/');
+    }
+  }, [roleLoading, isFullAccess, userId, navigate]);
+
   const handleDelete = async () => {
     if (deleteId) {
       await deleteTemplate(deleteId);
@@ -42,12 +53,16 @@ export default function FormTemplates() {
     }
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
+  }
+
+  if (!isFullAccess) {
+    return null;
   }
 
   return (
