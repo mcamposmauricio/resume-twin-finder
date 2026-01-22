@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { useJobApplications } from '@/hooks/useJobApplications';
 import { useResumeBalance } from '@/hooks/useResumeBalance';
+import { useUserRole } from '@/hooks/useUserRole';
 import { JobPosting, JobApplication, STATUS_LABELS, WORK_TYPE_LABELS } from '@/types/jobs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,7 @@ import { CloseJobDialog } from '@/components/jobs/CloseJobDialog';
 import { SendToAnalysisDialog } from '@/components/jobs/SendToAnalysisDialog';
 import { ShareJobLink } from '@/components/jobs/ShareJobLink';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -49,6 +51,7 @@ export default function JobPostingDetails() {
   const { applications, getResumeUrl, updateTriageStatus, refetch: refetchApplications } = useJobApplications(id);
   const resumeBalance = useResumeBalance(userId);
   const balance = resumeBalance.availableResumes;
+  const { isFullAccess, loading: roleLoading } = useUserRole(userId);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -59,6 +62,14 @@ export default function JobPostingDetails() {
       }
     });
   }, [navigate]);
+
+  // Redirect non-full-access users
+  useEffect(() => {
+    if (!roleLoading && userId && !isFullAccess) {
+      sonnerToast.error('Você não tem acesso a esta funcionalidade.');
+      navigate('/');
+    }
+  }, [roleLoading, isFullAccess, userId, navigate]);
 
   useEffect(() => {
     if (id && userId) {
@@ -203,12 +214,16 @@ export default function JobPostingDetails() {
     }
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
+  }
+
+  if (!isFullAccess) {
+    return null;
   }
 
   if (!job) {

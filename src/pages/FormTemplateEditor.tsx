@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Save, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFormTemplates } from '@/hooks/useFormTemplates';
+import { useUserRole } from '@/hooks/useUserRole';
 import { FormField, PREDEFINED_FIELDS } from '@/types/jobs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { FormFieldEditor } from '@/components/forms/FormFieldEditor';
 import { FieldConfigDialog } from '@/components/forms/FieldConfigDialog';
 import { DynamicFormRenderer } from '@/components/forms/DynamicFormRenderer';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 
 export default function FormTemplateEditor() {
   const navigate = useNavigate();
@@ -31,6 +33,7 @@ export default function FormTemplateEditor() {
   const initialized = useRef(false);
 
   const { templates, createTemplate, updateTemplate, getDefaultFields } = useFormTemplates(userId);
+  const { isFullAccess, loading: roleLoading } = useUserRole(userId);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -41,6 +44,14 @@ export default function FormTemplateEditor() {
       }
     });
   }, [navigate]);
+
+  // Redirect non-full-access users
+  useEffect(() => {
+    if (!roleLoading && userId && !isFullAccess) {
+      sonnerToast.error('Você não tem acesso a esta funcionalidade.');
+      navigate('/');
+    }
+  }, [roleLoading, isFullAccess, userId, navigate]);
 
   useEffect(() => {
     if (!userId) return;

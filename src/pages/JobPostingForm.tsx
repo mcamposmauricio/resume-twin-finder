@@ -5,12 +5,14 @@ import { ShareJobLink } from '@/components/jobs/ShareJobLink';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { useFormTemplates } from '@/hooks/useFormTemplates';
+import { useUserRole } from '@/hooks/useUserRole';
 import { WorkType, JobStatus, JobPosting } from '@/types/jobs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast as sonnerToast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -41,6 +43,7 @@ export default function JobPostingForm() {
 
   const { createJobPosting, updateJobPosting, getJobById } = useJobPostings(userId);
   const { templates } = useFormTemplates(userId);
+  const { isFullAccess, loading: roleLoading } = useUserRole(userId);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -51,6 +54,14 @@ export default function JobPostingForm() {
       }
     });
   }, [navigate]);
+
+  // Redirect non-full-access users
+  useEffect(() => {
+    if (!roleLoading && userId && !isFullAccess) {
+      sonnerToast.error('Você não tem acesso a esta funcionalidade.');
+      navigate('/');
+    }
+  }, [roleLoading, isFullAccess, userId, navigate]);
 
   useEffect(() => {
     if (id && userId) {

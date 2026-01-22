@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Briefcase, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { JobPostingCard } from '@/components/jobs/JobPostingCard';
 import { JobTimeline, TimelineStatus } from '@/components/jobs/JobTimeline';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +26,7 @@ export default function JobPostings() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<TimelineStatus>('draft');
   const { jobPostings, loading, deleteJobPosting, changeStatus } = useJobPostings(userId);
+  const { isFullAccess, loading: roleLoading } = useUserRole(userId);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -34,6 +37,14 @@ export default function JobPostings() {
       }
     });
   }, [navigate]);
+
+  // Redirect non-full-access users
+  useEffect(() => {
+    if (!roleLoading && userId && !isFullAccess) {
+      toast.error('Você não tem acesso a esta funcionalidade.');
+      navigate('/');
+    }
+  }, [roleLoading, isFullAccess, userId, navigate]);
 
   const handleDelete = async () => {
     if (deleteId) {
@@ -87,12 +98,16 @@ export default function JobPostings() {
     }
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
+  }
+
+  if (!isFullAccess) {
+    return null;
   }
 
   return (

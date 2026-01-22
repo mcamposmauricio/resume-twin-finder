@@ -11,6 +11,7 @@ import { ErrorScreen } from "@/components/ErrorScreen";
 import { ReferralDialog } from "@/components/ReferralDialog";
 import { MarqBanner } from "@/components/MarqBanner";
 import { useResumeBalance } from "@/hooks/useResumeBalance";
+import { useUserRole } from "@/hooks/useUserRole";
 import type { AppStep, UploadedFile, AnalysisResult, CandidateResult } from "@/types";
 
 interface DraftData {
@@ -36,6 +37,7 @@ export default function Index() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { availableResumes, maxPerAnalysis, loading: balanceLoading, refetch: refetchBalance } = useResumeBalance(user?.id);
+  const { isFullAccess, loading: roleLoading } = useUserRole(user?.id);
   
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -696,7 +698,8 @@ export default function Index() {
       <main className="flex-1">
         {step === "welcome" && (
           <Dashboard 
-            user={user} 
+            user={user}
+            isFullAccess={isFullAccess}
             onNewAnalysis={handleNewAnalysis} 
             onViewAnalysis={handleViewAnalysis}
             onContinueDraft={handleContinueDraft}

@@ -14,6 +14,7 @@ import {
 
 interface DashboardProps {
   user: any;
+  isFullAccess: boolean;
   onNewAnalysis: () => void;
   onViewAnalysis: (analysisId: string) => void;
   onContinueDraft: (analysisId: string) => void;
@@ -32,7 +33,7 @@ interface Analysis {
   status: string;
 }
 
-export function Dashboard({ user, onNewAnalysis, onViewAnalysis, onContinueDraft, onNavigateToJobs, onNewJobPosting, onNavigateToForms }: DashboardProps) {
+export function Dashboard({ user, isFullAccess, onNewAnalysis, onViewAnalysis, onContinueDraft, onNavigateToJobs, onNewJobPosting, onNavigateToForms }: DashboardProps) {
   const navigate = useNavigate();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [jobPostings, setJobPostings] = useState<any[]>([]);
@@ -42,9 +43,11 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis, onContinueDraft
 
   useEffect(() => {
     fetchAnalyses();
-    fetchJobPostings();
+    if (isFullAccess) {
+      fetchJobPostings();
+    }
     fetchUserProfile();
-  }, [user]);
+  }, [user, isFullAccess]);
 
   const fetchUserProfile = async () => {
     if (!user) return;
@@ -184,36 +187,46 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis, onContinueDraft
             {userName}
           </h1>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105">
-              <Plus className="w-6 h-6 sm:w-7 sm:h-7" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={onNewAnalysis} className="cursor-pointer py-3">
-              <FileText className="w-4 h-4 mr-3 text-primary" />
-              <span>Nova Análise</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onNewJobPosting} className="cursor-pointer py-3">
-              <Briefcase className="w-4 h-4 mr-3 text-blue-600" />
-              <span>Nova Vaga</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onNavigateToForms} className="cursor-pointer py-3">
-              <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
-              <span>Modelos de Formulário</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onNavigateToJobs} className="cursor-pointer py-3">
-              <Palette className="w-4 h-4 mr-3 text-muted-foreground" />
-              <span>Gerenciar Vagas</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {isFullAccess ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105">
+                <Plus className="w-6 h-6 sm:w-7 sm:h-7" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={onNewAnalysis} className="cursor-pointer py-3">
+                <FileText className="w-4 h-4 mr-3 text-primary" />
+                <span>Nova Análise</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onNewJobPosting} className="cursor-pointer py-3">
+                <Briefcase className="w-4 h-4 mr-3 text-blue-600" />
+                <span>Nova Vaga</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onNavigateToForms} className="cursor-pointer py-3">
+                <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
+                <span>Modelos de Formulário</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onNavigateToJobs} className="cursor-pointer py-3">
+                <Palette className="w-4 h-4 mr-3 text-muted-foreground" />
+                <span>Gerenciar Vagas</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <button 
+            onClick={onNewAnalysis}
+            className="btn-primary text-sm sm:text-base"
+          >
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+            Nova Análise
+          </button>
+        )}
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-12">
+      <div className={`grid ${isFullAccess ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-2'} gap-3 sm:gap-6 mb-8 sm:mb-12`}>
         <div className="card-clean p-4 sm:p-6">
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="w-10 h-10 sm:w-14 sm:h-14 bg-primary/10 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
@@ -236,110 +249,116 @@ export function Dashboard({ user, onNewAnalysis, onViewAnalysis, onContinueDraft
             </div>
           </div>
         </div>
-        <div className="card-clean p-4 sm:p-6">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-10 h-10 sm:w-14 sm:h-14 bg-blue-100 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
-              <Briefcase className="w-5 h-5 sm:w-7 sm:h-7 text-blue-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl sm:text-3xl font-bold text-foreground">{stats.activeJobs}</p>
-              <p className="text-xs sm:text-base text-muted-foreground truncate">Vagas ativas</p>
-            </div>
-          </div>
-        </div>
-        <div className="card-clean p-4 sm:p-6">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-10 h-10 sm:w-14 sm:h-14 bg-violet-100 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
-              <UserPlus className="w-5 h-5 sm:w-7 sm:h-7 text-violet-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl sm:text-3xl font-bold text-foreground">{stats.totalApplications}</p>
-              <p className="text-xs sm:text-base text-muted-foreground truncate">Candidaturas</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Job Postings Section */}
-      <div className="mb-8 sm:mb-12">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <h2 className="text-lg sm:text-xl font-semibold text-foreground">
-            Vagas Recentes
-          </h2>
-          <button 
-            onClick={onNavigateToJobs}
-            className="text-xs sm:text-sm text-primary hover:text-primary/80 flex items-center gap-1 font-medium transition-colors"
-          >
-            Ver todas <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="space-y-3 sm:space-y-4">
-            {[1, 2].map((i) => (
-              <div key={i} className="card-clean animate-pulse p-4 sm:p-6">
-                <div className="h-4 sm:h-5 bg-muted rounded w-1/3 mb-3" />
-                <div className="h-3 sm:h-4 bg-muted rounded w-1/4" />
-              </div>
-            ))}
-          </div>
-        ) : jobPostings.length === 0 ? (
-          <div className="card-clean text-center py-8 sm:py-12">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-muted rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Briefcase className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground" />
-            </div>
-            <p className="text-sm sm:text-base text-muted-foreground mb-4">Você ainda não criou nenhuma vaga.</p>
-            <button
-              onClick={onNewJobPosting}
-              className="btn-primary text-sm sm:text-base"
-            >
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-              Criar primeira vaga
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-2 sm:space-y-3">
-            {jobPostings.slice(0, 3).map((job) => (
-              <button
-                key={job.id}
-                onClick={() => onNavigateToJobs()}
-                className="w-full card-hover text-left group p-3 sm:p-4 md:p-6"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 bg-blue-100">
-                      <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-sm sm:text-base font-medium text-foreground truncate">
-                          {job.title}
-                        </h3>
-                        {getStatusBadge(job.status)}
-                        {job.analyzed_at && (
-                          <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary">
-                            Analisado
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-                          {formatDate(job.created_at)}
-                        </span>
-                        {job.location && (
-                          <span className="truncate">{job.location}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+        {isFullAccess && (
+          <>
+            <div className="card-clean p-4 sm:p-6">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 bg-blue-100 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <Briefcase className="w-5 h-5 sm:w-7 sm:h-7 text-blue-600" />
                 </div>
-              </button>
-            ))}
-          </div>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-3xl font-bold text-foreground">{stats.activeJobs}</p>
+                  <p className="text-xs sm:text-base text-muted-foreground truncate">Vagas ativas</p>
+                </div>
+              </div>
+            </div>
+            <div className="card-clean p-4 sm:p-6">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 bg-violet-100 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <UserPlus className="w-5 h-5 sm:w-7 sm:h-7 text-violet-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-3xl font-bold text-foreground">{stats.totalApplications}</p>
+                  <p className="text-xs sm:text-base text-muted-foreground truncate">Candidaturas</p>
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
+
+      {/* Job Postings Section - Only for Full Access */}
+      {isFullAccess && (
+        <div className="mb-8 sm:mb-12">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground">
+              Vagas Recentes
+            </h2>
+            <button 
+              onClick={onNavigateToJobs}
+              className="text-xs sm:text-sm text-primary hover:text-primary/80 flex items-center gap-1 font-medium transition-colors"
+            >
+              Ver todas <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="space-y-3 sm:space-y-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="card-clean animate-pulse p-4 sm:p-6">
+                  <div className="h-4 sm:h-5 bg-muted rounded w-1/3 mb-3" />
+                  <div className="h-3 sm:h-4 bg-muted rounded w-1/4" />
+                </div>
+              ))}
+            </div>
+          ) : jobPostings.length === 0 ? (
+            <div className="card-clean text-center py-8 sm:py-12">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-muted rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Briefcase className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground" />
+              </div>
+              <p className="text-sm sm:text-base text-muted-foreground mb-4">Você ainda não criou nenhuma vaga.</p>
+              <button
+                onClick={onNewJobPosting}
+                className="btn-primary text-sm sm:text-base"
+              >
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                Criar primeira vaga
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2 sm:space-y-3">
+              {jobPostings.slice(0, 3).map((job) => (
+                <button
+                  key={job.id}
+                  onClick={() => onNavigateToJobs()}
+                  className="w-full card-hover text-left group p-3 sm:p-4 md:p-6"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 bg-blue-100">
+                        <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-sm sm:text-base font-medium text-foreground truncate">
+                            {job.title}
+                          </h3>
+                          {getStatusBadge(job.status)}
+                          {job.analyzed_at && (
+                            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary">
+                              Analisado
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                            {formatDate(job.created_at)}
+                          </span>
+                          {job.location && (
+                            <span className="truncate">{job.location}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
 
       {/* Recent Analyses */}
