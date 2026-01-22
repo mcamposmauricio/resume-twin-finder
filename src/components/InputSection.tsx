@@ -3,6 +3,8 @@ import { Upload, FileText, X, AlertCircle, ArrowRight, Info, Save, Phone, Check,
 import { UploadedFile } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getStoredUTMParams } from "@/hooks/useUTMTracking";
+import { pushGTMEvent } from "@/hooks/useGTMEvent";
 
 const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB em bytes
 
@@ -214,11 +216,40 @@ export function InputSection({ onAnalyze, onSaveDraft, isLoading, maxFiles, avai
     
     setIsRequestingContact(true);
     try {
+      // [EXISTING] MarQ webhook
       const { error } = await supabase.functions.invoke('send-lead-to-marq', {
         body: { userId, leadSource: 'saldo_esgotado' }
       });
       
       if (error) throw error;
+
+      // [NEW] Send to RD Station
+      const utmParams = getStoredUTMParams();
+      // Fetch user email from profile for RD Station
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email, name, phone, company_name')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (profile?.email) {
+        supabase.functions.invoke('send-lead-to-rdstation', {
+          body: {
+            conversion_identifier: 'comparecv_saldo_esgotado',
+            email: profile.email,
+            name: profile.name || undefined,
+            personal_phone: profile.phone || undefined,
+            company_name: profile.company_name || undefined,
+            ...utmParams,
+          },
+        }).catch(err => console.log('RD Station:', err?.message));
+      }
+
+      // [NEW] Push GTM event
+      pushGTMEvent('form_submit_success', { 
+        formId: 'contact-request-saldo', 
+        formName: 'Saldo Esgotado - Contato' 
+      });
       
       toast.success("Solicitação enviada! Entraremos em contato em breve.");
       setContactRequested(true);
