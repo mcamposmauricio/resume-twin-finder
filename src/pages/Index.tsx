@@ -267,25 +267,21 @@ export default function Index() {
     setDurationSeconds(data.duration_seconds);
     setStep("results");
 
-    // Save analysis to database
+    // Analysis is already saved by the Edge Function
+    // Just fetch the most recent analysis to link applications
     if (user) {
-      const { data: savedAnalysis, error: saveError } = await supabase.from("analyses").insert({
-        user_id: user.id,
-        job_title: null,
-        job_description: "Análise de candidatos de vaga",
-        candidates: candidatesArray.map((c: any) => ({ name: c.candidate_name || c.name || "Candidato" })),
-        results: data,
-        tokens_used: data.tokens_used || 0,
-        status: "completed",
-      }).select().single();
+      const { data: recentAnalysis } = await supabase
+        .from("analyses")
+        .select("id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
 
-      if (saveError) {
-        console.error("Error saving analysis:", saveError);
-      } else if (savedAnalysis) {
-        // Link applications to the saved analysis
-        await linkApplicationsToAnalysis(savedAnalysis.id);
-        refetchBalance();
+      if (recentAnalysis) {
+        await linkApplicationsToAnalysis(recentAnalysis.id);
       }
+      refetchBalance();
     }
   };
 
@@ -362,6 +358,8 @@ export default function Index() {
     setDurationSeconds(data.duration_seconds);
     setStep("results");
 
+    // Analysis is already saved by the Edge Function
+    // Only update if there was a draft being edited
     if (user) {
       if (currentDraft?.id) {
         // Update existing draft to completed
@@ -380,26 +378,11 @@ export default function Index() {
         if (updateError) {
           console.error("Error updating analysis:", updateError);
         } else {
-          refetchBalance();
           setCurrentDraft(null);
         }
-      } else {
-        // Create new analysis
-        const { error: saveError } = await supabase.from("analyses").insert({
-          user_id: user.id,
-          job_title: jobTitle || null,
-          job_description: jobDescription,
-          candidates: files.map((f) => ({ name: f.name })),
-          results: data,
-          tokens_used: data.tokens_used || 0,
-          status: "completed",
-        });
-        if (saveError) {
-          console.error("Error saving analysis:", saveError);
-        } else {
-          refetchBalance();
-        }
       }
+      // Always refetch balance (Edge Function already saved the analysis)
+      refetchBalance();
     }
   };
 
