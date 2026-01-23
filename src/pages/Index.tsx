@@ -395,7 +395,7 @@ export default function Index() {
     try {
       // Call the edge function to start analysis
       const { data, error } = await supabase.functions.invoke("analyze-resumes", {
-        body: { files, jobDescription, user_id: user?.id },
+        body: { files, jobDescription, user_id: user?.id, job_title: jobTitle },
       });
 
       if (error) {
