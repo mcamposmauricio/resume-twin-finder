@@ -55,11 +55,14 @@ export default function JobPostingForm() {
     });
   }, [navigate]);
 
-  // Redirect non-full-access users
+  // Redirect non-full-access users - only check after role is loaded
   useEffect(() => {
-    if (!roleLoading && userId && !isFullAccess) {
-      sonnerToast.error('Você não tem acesso a esta funcionalidade.');
-      navigate('/');
+    // Wait until we have userId AND role has finished loading
+    if (userId && !roleLoading) {
+      if (!isFullAccess) {
+        sonnerToast.error('Você não tem acesso a esta funcionalidade.');
+        navigate('/');
+      }
     }
   }, [roleLoading, isFullAccess, userId, navigate]);
 
