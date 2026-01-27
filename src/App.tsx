@@ -13,6 +13,7 @@ import JobPostings from "./pages/JobPostings";
 import JobPostingForm from "./pages/JobPostingForm";
 import JobPostingDetails from "./pages/JobPostingDetails";
 import PublicApplication from "./pages/PublicApplication";
+import ActivityLog from "./pages/ActivityLog";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,9 @@ const App = () => (
           
           {/* Public Application */}
           <Route path="/apply/:slug" element={<PublicApplication />} />
+          
+          {/* Activity Log (Admin Only) */}
+          <Route path="/atividades" element={<ActivityLog />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

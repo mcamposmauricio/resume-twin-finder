@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action_label: string
+          action_type: string
+          company_name: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          metadata: Json | null
+          user_email: string
+          user_id: string
+        }
+        Insert: {
+          action_label: string
+          action_type: string
+          company_name?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json | null
+          user_email: string
+          user_id: string
+        }
+        Update: {
+          action_label?: string
+          action_type?: string
+          company_name?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json | null
+          user_email?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       analyses: {
         Row: {
           candidates: Json
@@ -397,6 +436,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_email: { Args: never; Returns: boolean }
       is_corporate_email: { Args: { email: string }; Returns: boolean }
       is_full_access: { Args: { _user_id: string }; Returns: boolean }
       update_user_password_hash: {
