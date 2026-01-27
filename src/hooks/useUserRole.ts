@@ -12,10 +12,13 @@ export function useUserRole(userId?: string): UserRole {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Keep loading true while waiting for userId
     if (!userId) {
-      setLoading(false);
+      setLoading(true);
       return;
     }
+
+    setLoading(true);
 
     const fetchRole = async () => {
       try {
