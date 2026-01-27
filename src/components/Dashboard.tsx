@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Briefcase, Users, ArrowRight, Plus, FileText, Calendar, Clock, UserPlus, Palette, ExternalLink } from "lucide-react";
+import { Briefcase, Users, ArrowRight, Plus, FileText, Calendar, Clock, UserPlus, Palette, ExternalLink, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -212,6 +212,15 @@ export function Dashboard({ user, isFullAccess, onNewAnalysis, onViewAnalysis, o
                 <Palette className="w-4 h-4 mr-3 text-muted-foreground" />
                 <span>Gerenciar Vagas</span>
               </DropdownMenuItem>
+              {user?.email === 'mauricio@marqponto.com.br' && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/atividades')} className="cursor-pointer py-3">
+                    <Activity className="w-4 h-4 mr-3 text-orange-600" />
+                    <span>Log de Atividades</span>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
