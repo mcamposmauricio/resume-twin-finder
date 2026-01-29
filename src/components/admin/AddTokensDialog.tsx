@@ -18,6 +18,7 @@ interface AddTokensDialogProps {
   userName: string;
   userEmail: string;
   currentBalance: number;
+  resumesAnalyzed: number;
   onConfirm: (amount: number) => Promise<void>;
 }
 
@@ -27,8 +28,10 @@ export function AddTokensDialog({
   userName,
   userEmail,
   currentBalance,
+  resumesAnalyzed,
   onConfirm,
 }: AddTokensDialogProps) {
+  const availableBalance = Math.round(currentBalance - resumesAnalyzed);
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -71,8 +74,11 @@ export function AddTokensDialog({
 
         <div className="space-y-4 py-4">
           <div className="rounded-lg bg-muted p-3">
-            <p className="text-sm text-muted-foreground">Saldo atual</p>
-            <p className="text-2xl font-bold">{currentBalance} currículos</p>
+            <p className="text-sm text-muted-foreground">Saldo disponível</p>
+            <p className="text-2xl font-bold">{availableBalance} currículos</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              ({currentBalance} total - {resumesAnalyzed} utilizados)
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -90,9 +96,9 @@ export function AddTokensDialog({
 
           {amount && parseInt(amount, 10) > 0 && (
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-              <p className="text-sm text-muted-foreground">Novo saldo</p>
+              <p className="text-sm text-muted-foreground">Novo saldo disponível</p>
               <p className="text-xl font-bold text-primary">
-                {currentBalance + parseInt(amount, 10)} currículos
+                {availableBalance + parseInt(amount, 10)} currículos
               </p>
             </div>
           )}
