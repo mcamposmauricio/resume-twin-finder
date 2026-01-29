@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import logoMarq from "@/assets/logo-marq-blue.png";
 import { useUTMTracking } from "@/hooks/useUTMTracking";
 import { pushGTMEvent } from "@/hooks/useGTMEvent";
+import { logActivity } from "@/hooks/useActivityLog";
 
 // Declaração de tipo para Google Tag Manager dataLayer
 declare global {
@@ -210,11 +211,28 @@ export default function Auth() {
     try {
       if (isLogin) {
         // Login still uses local Supabase
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+        
+        // Log login activity
+        if (data?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('company_name')
+            .eq('user_id', data.user.id)
+            .maybeSingle();
+          
+          logActivity({
+            userId: data.user.id,
+            userEmail: data.user.email || email,
+            companyName: profile?.company_name || undefined,
+            actionType: 'user_login',
+          });
+        }
+        
         toast.success("Login realizado com sucesso!");
       } else {
         // SIGNUP: Create user LOCALLY first (immediate login)
