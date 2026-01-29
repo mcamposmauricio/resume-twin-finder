@@ -355,22 +355,27 @@ export function UserManagementTab() {
                       </span>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <span
-                          className={`font-medium ${
-                            user.total_resumes <= 2
-                              ? "text-destructive"
-                              : user.total_resumes <= 5
-                              ? "text-yellow-600"
-                              : ""
-                          }`}
-                        >
-                          {user.total_resumes}
-                        </span>
-                        {user.total_resumes <= 2 && (
-                          <AlertTriangle className="h-3 w-3 text-destructive" />
-                        )}
-                      </div>
+                      {(() => {
+                        const balance = Math.round(user.total_resumes - user.resumes_analyzed);
+                        return (
+                          <div className="flex items-center justify-center gap-1">
+                            <span
+                              className={`font-medium ${
+                                balance <= 2
+                                  ? "text-destructive"
+                                  : balance <= 5
+                                  ? "text-yellow-600"
+                                  : ""
+                              }`}
+                            >
+                              {balance}
+                            </span>
+                            {balance <= 2 && (
+                              <AlertTriangle className="h-3 w-3 text-destructive" />
+                            )}
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       {getStatusBadge(user)}
@@ -450,6 +455,7 @@ export function UserManagementTab() {
             userName={selectedUser.name || ""}
             userEmail={selectedUser.email || ""}
             currentBalance={selectedUser.total_resumes}
+            resumesAnalyzed={selectedUser.resumes_analyzed}
             onConfirm={handleAddTokens}
           />
           <BlockUserDialog
