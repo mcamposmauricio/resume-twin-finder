@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Filter, Calendar as CalendarIcon, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Filter, Calendar as CalendarIcon, Search, X, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -429,11 +429,24 @@ export default function ActivityLog() {
                               </span>
                             </TableCell>
                             <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                              {log.entity_type && (
-                                <span className="truncate block max-w-[200px]">
-                                  {log.entity_type}: {log.entity_id?.substring(0, 8)}...
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2">
+                                {log.entity_type && (
+                                  <span className="truncate block max-w-[150px]">
+                                    {log.entity_type}: {log.entity_id?.substring(0, 8)}...
+                                  </span>
+                                )}
+                                {(log.action_type === 'analysis_completed' || log.action_type === 'application_analyzed') && log.entity_id && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2"
+                                    onClick={() => navigate(`/?viewAnalysis=${log.entity_id}`)}
+                                    title="Ver análise"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))
