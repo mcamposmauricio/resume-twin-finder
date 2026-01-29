@@ -128,6 +128,22 @@ export default function JobPostingDetails() {
 
   const handleSendToAnalysis = async (applicationIds: string[]) => {
     try {
+      // Check if user is blocked before starting analysis
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_blocked')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (profile?.is_blocked) {
+        toast({
+          title: 'Conta bloqueada',
+          description: 'Sua conta está bloqueada. Entre em contato com o administrador.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // 1. Filter selected applications
       const selectedApps = applications.filter((a) => applicationIds.includes(a.id));
 

@@ -18,7 +18,10 @@ export type ActionType =
   | 'form_template_created'
   | 'form_template_updated'
   | 'form_template_deleted'
-  | 'referral_bonus';
+  | 'referral_bonus'
+  | 'admin_add_resumes'
+  | 'user_blocked'
+  | 'user_unblocked';
 
 const ACTION_LABELS: Record<ActionType, string> = {
   user_signup: 'Novo usuário cadastrado',
@@ -39,6 +42,9 @@ const ACTION_LABELS: Record<ActionType, string> = {
   form_template_updated: 'Modelo de formulário atualizado',
   form_template_deleted: 'Modelo de formulário excluído',
   referral_bonus: 'Bônus de indicação aplicado',
+  admin_add_resumes: 'Currículos adicionados por admin',
+  user_blocked: 'Usuário bloqueado',
+  user_unblocked: 'Usuário desbloqueado',
 };
 
 interface LogActivityParams {

@@ -449,6 +449,23 @@ serve(async (req) => {
   try {
     const { files, jobDescription, user_id, job_title, job_posting_id } = await req.json();
 
+    // Check if user is blocked
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: isBlocked } = await supabase.rpc("is_user_blocked", { _user_id: user_id });
+    
+    if (isBlocked) {
+      return new Response(
+        JSON.stringify({
+          error: "Sua conta está bloqueada. Entre em contato com o administrador.",
+          error_code: "USER_BLOCKED"
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (!jobDescription || typeof jobDescription !== "string" || jobDescription.trim().length < 50) {
       return new Response(
         JSON.stringify({
@@ -481,9 +498,7 @@ serve(async (req) => {
       );
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Note: supabase client already created above for block check
 
     const { data: jobData, error: insertError } = await supabase
       .from("analysis_jobs")

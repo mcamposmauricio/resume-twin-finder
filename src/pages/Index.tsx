@@ -387,6 +387,22 @@ export default function Index() {
   };
 
   const handleAnalyze = async (files: UploadedFile[], jobDescription: string, jobTitle?: string) => {
+    // Check if user is blocked before starting analysis
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_blocked')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
+      if (profile?.is_blocked) {
+        toast.error("Sua conta está bloqueada. Entre em contato com o administrador para mais informações.");
+        return;
+      }
+    } catch (err) {
+      console.error("Error checking block status:", err);
+    }
+
     setStep("loading");
     setCurrentJobTitle(jobTitle);
     setAnalysisProgress(0);

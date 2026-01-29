@@ -350,6 +350,7 @@ export type Database = {
           employee_count: string | null
           hr_hub_user_id: string | null
           id: string
+          is_blocked: boolean
           lead_source: string | null
           name: string | null
           phone: string | null
@@ -369,6 +370,7 @@ export type Database = {
           employee_count?: string | null
           hr_hub_user_id?: string | null
           id?: string
+          is_blocked?: boolean
           lead_source?: string | null
           name?: string | null
           phone?: string | null
@@ -388,6 +390,7 @@ export type Database = {
           employee_count?: string | null
           hr_hub_user_id?: string | null
           id?: string
+          is_blocked?: boolean
           lead_source?: string | null
           name?: string | null
           phone?: string | null
@@ -427,6 +430,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_users_with_stats: {
+        Args: never
+        Returns: {
+          cargo: string
+          company_name: string
+          created_at: string
+          email: string
+          is_blocked: boolean
+          name: string
+          phone: string
+          resumes_analyzed: number
+          role: string
+          total_analyses: number
+          total_resumes: number
+          total_tokens_used: number
+          user_id: string
+        }[]
+      }
+      admin_update_user_profile: {
+        Args: {
+          _resumes_to_add?: number
+          _set_blocked?: boolean
+          _target_user_id: string
+        }
+        Returns: undefined
+      }
       generate_referral_code: { Args: never; Returns: string }
       get_user_password_hash: { Args: { p_user_id: string }; Returns: string }
       has_role: {
@@ -439,6 +468,7 @@ export type Database = {
       is_admin_email: { Args: never; Returns: boolean }
       is_corporate_email: { Args: { email: string }; Returns: boolean }
       is_full_access: { Args: { _user_id: string }; Returns: boolean }
+      is_user_blocked: { Args: { _user_id: string }; Returns: boolean }
       update_user_password_hash: {
         Args: { p_password_hash: string; p_user_id: string }
         Returns: undefined
