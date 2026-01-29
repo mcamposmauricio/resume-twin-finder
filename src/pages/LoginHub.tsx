@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Mail, Lock, AlertCircle } from "lucide-react";
 import logoWhite from "@/assets/logo-marq-white.png";
+import { logActivity } from "@/hooks/useActivityLog";
 
 const LoginHub = () => {
   const [searchParams] = useSearchParams();
@@ -49,13 +50,30 @@ const LoginHub = () => {
           throw new Error(fnError?.message || data?.error || "Falha na autenticação automática");
         }
 
-        const { error: sessionError } = await supabase.auth.setSession({
+        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token,
         });
 
         if (sessionError) {
           throw sessionError;
+        }
+
+        // Log login activity
+        if (sessionData?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('company_name')
+            .eq('user_id', sessionData.user.id)
+            .maybeSingle();
+          
+          logActivity({
+            userId: sessionData.user.id,
+            userEmail: sessionData.user.email || '',
+            companyName: profile?.company_name || undefined,
+            actionType: 'user_login',
+            metadata: { source: 'hr_hub_auto' },
+          });
         }
 
         // Clear the token from URL and navigate
@@ -85,13 +103,30 @@ const LoginHub = () => {
         throw new Error(fnError?.message || data?.error || "Credenciais inválidas");
       }
 
-      const { error: sessionError } = await supabase.auth.setSession({
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
         access_token: data.access_token,
         refresh_token: data.refresh_token,
       });
 
       if (sessionError) {
         throw sessionError;
+      }
+
+      // Log login activity
+      if (sessionData?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('company_name')
+          .eq('user_id', sessionData.user.id)
+          .maybeSingle();
+        
+        logActivity({
+          userId: sessionData.user.id,
+          userEmail: sessionData.user.email || email,
+          companyName: profile?.company_name || undefined,
+          actionType: 'user_login',
+          metadata: { source: 'hr_hub_manual' },
+        });
       }
 
       navigate("/", { replace: true });
