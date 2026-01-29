@@ -72,6 +72,98 @@ export default function Index() {
     }
   }, [searchParams, user]);
 
+  // Handle URL-based analysis viewing (from activity log)
+  useEffect(() => {
+    const viewAnalysisId = searchParams.get("viewAnalysis");
+    if (viewAnalysisId && user) {
+      // Clear the URL parameter
+      setSearchParams({});
+      // Load and display the analysis
+      loadAnalysisById(viewAnalysisId);
+    }
+  }, [searchParams, user]);
+
+  const loadAnalysisById = async (analysisId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("analyses")
+        .select("*")
+        .eq("id", analysisId)
+        .maybeSingle();
+
+      if (error || !data) {
+        toast.error("Análise não encontrada");
+        return;
+      }
+
+      // Parse and display results
+      const results = data.results as any;
+      if (results) {
+        let candidatesArray: any[] = [];
+        
+        if (results.candidates_analysis && Array.isArray(results.candidates_analysis)) {
+          candidatesArray = results.candidates_analysis;
+        } else if (results.candidates && Array.isArray(results.candidates)) {
+          candidatesArray = results.candidates;
+        }
+
+        const normalizedData = {
+          candidates: candidatesArray.map((c: any, idx: number) => ({
+            candidate_name: c.candidate_name || c.name || `Candidato ${idx + 1}`,
+            file_name: c.file_name || `Arquivo ${idx + 1}`,
+            match_score: c.match_score ?? 0,
+            technical_fit: c.technical_fit ?? 0,
+            potential_fit: c.potential_fit ?? 0,
+            summary: c.summary || "",
+            years_experience: c.years_experience ?? 0,
+            soft_skills: Array.isArray(c.soft_skills) 
+              ? c.soft_skills.map((s: any) => {
+                  if (s.name && typeof s.score === 'number') return s;
+                  const key = Object.keys(s)[0];
+                  return { name: key, score: s[key] };
+                })
+              : [],
+            cultural_fit: c.cultural_fit || {
+              results_orientation: 50,
+              process_orientation: 50,
+              people_orientation: 50,
+              innovation_orientation: 50,
+            },
+            red_flags: Array.isArray(c.red_flags) ? c.red_flags : [],
+            gap_analysis: c.gap_analysis || {
+              strong_match: [],
+              moderate_match: [],
+              weak_or_missing: [],
+            },
+            inferred_info: c.inferred_info || {
+              seniority_level: "N/A",
+              estimated_salary_range: "N/A",
+              tools_and_technologies: [],
+              industry_experience: [],
+              education_level: "N/A",
+              languages: [],
+              certifications: [],
+              leadership_experience: "N/A",
+              remote_work_compatibility: "N/A",
+              availability: "N/A",
+            },
+          })),
+          recommendation: results.recommendation || "Análise concluída.",
+          comparison_summary: results.comparison_summary || "Veja a tabela comparativa.",
+        };
+
+        setResults(normalizedData);
+        setDurationSeconds(data.duration_seconds || undefined);
+        setCurrentJobTitle(data.job_title || undefined);
+        setSelectedAnalysisId(analysisId);
+        setStep("results");
+      }
+    } catch (err) {
+      console.error("Error loading analysis:", err);
+      toast.error("Erro ao carregar análise");
+    }
+  };
+
   // Cleanup polling on unmount
   useEffect(() => {
     return () => {
