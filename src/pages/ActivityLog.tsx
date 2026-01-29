@@ -25,6 +25,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
+import { AnalysisPreviewDialog } from "@/components/admin/AnalysisPreviewDialog";
 import type { DateRange } from "react-day-picker";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -82,6 +83,10 @@ export default function ActivityLog() {
   const [dateMode, setDateMode] = useState<'single' | 'range'>('range');
   const [singleDate, setSingleDate] = useState<Date | undefined>();
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  // Analysis preview
+  const [previewAnalysisId, setPreviewAnalysisId] = useState<string | null>(null);
+  const [previewUserEmail, setPreviewUserEmail] = useState<string | undefined>();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -440,7 +445,10 @@ export default function ActivityLog() {
                                     variant="ghost"
                                     size="sm"
                                     className="h-7 px-2"
-                                    onClick={() => navigate(`/?viewAnalysis=${log.entity_id}`)}
+                                    onClick={() => {
+                                      setPreviewAnalysisId(log.entity_id);
+                                      setPreviewUserEmail(log.user_email);
+                                    }}
                                     title="Ver análise"
                                   >
                                     <Eye className="h-4 w-4" />
@@ -485,6 +493,19 @@ export default function ActivityLog() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Analysis Preview Dialog */}
+        <AnalysisPreviewDialog
+          open={!!previewAnalysisId}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPreviewAnalysisId(null);
+              setPreviewUserEmail(undefined);
+            }
+          }}
+          analysisId={previewAnalysisId}
+          userEmail={previewUserEmail}
+        />
       </div>
     </div>
   );
