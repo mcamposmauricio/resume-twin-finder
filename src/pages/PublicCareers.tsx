@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Briefcase, DollarSign, Users } from 'lucide-react';
+import { Briefcase, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { JobPosting, WorkType, JobStatus, FormField } from '@/types/jobs';
-import { WORK_TYPE_LABELS } from '@/types/jobs';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -13,23 +12,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import logoBlue from '@/assets/logo-marq-blue.png';
+import { CareersHeader } from '@/components/careers/CareersHeader';
+import { CareersHero } from '@/components/careers/CareersHero';
+import { CareersAbout } from '@/components/careers/CareersAbout';
+import { CareersBenefits } from '@/components/careers/CareersBenefits';
+import { CareersJobCard } from '@/components/careers/CareersJobCard';
+import { CareersFooter } from '@/components/careers/CareersFooter';
 
 interface CompanyProfile {
   user_id: string;
   company_name: string | null;
   company_logo_url: string | null;
   brand_color: string | null;
+  company_tagline: string | null;
+  company_about: string | null;
+  company_culture: string | null;
+  company_benefits: string[] | null;
+  company_website: string | null;
+  company_linkedin: string | null;
+  company_instagram: string | null;
+  careers_hero_image_url: string | null;
+  careers_cta_text: string | null;
+  careers_show_about: boolean | null;
+  careers_show_benefits: boolean | null;
+  careers_show_culture: boolean | null;
+  careers_show_social: boolean | null;
 }
 
 export default function PublicCareers() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const jobsRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [workTypeFilter, setWorkTypeFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!slug) return;
@@ -37,10 +56,15 @@ export default function PublicCareers() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch profile by careers page slug
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('user_id, company_name, company_logo_url, brand_color')
+          .select(`
+            user_id, company_name, company_logo_url, brand_color,
+            company_tagline, company_about, company_culture, company_benefits,
+            company_website, company_linkedin, company_instagram,
+            careers_hero_image_url, careers_cta_text,
+            careers_show_about, careers_show_benefits, careers_show_culture, careers_show_social
+          `)
           .eq('careers_page_slug', slug)
           .eq('careers_page_enabled', true)
           .maybeSingle();
@@ -52,15 +76,14 @@ export default function PublicCareers() {
           return;
         }
 
-        setProfile(profileData);
+        setProfile({
+          ...profileData,
+          company_benefits: (profileData.company_benefits as string[]) || [],
+        });
 
-        // Fetch active jobs for this user
         const { data: jobsData, error: jobsError } = await supabase
           .from('job_postings')
-          .select(`
-            *,
-            form_template:form_templates(*)
-          `)
+          .select(`*, form_template:form_templates(*)`)
           .eq('user_id', profileData.user_id)
           .eq('status', 'active')
           .order('created_at', { ascending: false });
@@ -90,17 +113,25 @@ export default function PublicCareers() {
     fetchData();
   }, [slug]);
 
-  // Get unique locations for filter
   const locations = [...new Set(jobs.map((j) => j.location).filter(Boolean))] as string[];
 
-  // Filter jobs
   const filteredJobs = jobs.filter((job) => {
     if (workTypeFilter !== 'all' && job.work_type !== workTypeFilter) return false;
     if (locationFilter !== 'all' && job.location !== locationFilter) return false;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesTitle = job.title.toLowerCase().includes(query);
+      const matchesDescription = job.description?.toLowerCase().includes(query);
+      if (!matchesTitle && !matchesDescription) return false;
+    }
     return true;
   });
 
   const brandColor = profile?.brand_color || '#3B82F6';
+
+  const scrollToJobs = () => {
+    jobsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   if (loading) {
     return (
@@ -115,7 +146,7 @@ export default function PublicCareers() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md mx-4">
           <CardContent className="py-12 text-center">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Página não encontrada</h2>
             <p className="text-muted-foreground">
               Esta página de carreiras não existe ou está desativada.
@@ -128,154 +159,124 @@ export default function PublicCareers() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header
-        className="border-b bg-card"
-        style={{ borderBottomColor: brandColor }}
-      >
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            {profile.company_logo_url ? (
-              <img
-                src={profile.company_logo_url}
-                alt={profile.company_name || 'Logo'}
-                className="h-12 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            ) : profile.company_name ? (
-              <span className="text-2xl font-bold" style={{ color: brandColor }}>
-                {profile.company_name}
-              </span>
-            ) : (
-              <img src={logoBlue} alt="Logo" className="h-10" />
-            )}
-            <span className="text-lg font-medium text-muted-foreground">
-              Trabalhe Conosco
-            </span>
-          </div>
-        </div>
-      </header>
+      <CareersHeader
+        companyName={profile.company_name}
+        companyLogoUrl={profile.company_logo_url}
+        brandColor={brandColor}
+        website={profile.company_website}
+        linkedin={profile.company_linkedin}
+        instagram={profile.company_instagram}
+        showSocial={profile.careers_show_social ?? true}
+      />
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Hero */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            Junte-se ao time {profile.company_name || ''}!
-          </h1>
-          <p className="text-muted-foreground">
-            Confira nossas vagas abertas e faça parte da nossa equipe
+      <CareersHero
+        companyName={profile.company_name}
+        tagline={profile.company_tagline}
+        heroImageUrl={profile.careers_hero_image_url}
+        ctaText={profile.careers_cta_text}
+        brandColor={brandColor}
+        onCtaClick={scrollToJobs}
+      />
+
+      <CareersAbout
+        about={profile.company_about}
+        culture={profile.company_culture}
+        showAbout={profile.careers_show_about ?? true}
+        showCulture={profile.careers_show_culture ?? true}
+        brandColor={brandColor}
+      />
+
+      <CareersBenefits
+        benefits={profile.company_benefits || []}
+        showBenefits={profile.careers_show_benefits ?? true}
+        brandColor={brandColor}
+      />
+
+      {/* Jobs Section */}
+      <section ref={jobsRef} className="py-12 md:py-16">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-2">
+            Vagas Abertas
+          </h2>
+          <p className="text-muted-foreground text-center mb-8">
+            {jobs.length} {jobs.length === 1 ? 'oportunidade disponível' : 'oportunidades disponíveis'}
           </p>
-        </div>
 
-        {/* Filters */}
-        {jobs.length > 0 && (
-          <div className="flex flex-wrap gap-4 mb-6">
-            <Select value={workTypeFilter} onValueChange={setWorkTypeFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Tipo de trabalho" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
-                <SelectItem value="remote">Remoto</SelectItem>
-                <SelectItem value="hybrid">Híbrido</SelectItem>
-                <SelectItem value="onsite">Presencial</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {locations.length > 0 && (
-              <Select value={locationFilter} onValueChange={setLocationFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Localização" />
+          {/* Filters */}
+          {jobs.length > 0 && (
+            <div className="flex flex-col sm:flex-row gap-3 mb-8">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar vagas..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={workTypeFilter} onValueChange={setWorkTypeFilter}>
+                <SelectTrigger className="w-full sm:w-[160px]">
+                  <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas localidades</SelectItem>
-                  {locations.map((loc) => (
-                    <SelectItem key={loc} value={loc}>
-                      {loc}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value="remote">Remoto</SelectItem>
+                  <SelectItem value="hybrid">Híbrido</SelectItem>
+                  <SelectItem value="onsite">Presencial</SelectItem>
                 </SelectContent>
               </Select>
-            )}
-          </div>
-        )}
 
-        {/* Job Listings */}
-        {filteredJobs.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">
-                {jobs.length === 0
-                  ? 'Nenhuma vaga disponível no momento'
-                  : 'Nenhuma vaga corresponde aos filtros'}
-              </h3>
-              <p className="text-muted-foreground">
-                {jobs.length === 0
-                  ? 'Volte em breve para conferir novas oportunidades!'
-                  : 'Tente ajustar os filtros para ver mais vagas.'}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {filteredJobs.map((job) => (
-              <Card key={job.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xl">{job.title}</CardTitle>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-                    {job.location && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {job.location}
-                      </div>
-                    )}
-                    {job.work_type && (
-                      <div className="flex items-center gap-1">
-                        <Briefcase className="h-4 w-4" />
-                        {WORK_TYPE_LABELS[job.work_type]}
-                      </div>
-                    )}
-                    {job.salary_range && (
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4" />
-                        {job.salary_range}
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                    {job.description}
-                  </p>
-                  <Button
-                    onClick={() => navigate(`/apply/${job.public_slug}`)}
-                    style={{ backgroundColor: brandColor }}
-                  >
-                    Candidatar-se
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+              {locations.length > 0 && (
+                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Localização" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas localidades</SelectItem>
+                    {locations.map((loc) => (
+                      <SelectItem key={loc} value={loc}>
+                        {loc}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
 
-        {/* Footer */}
-        <div className="mt-12 text-center text-sm text-muted-foreground">
-          Powered by{' '}
-          <a
-            href="https://marqponto.com.br"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium hover:underline"
-            style={{ color: brandColor }}
-          >
-            CompareCV powered by MarQ
-          </a>
+          {/* Job Listings */}
+          {filteredJobs.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold mb-2">
+                  {jobs.length === 0
+                    ? 'Nenhuma vaga disponível no momento'
+                    : 'Nenhuma vaga corresponde aos filtros'}
+                </h3>
+                <p className="text-muted-foreground">
+                  {jobs.length === 0
+                    ? 'Volte em breve para conferir novas oportunidades!'
+                    : 'Tente ajustar os filtros para ver mais vagas.'}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              {filteredJobs.map((job) => (
+                <CareersJobCard
+                  key={job.id}
+                  job={job}
+                  brandColor={brandColor}
+                  onApply={() => navigate(`/apply/${job.public_slug}`)}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      </section>
+
+      <CareersFooter brandColor={brandColor} />
     </div>
   );
 }
