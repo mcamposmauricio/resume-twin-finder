@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { PipelineStagesEditor } from '@/components/settings/PipelineStagesEditor';
+import { CompanyInfoTab } from '@/components/settings/CompanyInfoTab';
+import { CareersPageTab } from '@/components/settings/CareersPageTab';
 
 interface ProfileSettings {
   company_name: string;
@@ -18,21 +19,48 @@ interface ProfileSettings {
   brand_color: string;
   careers_page_slug: string;
   careers_page_enabled: boolean;
+  company_tagline: string;
+  company_about: string;
+  company_culture: string;
+  company_benefits: string[];
+  company_website: string;
+  company_linkedin: string;
+  company_instagram: string;
+  careers_hero_image_url: string;
+  careers_cta_text: string;
+  careers_show_about: boolean;
+  careers_show_benefits: boolean;
+  careers_show_culture: boolean;
+  careers_show_social: boolean;
 }
+
+const defaultSettings: ProfileSettings = {
+  company_name: '',
+  company_logo_url: '',
+  brand_color: '#3B82F6',
+  careers_page_slug: '',
+  careers_page_enabled: false,
+  company_tagline: '',
+  company_about: '',
+  company_culture: '',
+  company_benefits: [],
+  company_website: '',
+  company_linkedin: '',
+  company_instagram: '',
+  careers_hero_image_url: '',
+  careers_cta_text: 'Venha fazer parte!',
+  careers_show_about: true,
+  careers_show_benefits: true,
+  careers_show_culture: true,
+  careers_show_social: true,
+};
 
 export default function Settings() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [settings, setSettings] = useState<ProfileSettings>({
-    company_name: '',
-    company_logo_url: '',
-    brand_color: '#3B82F6',
-    careers_page_slug: '',
-    careers_page_enabled: false,
-  });
+  const [settings, setSettings] = useState<ProfileSettings>(defaultSettings);
 
   const { isFullAccess, loading: roleLoading } = useUserRole(userId);
 
@@ -61,7 +89,14 @@ export default function Settings() {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('company_name, company_logo_url, brand_color, careers_page_slug, careers_page_enabled')
+          .select(`
+            company_name, company_logo_url, brand_color, 
+            careers_page_slug, careers_page_enabled,
+            company_tagline, company_about, company_culture, company_benefits,
+            company_website, company_linkedin, company_instagram,
+            careers_hero_image_url, careers_cta_text,
+            careers_show_about, careers_show_benefits, careers_show_culture, careers_show_social
+          `)
           .eq('user_id', userId)
           .single();
 
@@ -73,6 +108,19 @@ export default function Settings() {
           brand_color: data.brand_color || '#3B82F6',
           careers_page_slug: data.careers_page_slug || '',
           careers_page_enabled: data.careers_page_enabled || false,
+          company_tagline: data.company_tagline || '',
+          company_about: data.company_about || '',
+          company_culture: data.company_culture || '',
+          company_benefits: (data.company_benefits as string[]) || [],
+          company_website: data.company_website || '',
+          company_linkedin: data.company_linkedin || '',
+          company_instagram: data.company_instagram || '',
+          careers_hero_image_url: data.careers_hero_image_url || '',
+          careers_cta_text: data.careers_cta_text || 'Venha fazer parte!',
+          careers_show_about: data.careers_show_about ?? true,
+          careers_show_benefits: data.careers_show_benefits ?? true,
+          careers_show_culture: data.careers_show_culture ?? true,
+          careers_show_social: data.careers_show_social ?? true,
         });
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -89,7 +137,6 @@ export default function Settings() {
 
     setSaving(true);
     try {
-      // If enabling careers page without a slug, generate one
       let slug = settings.careers_page_slug;
       if (settings.careers_page_enabled && !slug && settings.company_name) {
         const { data: generatedSlug } = await supabase.rpc('generate_careers_slug', {
@@ -106,6 +153,19 @@ export default function Settings() {
           brand_color: settings.brand_color || '#3B82F6',
           careers_page_slug: slug || null,
           careers_page_enabled: settings.careers_page_enabled,
+          company_tagline: settings.company_tagline || null,
+          company_about: settings.company_about || null,
+          company_culture: settings.company_culture || null,
+          company_benefits: settings.company_benefits,
+          company_website: settings.company_website || null,
+          company_linkedin: settings.company_linkedin || null,
+          company_instagram: settings.company_instagram || null,
+          careers_hero_image_url: settings.careers_hero_image_url || null,
+          careers_cta_text: settings.careers_cta_text || 'Venha fazer parte!',
+          careers_show_about: settings.careers_show_about,
+          careers_show_benefits: settings.careers_show_benefits,
+          careers_show_culture: settings.careers_show_culture,
+          careers_show_social: settings.careers_show_social,
         })
         .eq('user_id', userId);
 
@@ -121,20 +181,8 @@ export default function Settings() {
     }
   };
 
-  const getCareersUrl = () => {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/carreiras/${settings.careers_page_slug}`;
-  };
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(getCareersUrl());
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast.success('Link copiado!');
-    } catch {
-      toast.error('Erro ao copiar link');
-    }
+  const updateSettings = (updates: Partial<ProfileSettings>) => {
+    setSettings((prev) => ({ ...prev, ...updates }));
   };
 
   if (loading || roleLoading) {
@@ -152,7 +200,6 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
@@ -166,9 +213,10 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'brand'} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="brand">Marca</TabsTrigger>
-            <TabsTrigger value="careers">Página de Carreiras</TabsTrigger>
+            <TabsTrigger value="company">Empresa</TabsTrigger>
+            <TabsTrigger value="careers">Carreiras</TabsTrigger>
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           </TabsList>
 
@@ -186,9 +234,7 @@ export default function Settings() {
                   <Input
                     id="companyName"
                     value={settings.company_name}
-                    onChange={(e) =>
-                      setSettings((prev) => ({ ...prev, company_name: e.target.value }))
-                    }
+                    onChange={(e) => updateSettings({ company_name: e.target.value })}
                     placeholder="Ex: MarQ Ponto"
                   />
                 </div>
@@ -198,9 +244,7 @@ export default function Settings() {
                   <Input
                     id="companyLogoUrl"
                     value={settings.company_logo_url}
-                    onChange={(e) =>
-                      setSettings((prev) => ({ ...prev, company_logo_url: e.target.value }))
-                    }
+                    onChange={(e) => updateSettings({ company_logo_url: e.target.value })}
                     placeholder="https://exemplo.com/logo.png"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -228,16 +272,12 @@ export default function Settings() {
                       type="color"
                       id="brandColor"
                       value={settings.brand_color}
-                      onChange={(e) =>
-                        setSettings((prev) => ({ ...prev, brand_color: e.target.value }))
-                      }
+                      onChange={(e) => updateSettings({ brand_color: e.target.value })}
                       className="w-12 h-10 rounded border cursor-pointer"
                     />
                     <Input
                       value={settings.brand_color}
-                      onChange={(e) =>
-                        setSettings((prev) => ({ ...prev, brand_color: e.target.value }))
-                      }
+                      onChange={(e) => updateSettings({ brand_color: e.target.value })}
                       placeholder="#3B82F6"
                       className="flex-1"
                     />
@@ -247,87 +287,35 @@ export default function Settings() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="company">
+            <CompanyInfoTab
+              settings={{
+                company_tagline: settings.company_tagline,
+                company_about: settings.company_about,
+                company_culture: settings.company_culture,
+                company_benefits: settings.company_benefits,
+                company_website: settings.company_website,
+                company_linkedin: settings.company_linkedin,
+                company_instagram: settings.company_instagram,
+              }}
+              onSettingsChange={updateSettings}
+            />
+          </TabsContent>
+
           <TabsContent value="careers">
-            <Card>
-              <CardHeader>
-                <CardTitle>Página Pública de Carreiras</CardTitle>
-                <CardDescription>
-                  Configure uma página pública listando todas as suas vagas abertas
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="careersEnabled">Habilitar página de carreiras</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Quando habilitada, candidatos podem ver todas as suas vagas abertas
-                    </p>
-                  </div>
-                  <Switch
-                    id="careersEnabled"
-                    checked={settings.careers_page_enabled}
-                    onCheckedChange={(checked) =>
-                      setSettings((prev) => ({ ...prev, careers_page_enabled: checked }))
-                    }
-                  />
-                </div>
-
-                {settings.careers_page_enabled && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="careersSlug">URL da página</Label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">/carreiras/</span>
-                        <Input
-                          id="careersSlug"
-                          value={settings.careers_page_slug}
-                          onChange={(e) =>
-                            setSettings((prev) => ({
-                              ...prev,
-                              careers_page_slug: e.target.value
-                                .toLowerCase()
-                                .replace(/[^a-z0-9-]/g, '-'),
-                            }))
-                          }
-                          placeholder="minha-empresa"
-                          className="flex-1"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Deixe em branco para gerar automaticamente a partir do nome da empresa
-                      </p>
-                    </div>
-
-                    {settings.careers_page_slug && (
-                      <div className="space-y-2">
-                        <Label>Link completo</Label>
-                        <div className="flex items-center gap-2">
-                          <Input value={getCareersUrl()} readOnly className="flex-1" />
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={handleCopyLink}
-                          >
-                            {copied ? (
-                              <Check className="h-4 w-4" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => window.open(getCareersUrl(), '_blank')}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            <CareersPageTab
+              settings={{
+                careers_page_enabled: settings.careers_page_enabled,
+                careers_page_slug: settings.careers_page_slug,
+                careers_hero_image_url: settings.careers_hero_image_url,
+                careers_cta_text: settings.careers_cta_text,
+                careers_show_about: settings.careers_show_about,
+                careers_show_benefits: settings.careers_show_benefits,
+                careers_show_culture: settings.careers_show_culture,
+                careers_show_social: settings.careers_show_social,
+              }}
+              onSettingsChange={updateSettings}
+            />
           </TabsContent>
 
           <TabsContent value="pipeline">

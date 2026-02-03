@@ -380,11 +380,24 @@ export type Database = {
       profiles: {
         Row: {
           brand_color: string | null
+          careers_cta_text: string | null
+          careers_hero_image_url: string | null
           careers_page_enabled: boolean | null
           careers_page_slug: string | null
+          careers_show_about: boolean | null
+          careers_show_benefits: boolean | null
+          careers_show_culture: boolean | null
+          careers_show_social: boolean | null
           cargo: string | null
+          company_about: string | null
+          company_benefits: Json | null
+          company_culture: string | null
+          company_instagram: string | null
+          company_linkedin: string | null
           company_logo_url: string | null
           company_name: string | null
+          company_tagline: string | null
+          company_website: string | null
           created_at: string
           email: string | null
           employee_count: string | null
@@ -404,11 +417,24 @@ export type Database = {
         }
         Insert: {
           brand_color?: string | null
+          careers_cta_text?: string | null
+          careers_hero_image_url?: string | null
           careers_page_enabled?: boolean | null
           careers_page_slug?: string | null
+          careers_show_about?: boolean | null
+          careers_show_benefits?: boolean | null
+          careers_show_culture?: boolean | null
+          careers_show_social?: boolean | null
           cargo?: string | null
+          company_about?: string | null
+          company_benefits?: Json | null
+          company_culture?: string | null
+          company_instagram?: string | null
+          company_linkedin?: string | null
           company_logo_url?: string | null
           company_name?: string | null
+          company_tagline?: string | null
+          company_website?: string | null
           created_at?: string
           email?: string | null
           employee_count?: string | null
@@ -428,11 +454,24 @@ export type Database = {
         }
         Update: {
           brand_color?: string | null
+          careers_cta_text?: string | null
+          careers_hero_image_url?: string | null
           careers_page_enabled?: boolean | null
           careers_page_slug?: string | null
+          careers_show_about?: boolean | null
+          careers_show_benefits?: boolean | null
+          careers_show_culture?: boolean | null
+          careers_show_social?: boolean | null
           cargo?: string | null
+          company_about?: string | null
+          company_benefits?: Json | null
+          company_culture?: string | null
+          company_instagram?: string | null
+          company_linkedin?: string | null
           company_logo_url?: string | null
           company_name?: string | null
+          company_tagline?: string | null
+          company_website?: string | null
           created_at?: string
           email?: string | null
           employee_count?: string | null
