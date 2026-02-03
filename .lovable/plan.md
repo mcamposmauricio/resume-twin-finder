@@ -1,283 +1,166 @@
 
-## Plano: Configuracoes de Plataforma, Clonagem de Vagas e Pagina Publica de Carreiras
+## Plano: Ajustes no Fluxo de Criacao de Vagas e Acesso a Carreiras
 
 ### Visao Geral
 
-Refatorar o sistema para:
-1. Mover personalizacao (logo, cor, nome) para nivel de plataforma (profiles)
-2. Adicionar opcao de criar vaga do zero ou clonar uma existente
-3. Criar pagina publica de carreiras com todas as vagas ativas da empresa
+Realizar quatro ajustes no sistema:
+1. Integrar o NewJobDialog no botao "+" do Dashboard (home)
+2. Remover o botao "Preencher Exemplo" do formulario de vaga
+3. Adicionar opcao "Configuracoes" no menu dropdown do botao "+"
+4. Adicionar link para pagina de carreiras na pagina de gerenciamento de vagas
 
 ---
 
-### 1. Personalizacao a Nivel de Plataforma
+### 1. NewJobDialog no Dashboard (Home)
 
 **Situacao Atual:**
-- Campos `company_name`, `company_logo_url` e `brand_color` estao na tabela `job_postings`
-- Cada vaga pode ter branding diferente
+- O botao "Nova Vaga" no dropdown do Dashboard chama `onNewJobPosting` que navega direto para `/vagas/nova`
+- O `NewJobDialog` ja existe e esta sendo usado na pagina `/vagas` (JobPostings)
 
 **Mudanca:**
-- Mover campos de branding para a tabela `profiles`:
-  - `company_logo_url` (novo)
-  - `brand_color` (novo)
-  - `careers_page_slug` (novo - slug unico para pagina de carreiras)
-  - `careers_page_enabled` (novo - controla se a pagina esta ativa)
-- O campo `company_name` ja existe em `profiles`
-- Remover esses campos do formulario de criacao de vaga
-- Criar nova pagina de configuracoes para personalizar a marca
-
-**Nova Rota:**
-- `/configuracoes` - Pagina com configuracoes de marca e pagina de carreiras
+- Adicionar estado para controlar a abertura do dialog no Dashboard
+- Importar e renderizar o `NewJobDialog` no Dashboard
+- Alterar o click de "Nova Vaga" para abrir o dialog ao inves de navegar direto
+- Buscar lista de vagas para passar ao dialog (para clonagem)
 
 ---
 
-### 2. Criar Vaga: Do Zero ou Clonar
+### 2. Remover Botao "Preencher Exemplo"
 
-**Fluxo Proposto:**
-1. Ao clicar em "Nova Vaga", abre um Dialog
-2. Usuario escolhe:
-   - "Comecar do zero" → navega para `/vagas/nova`
-   - "Clonar vaga existente" → lista de vagas para selecionar
-3. Ao clonar, todos os campos sao pre-preenchidos:
-   - Titulo, descricao, requisitos, localizacao, faixa salarial, tipo de trabalho
-   - Formulario de candidatura (form_template_id)
-4. A vaga clonada inicia como rascunho com novo ID e slug
+**Situacao Atual:**
+- O botao esta nas linhas 189-194 do `JobPostingForm.tsx`
+- Funcao `fillTestData` preenche campos com dados de exemplo
+
+**Mudanca:**
+- Remover o botao e a funcao `fillTestData`
+- Manter o layout do header sem o botao
 
 ---
 
-### 3. Pagina Publica de Carreiras
+### 3. Adicionar "Configuracoes" no Menu "+"
 
-**URL:** `/carreiras/:slug`
+**Situacao Atual:**
+- O menu dropdown tem: Nova Analise, Nova Vaga, separador, Modelos de Formulario, Gerenciar Vagas, e Log de Atividades (admin only)
 
-**Funcionalidades:**
-- Exibe header com logo/nome da empresa (da tabela profiles)
-- Lista todas as vagas com status `active` do usuario
-- Cada vaga mostra: titulo, localizacao, tipo de trabalho
-- Ao clicar em uma vaga, redireciona para `/apply/:job_slug`
-- Filtros opcionais: tipo de trabalho, localizacao
+**Mudanca:**
+- Adicionar opcao "Configuracoes" apos "Gerenciar Vagas" com icone Settings
+- Navegacao para `/configuracoes`
 
-**Componentes:**
-- Header com branding da empresa
-- Grid/Lista de vagas
-- Card de vaga com informacoes resumidas
-- Estado vazio quando nao ha vagas
+---
+
+### 4. Link para Pagina de Carreiras em JobPostings
+
+**Situacao Atual:**
+- A pagina de gerenciamento de vagas (`JobPostings.tsx`) nao tem link para a pagina de carreiras
+- A configuracao da pagina de carreiras esta em `/configuracoes`
+
+**Mudanca:**
+- Buscar o slug da pagina de carreiras do profile do usuario
+- Mostrar um banner/card com link para a pagina de carreiras quando habilitada
+- Incluir botao para copiar link e abrir em nova aba
 
 ---
 
 ### Detalhes Tecnicos
 
-**Migracao de Banco de Dados:**
-```sql
--- Adicionar campos de branding na tabela profiles
-ALTER TABLE profiles 
-  ADD COLUMN company_logo_url TEXT,
-  ADD COLUMN brand_color TEXT DEFAULT '#3B82F6',
-  ADD COLUMN careers_page_slug TEXT UNIQUE,
-  ADD COLUMN careers_page_enabled BOOLEAN DEFAULT false;
+**Arquivo: src/components/Dashboard.tsx**
 
--- Migrar dados existentes das vagas para profiles
--- (executar UPDATE para cada usuario, pegando os valores da primeira vaga)
-UPDATE profiles p
-SET 
-  company_logo_url = COALESCE(p.company_logo_url, (
-    SELECT company_logo_url FROM job_postings jp 
-    WHERE jp.user_id = p.user_id AND jp.company_logo_url IS NOT NULL 
-    LIMIT 1
-  )),
-  brand_color = COALESCE(p.brand_color, (
-    SELECT brand_color FROM job_postings jp 
-    WHERE jp.user_id = p.user_id AND jp.brand_color IS NOT NULL 
-    LIMIT 1
-  ));
+Alteracoes:
+1. Importar `NewJobDialog` e `Settings` icon
+2. Adicionar estados: `showNewJobDialog` e `allJobPostings` (lista completa para clonagem)
+3. Buscar todas as vagas (sem limite) para o dialog de clonagem
+4. Adicionar item "Configuracoes" no dropdown
+5. Alterar "Nova Vaga" para abrir o dialog
+6. Renderizar o `NewJobDialog`
 
--- Criar funcao para gerar slug unico de carreiras
-CREATE OR REPLACE FUNCTION generate_careers_slug(company text)
-RETURNS text AS $$
-DECLARE
-  base_slug text;
-  final_slug text;
-  counter int := 0;
-BEGIN
-  base_slug := lower(regexp_replace(company, '[^a-zA-Z0-9]+', '-', 'g'));
-  base_slug := regexp_replace(base_slug, '^-|-$', '', 'g');
-  final_slug := base_slug;
-  
-  WHILE EXISTS(SELECT 1 FROM profiles WHERE careers_page_slug = final_slug) LOOP
-    counter := counter + 1;
-    final_slug := base_slug || '-' || counter;
-  END LOOP;
-  
-  RETURN final_slug;
-END;
-$$ LANGUAGE plpgsql;
+```text
+Estrutura do Dropdown atualizada:
++------------------------------------------+
+| Nova Analise                     [icon]  |
+| Nova Vaga                        [icon]  |
++------------------------------------------+
+| Modelos de Formulario            [icon]  |
+| Gerenciar Vagas                  [icon]  |
+| Configuracoes                    [icon]  | <- NOVO
++------------------------------------------+
+| Log de Atividades (admin)        [icon]  |
++------------------------------------------+
 ```
 
-**RLS para Pagina de Carreiras:**
-```sql
--- Permitir acesso publico a profiles com careers_page_enabled
-CREATE POLICY "Public can view careers-enabled profiles"
-ON profiles FOR SELECT
-USING (careers_page_enabled = true);
+**Arquivo: src/pages/JobPostingForm.tsx**
+
+Alteracoes:
+1. Remover funcao `fillTestData` (linhas 111-129)
+2. Remover botao "Preencher Exemplo" (linhas 189-194)
+
+**Arquivo: src/pages/JobPostings.tsx**
+
+Alteracoes:
+1. Adicionar estado para armazenar dados do perfil (careers_page_slug, careers_page_enabled)
+2. Buscar dados do perfil ao carregar
+3. Adicionar um card/banner acima da timeline mostrando o link da pagina de carreiras (quando habilitada)
+4. Botoes para copiar link e abrir em nova aba
+
+```text
+Layout da pagina de vagas com link de carreiras:
++----------------------------------------------------------+
+| <- Acompanhamento de Vagas               [Nova Vaga]     |
++----------------------------------------------------------+
+| +------------------------------------------------------+ |
+| | Pagina de Carreiras Ativa                            | |
+| | /carreiras/empresa-exemplo   [Copiar] [Abrir]        | |
+| +------------------------------------------------------+ |
+|                                                          |
+| [Timeline: Rascunhos | Publicadas | Pausadas | ...]      |
+|                                                          |
+| [Lista de vagas...]                                      |
++----------------------------------------------------------+
 ```
-
-**Arquivos a Criar:**
-
-1. `src/pages/Settings.tsx`
-   - Configuracoes de marca (nome, logo, cor)
-   - Configuracoes da pagina de carreiras (slug, habilitar/desabilitar)
-   - Preview em tempo real
-
-2. `src/pages/PublicCareers.tsx`
-   - Pagina publica de carreiras
-   - Lista vagas ativas do usuario pelo slug
-
-3. `src/components/jobs/NewJobDialog.tsx`
-   - Dialog para escolher: comecar do zero ou clonar
-   - Lista de vagas existentes para clonar
-
-**Arquivos a Modificar:**
-
-1. `src/pages/JobPostingForm.tsx`
-   - Remover secao "Personalizacao da Pagina"
-   - Receber props de vaga clonada (via query params ou state)
-
-2. `src/pages/JobPostings.tsx`
-   - Trocar navegacao direta por abertura do NewJobDialog
-
-3. `src/pages/PublicApplication.tsx`
-   - Buscar branding do profile em vez da job_posting
-   - Adicionar link "Ver outras vagas" para pagina de carreiras
-
-4. `src/hooks/useJobPostings.ts`
-   - Adicionar funcao `cloneJobPosting`
-
-5. `src/App.tsx`
-   - Adicionar rota `/configuracoes`
-   - Adicionar rota `/carreiras/:slug`
-
-6. `src/types/jobs.ts`
-   - Remover campos de branding do JobPosting type (opcional - pode manter para compatibilidade)
 
 ---
 
-### Interface Visual - Dialog Nova Vaga
+### Arquivos a Modificar
+
+1. **src/components/Dashboard.tsx**
+   - Importar `NewJobDialog` e `Settings` icon
+   - Adicionar estados para dialog e lista de vagas
+   - Buscar todas as vagas para clonagem
+   - Adicionar "Configuracoes" no dropdown
+   - Renderizar NewJobDialog
+
+2. **src/pages/JobPostingForm.tsx**
+   - Remover funcao `fillTestData`
+   - Remover botao "Preencher Exemplo"
+
+3. **src/pages/JobPostings.tsx**
+   - Buscar e exibir link da pagina de carreiras
+   - Adicionar card com link copiavel
+
+---
+
+### Interface Visual - Card de Carreiras na Pagina de Vagas
 
 ```text
-+------------------------------------------+
-|           Criar Nova Vaga                |
-+------------------------------------------+
-|                                          |
-|  Como deseja criar a vaga?               |
-|                                          |
-|  [        Comecar do Zero           ]    |
-|  Crie uma vaga completamente nova        |
-|                                          |
-|  [    Clonar Vaga Existente        ]     |
-|  Copie os dados de uma vaga anterior     |
-|                                          |
-+------------------------------------------+
+Quando pagina de carreiras esta habilitada:
++------------------------------------------------------+
+| [Globe icon]  Pagina de Carreiras                    |
+| Sua pagina publica esta ativa em:                    |
+| resume-twin-finder.lovable.app/carreiras/empresa     |
+|                                   [Copiar] [Abrir]   |
++------------------------------------------------------+
 
-Ao clicar em "Clonar Vaga Existente":
-
-+------------------------------------------+
-|       Selecione a vaga para clonar       |
-+------------------------------------------+
-|  [Buscar...]                             |
-|                                          |
-|  - Desenvolvedor Full Stack (Ativa)      |
-|  - Analista de Marketing (Encerrada)     |
-|  - Designer UX/UI (Rascunho)             |
-|                                          |
-|  [Cancelar]             [Clonar]         |
-+------------------------------------------+
-```
-
-### Interface Visual - Pagina de Configuracoes
-
-```text
-+----------------------------------------------------------+
-|  <- Configuracoes                                         |
-|                                                          |
-|  [Marca]  [Pagina de Carreiras]                          |
-|  ======                                                   |
-|                                                          |
-|  +------------------------------------------------------+|
-|  | Identidade Visual                                     ||
-|  |                                                       ||
-|  | Nome da empresa: [MarQ Ponto                    ]     ||
-|  |                                                       ||
-|  | Logo da empresa:                                      ||
-|  | [https://exemplo.com/logo.png                   ]     ||
-|  | [Preview do logo se URL valida]                       ||
-|  |                                                       ||
-|  | Cor principal: [#3B82F6] [===]                        ||
-|  +------------------------------------------------------+|
-|                                                          |
-|  [Salvar Alteracoes]                                     |
-+----------------------------------------------------------+
-
-Aba Pagina de Carreiras:
-
-+----------------------------------------------------------+
-|  +------------------------------------------------------+|
-|  | Pagina Publica de Carreiras                          ||
-|  |                                                       ||
-|  | [x] Habilitar pagina de carreiras                    ||
-|  |                                                       ||
-|  | URL da pagina:                                        ||
-|  | /carreiras/[marq-ponto                          ]     ||
-|  |                                                       ||
-|  | Link completo:                                        ||
-|  | https://site.com/carreiras/marq-ponto [Copiar]       ||
-|  +------------------------------------------------------+|
-+----------------------------------------------------------+
-```
-
-### Interface Visual - Pagina de Carreiras
-
-```text
-+----------------------------------------------------------+
-|  [Logo MarQ]                      Trabalhe Conosco        |
-+----------------------------------------------------------+
-|                                                          |
-|  Junte-se ao time MarQ Ponto!                            |
-|  Confira nossas vagas abertas                            |
-|                                                          |
-|  Filtros: [Todos os tipos v] [Todas localidades v]       |
-|                                                          |
-|  +------------------------------------------------------+|
-|  | Desenvolvedor Full Stack Senior                       ||
-|  | Remoto | Sao Paulo, SP                                ||
-|  | R$ 12.000 - R$ 18.000                                 ||
-|  |                                          [Candidatar] ||
-|  +------------------------------------------------------+|
-|  | Analista de RH                                        ||
-|  | Hibrido | Rio de Janeiro, RJ                          ||
-|  |                                          [Candidatar] ||
-|  +------------------------------------------------------+|
-|                                                          |
-|  Powered by Resume AI                                    |
-+----------------------------------------------------------+
+Quando nao esta habilitada:
++------------------------------------------------------+
+| [Globe icon]  Pagina de Carreiras                    |
+| Configure sua pagina publica de vagas                |
+|                                   [Configurar]       |
++------------------------------------------------------+
 ```
 
 ---
 
 ### Passos de Implementacao
 
-1. **Migracoes de banco**: Adicionar campos no profiles e criar politicas RLS
-2. **Criar NewJobDialog**: Dialog para escolher modo de criacao
-3. **Modificar JobPostings.tsx**: Integrar dialog ao botao Nova Vaga
-4. **Modificar JobPostingForm.tsx**: Remover personalizacao, aceitar clone state
-5. **Criar Settings.tsx**: Pagina de configuracoes com abas
-6. **Criar PublicCareers.tsx**: Pagina publica de carreiras
-7. **Atualizar PublicApplication.tsx**: Buscar branding do profile
-8. **Atualizar App.tsx**: Adicionar novas rotas
-9. **Atualizar navegacao**: Adicionar link para configuracoes no dashboard
-
----
-
-### Compatibilidade e Migracao
-
-- Os campos de branding na `job_postings` serao mantidos por retrocompatibilidade
-- A `PublicApplication` primeiro tentara usar o branding do profile; se nao existir, usa da vaga
-- Isso permite que vagas antigas continuem funcionando enquanto usuarios migram para o novo sistema
+1. Atualizar Dashboard.tsx com NewJobDialog e opcao Configuracoes
+2. Remover botao de exemplo do JobPostingForm.tsx  
+3. Adicionar banner/card de carreiras no JobPostings.tsx
