@@ -15,7 +15,7 @@ export function CareersHero({
 
   return (
     <section
-      className="relative py-16 md:py-24 overflow-hidden"
+      className="relative py-8 md:py-12 overflow-hidden"
       style={{
         background: hasHeroImage
           ? undefined
@@ -34,7 +34,7 @@ export function CareersHero({
 
       <div className="container mx-auto px-4 relative z-10 text-center">
         <h1
-          className={`text-3xl md:text-5xl font-bold mb-4 ${
+          className={`text-2xl md:text-4xl font-bold mb-2 ${
             hasHeroImage ? 'text-white' : ''
           }`}
         >
@@ -43,7 +43,7 @@ export function CareersHero({
 
         {tagline && (
           <p
-            className={`text-lg md:text-xl max-w-2xl mx-auto ${
+            className={`text-base md:text-lg max-w-2xl mx-auto ${
               hasHeroImage ? 'text-white/90' : 'text-muted-foreground'
             }`}
           >

@@ -16,27 +16,16 @@ export function CareersBenefits({
   }
 
   return (
-    <section
-      className="py-12 md:py-16"
-      style={{ backgroundColor: `${brandColor}08` }}
-    >
-      <div className="container mx-auto px-4 max-w-4xl">
-        <h2 className="text-2xl font-bold text-center mb-8">
-          Benefícios
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <section className="py-4 md:py-6" style={{ backgroundColor: `${brandColor}05` }}>
+      <div className="container mx-auto px-4 max-w-5xl">
+        <div className="flex flex-wrap justify-center gap-2">
           {benefits.map((benefit, index) => (
             <div
               key={index}
-              className="flex items-center gap-3 p-4 bg-background rounded-lg shadow-sm"
+              className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-full border text-sm"
             >
-              <div
-                className="flex-shrink-0 p-1.5 rounded-full"
-                style={{ backgroundColor: `${brandColor}20` }}
-              >
-                <Check className="h-4 w-4" style={{ color: brandColor }} />
-              </div>
-              <span className="text-sm font-medium">{benefit}</span>
+              <Check className="h-3.5 w-3.5" style={{ color: brandColor }} />
+              <span>{benefit}</span>
             </div>
           ))}
         </div>
