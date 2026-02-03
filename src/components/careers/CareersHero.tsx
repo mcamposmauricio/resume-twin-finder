@@ -1,21 +1,15 @@
-import { Button } from '@/components/ui/button';
-
 interface CareersHeroProps {
   companyName: string | null;
   tagline: string | null;
   heroImageUrl: string | null;
-  ctaText: string | null;
   brandColor: string;
-  onCtaClick: () => void;
 }
 
 export function CareersHero({
   companyName,
   tagline,
   heroImageUrl,
-  ctaText,
   brandColor,
-  onCtaClick,
 }: CareersHeroProps) {
   const hasHeroImage = !!heroImageUrl;
 
@@ -49,22 +43,13 @@ export function CareersHero({
 
         {tagline && (
           <p
-            className={`text-lg md:text-xl mb-8 max-w-2xl mx-auto ${
+            className={`text-lg md:text-xl max-w-2xl mx-auto ${
               hasHeroImage ? 'text-white/90' : 'text-muted-foreground'
             }`}
           >
             {tagline}
           </p>
         )}
-
-        <Button
-          size="lg"
-          onClick={onCtaClick}
-          style={{ backgroundColor: brandColor }}
-          className="text-white hover:opacity-90 transition-opacity"
-        >
-          {ctaText || 'Ver vagas abertas'}
-        </Button>
       </div>
     </section>
   );
