@@ -341,6 +341,42 @@ export type Database = {
           },
         ]
       }
+      pipeline_stages: {
+        Row: {
+          color: string
+          created_at: string | null
+          icon: string
+          id: string
+          is_default: boolean | null
+          name: string
+          order: number
+          slug: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string | null
+          icon?: string
+          id?: string
+          is_default?: boolean | null
+          name: string
+          order?: number
+          slug: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string | null
+          icon?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          order?: number
+          slug?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           brand_color: string | null

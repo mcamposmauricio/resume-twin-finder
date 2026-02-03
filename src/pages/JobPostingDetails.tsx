@@ -15,6 +15,7 @@ import { useJobPostings } from '@/hooks/useJobPostings';
 import { useJobApplications } from '@/hooks/useJobApplications';
 import { useResumeBalance } from '@/hooks/useResumeBalance';
 import { useUserRole } from '@/hooks/useUserRole';
+import { usePipelineStages } from '@/hooks/usePipelineStages';
 import { JobPosting, JobApplication, STATUS_LABELS, WORK_TYPE_LABELS } from '@/types/jobs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +53,7 @@ export default function JobPostingDetails() {
   const resumeBalance = useResumeBalance(userId);
   const balance = resumeBalance.availableResumes;
   const { isFullAccess, loading: roleLoading } = useUserRole(userId);
+  const { stages, loading: stagesLoading } = usePipelineStages(userId);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -230,7 +232,7 @@ export default function JobPostingDetails() {
     }
   };
 
-  if (loading || roleLoading) {
+  if (loading || roleLoading || stagesLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -408,6 +410,7 @@ export default function JobPostingDetails() {
           <CardContent>
             <ApplicationKanban
               applications={applications}
+              stages={stages}
               onViewDetails={setViewingApplication}
               onViewResume={handleViewResume}
               onUpdateTriageStatus={updateTriageStatus}
@@ -437,6 +440,7 @@ export default function JobPostingDetails() {
           application={viewingApplication}
           applications={applications}
           formFields={job.form_template?.fields || []}
+          stages={stages}
           onNavigate={(direction) => {
             if (!viewingApplication) return;
             const currentIndex = applications.findIndex(a => a.id === viewingApplication.id);

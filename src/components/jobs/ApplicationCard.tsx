@@ -11,6 +11,7 @@ interface ApplicationCardProps {
   onViewDetails: () => void;
   onViewResume: () => void;
   showTriageIndicator?: boolean;
+  stageColor?: string;
 }
 
 export function ApplicationCard({
@@ -18,6 +19,7 @@ export function ApplicationCard({
   onViewDetails,
   onViewResume,
   showTriageIndicator = false,
+  stageColor,
 }: ApplicationCardProps) {
   const hasResume = !!application.resume_url;
   const isDeservesAnalysis = application.triage_status === 'deserves_analysis';

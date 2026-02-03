@@ -7,9 +7,6 @@ import {
   Download,
   ExternalLink,
   ChevronLeft,
-  Star,
-  Inbox,
-  ThumbsDown,
 } from 'lucide-react';
 import {
   Sheet,
@@ -21,20 +18,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   JobApplication,
   FormField,
-  TriageStatus,
-  TRIAGE_STATUS_LABELS,
   APPLICATION_STATUS_LABELS,
 } from '@/types/jobs';
-import { cn } from '@/lib/utils';
+import { PipelineStage } from '@/types/pipeline';
+import { StageNavigator } from './StageNavigator';
 
 interface ApplicationDetailPanelProps {
   open: boolean;
@@ -42,16 +31,11 @@ interface ApplicationDetailPanelProps {
   application: JobApplication | null;
   applications: JobApplication[];
   formFields: FormField[];
+  stages: PipelineStage[];
   onNavigate: (direction: 'prev' | 'next') => void;
-  onUpdateTriageStatus: (id: string, status: TriageStatus) => Promise<boolean>;
+  onUpdateTriageStatus: (id: string, status: string) => Promise<boolean>;
   getResumeUrl: (path: string) => Promise<string | null>;
 }
-
-const TRIAGE_ICONS: Record<TriageStatus, React.ElementType> = {
-  new: Inbox,
-  low_fit: ThumbsDown,
-  deserves_analysis: Star,
-};
 
 export function ApplicationDetailPanel({
   open,
@@ -59,12 +43,14 @@ export function ApplicationDetailPanel({
   application,
   applications,
   formFields,
+  stages,
   onNavigate,
   onUpdateTriageStatus,
   getResumeUrl,
 }: ApplicationDetailPanelProps) {
   const [resumePreviewUrl, setResumePreviewUrl] = useState<string | null>(null);
   const [loadingResume, setLoadingResume] = useState(false);
+  const [updatingStage, setUpdatingStage] = useState(false);
 
   const currentIndex = application
     ? applications.findIndex((a) => a.id === application.id)
@@ -96,11 +82,16 @@ export function ApplicationDetailPanel({
     return field?.label || fieldId;
   };
 
-  const handleTriageChange = async (value: TriageStatus) => {
-    await onUpdateTriageStatus(application.id, value);
+  const handleStageChange = async (stageSlug: string) => {
+    setUpdatingStage(true);
+    try {
+      await onUpdateTriageStatus(application.id, stageSlug);
+    } finally {
+      setUpdatingStage(false);
+    }
   };
 
-  const TriageIcon = TRIAGE_ICONS[application.triage_status || 'new'];
+  const currentStage = stages.find((s) => s.slug === (application.triage_status || 'new'));
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -116,33 +107,6 @@ export function ApplicationDetailPanel({
               <ChevronLeft className="h-4 w-4" />
               Voltar
             </Button>
-
-            <Select
-              value={application.triage_status || 'new'}
-              onValueChange={handleTriageChange}
-            >
-              <SelectTrigger className="w-[200px]">
-                <div className="flex items-center gap-2">
-                  <TriageIcon className="h-4 w-4" />
-                  <SelectValue />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {(Object.keys(TRIAGE_STATUS_LABELS) as TriageStatus[]).map(
-                  (status) => {
-                    const Icon = TRIAGE_ICONS[status];
-                    return (
-                      <SelectItem key={status} value={status}>
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          {TRIAGE_STATUS_LABELS[status]}
-                        </div>
-                      </SelectItem>
-                    );
-                  }
-                )}
-              </SelectContent>
-            </Select>
           </div>
 
           <div>
@@ -167,6 +131,22 @@ export function ApplicationDetailPanel({
         </SheetHeader>
 
         <Separator className="my-6" />
+
+        {/* Stage Navigator */}
+        {stages.length > 0 && (
+          <>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm text-muted-foreground">Etapa do Processo</h3>
+              <StageNavigator
+                stages={stages}
+                currentStageSlug={application.triage_status || 'new'}
+                onMoveToStage={handleStageChange}
+                disabled={updatingStage}
+              />
+            </div>
+            <Separator className="my-6" />
+          </>
+        )}
 
         {/* Form Responses */}
         <div className="space-y-4">
