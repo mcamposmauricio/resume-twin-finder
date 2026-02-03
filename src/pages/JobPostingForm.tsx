@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, Save, Send, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save, Send } from 'lucide-react';
 import { ShareJobLink } from '@/components/jobs/ShareJobLink';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
@@ -108,25 +108,6 @@ export default function JobPostingForm() {
     }
   }, [id, userId]);
 
-  const fillTestData = () => {
-    setTitle('Desenvolvedor Full Stack Senior');
-    setDescription(`Estamos buscando um Desenvolvedor Full Stack Senior para se juntar à nossa equipe de tecnologia.
-
-Responsabilidades:
-• Desenvolver e manter aplicações web escaláveis
-• Colaborar com o time de produto e design
-• Participar de code reviews e mentoria de desenvolvedores júnior
-• Propor soluções técnicas inovadoras`);
-    setRequirements(`• 5+ anos de experiência com desenvolvimento web
-• Conhecimento sólido em React, Node.js e TypeScript
-• Experiência com bancos de dados SQL e NoSQL
-• Familiaridade com metodologias ágeis
-• Boa comunicação e trabalho em equipe
-• Inglês intermediário/avançado`);
-    setLocation_('São Paulo, SP');
-    setSalaryRange('R$ 12.000 - R$ 18.000');
-    setWorkType('remote');
-  };
 
   const handleSave = async (status: JobStatus) => {
     if (!title.trim() || !description.trim()) {
@@ -186,14 +167,7 @@ Responsabilidades:
               {id ? 'Editar Vaga' : 'Nova Vaga'}
             </h1>
           </div>
-          {!id && (
-            <Button variant="outline" size="sm" onClick={fillTestData}>
-              <Sparkles className="h-4 w-4 mr-2" />
-              Preencher Exemplo
-            </Button>
-          )}
         </div>
-
         <div className="space-y-6">
           {/* Public Link Card - only show for active jobs */}
           {currentJob?.status === 'active' && currentJob?.public_slug && (

@@ -795,7 +795,6 @@ export default function Index() {
             onViewAnalysis={handleViewAnalysis}
             onContinueDraft={handleContinueDraft}
             onNavigateToJobs={() => navigate("/vagas")}
-            onNewJobPosting={() => navigate("/vagas/nova")}
             onNavigateToForms={() => navigate("/formularios")}
           />
         )}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Briefcase, Users, ArrowRight, Plus, FileText, Calendar, Clock, UserPlus, Palette, ExternalLink, Activity } from "lucide-react";
+import { Briefcase, Users, ArrowRight, Plus, FileText, Calendar, Clock, UserPlus, Palette, ExternalLink, Activity, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -11,6 +11,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { NewJobDialog } from "@/components/jobs/NewJobDialog";
+import { JobPosting } from "@/types/jobs";
 
 interface DashboardProps {
   user: any;
@@ -19,7 +21,6 @@ interface DashboardProps {
   onViewAnalysis: (analysisId: string) => void;
   onContinueDraft: (analysisId: string) => void;
   onNavigateToJobs: () => void;
-  onNewJobPosting: () => void;
   onNavigateToForms: () => void;
 }
 
@@ -33,21 +34,41 @@ interface Analysis {
   status: string;
 }
 
-export function Dashboard({ user, isFullAccess, onNewAnalysis, onViewAnalysis, onContinueDraft, onNavigateToJobs, onNewJobPosting, onNavigateToForms }: DashboardProps) {
+export function Dashboard({ user, isFullAccess, onNewAnalysis, onViewAnalysis, onContinueDraft, onNavigateToJobs, onNavigateToForms }: DashboardProps) {
   const navigate = useNavigate();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [jobPostings, setJobPostings] = useState<any[]>([]);
+  const [allJobPostings, setAllJobPostings] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalAnalyses: 0, totalCandidates: 0, activeJobs: 0, totalApplications: 0 });
   const [userName, setUserName] = useState<string>("");
+  const [showNewJobDialog, setShowNewJobDialog] = useState(false);
 
   useEffect(() => {
     fetchAnalyses();
     if (isFullAccess) {
       fetchJobPostings();
+      fetchAllJobPostings();
     }
     fetchUserProfile();
   }, [user, isFullAccess]);
+
+  const fetchAllJobPostings = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("job_postings")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setAllJobPostings((data || []) as JobPosting[]);
+    } catch (error) {
+      console.error("Error fetching all job postings:", error);
+    }
+  };
 
   const fetchUserProfile = async () => {
     if (!user) return;
@@ -199,7 +220,7 @@ export function Dashboard({ user, isFullAccess, onNewAnalysis, onViewAnalysis, o
                 <FileText className="w-4 h-4 mr-3 text-primary" />
                 <span>Nova Análise</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onNewJobPosting} className="cursor-pointer py-3">
+              <DropdownMenuItem onClick={() => setShowNewJobDialog(true)} className="cursor-pointer py-3">
                 <Briefcase className="w-4 h-4 mr-3 text-blue-600" />
                 <span>Nova Vaga</span>
               </DropdownMenuItem>
@@ -211,6 +232,10 @@ export function Dashboard({ user, isFullAccess, onNewAnalysis, onViewAnalysis, o
               <DropdownMenuItem onClick={onNavigateToJobs} className="cursor-pointer py-3">
                 <Palette className="w-4 h-4 mr-3 text-muted-foreground" />
                 <span>Gerenciar Vagas</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/configuracoes')} className="cursor-pointer py-3">
+                <Settings className="w-4 h-4 mr-3 text-muted-foreground" />
+                <span>Configurações</span>
               </DropdownMenuItem>
               {user?.email === 'mauricio@marqponto.com.br' && (
                 <>
@@ -317,7 +342,7 @@ export function Dashboard({ user, isFullAccess, onNewAnalysis, onViewAnalysis, o
               </div>
               <p className="text-sm sm:text-base text-muted-foreground mb-4">Você ainda não criou nenhuma vaga.</p>
               <button
-                onClick={onNewJobPosting}
+                onClick={() => setShowNewJobDialog(true)}
                 className="btn-primary text-sm sm:text-base"
               >
                 <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -368,7 +393,6 @@ export function Dashboard({ user, isFullAccess, onNewAnalysis, onViewAnalysis, o
           )}
         </div>
       )}
-
 
       {/* Recent Analyses */}
       <div>
@@ -470,6 +494,13 @@ export function Dashboard({ user, isFullAccess, onNewAnalysis, onViewAnalysis, o
           </div>
         )}
       </div>
+
+      {/* New Job Dialog */}
+      <NewJobDialog
+        open={showNewJobDialog}
+        onOpenChange={setShowNewJobDialog}
+        jobPostings={allJobPostings}
+      />
     </div>
   );
 }
