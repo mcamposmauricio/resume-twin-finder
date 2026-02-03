@@ -13,6 +13,8 @@ import JobPostings from "./pages/JobPostings";
 import JobPostingForm from "./pages/JobPostingForm";
 import JobPostingDetails from "./pages/JobPostingDetails";
 import PublicApplication from "./pages/PublicApplication";
+import PublicCareers from "./pages/PublicCareers";
+import Settings from "./pages/Settings";
 import ActivityLog from "./pages/ActivityLog";
 
 const queryClient = new QueryClient();
@@ -39,8 +41,12 @@ const App = () => (
           <Route path="/vagas/:id" element={<JobPostingDetails />} />
           <Route path="/vagas/:id/editar" element={<JobPostingForm />} />
           
-          {/* Public Application */}
+          {/* Public Pages */}
           <Route path="/apply/:slug" element={<PublicApplication />} />
+          <Route path="/carreiras/:slug" element={<PublicCareers />} />
+          
+          {/* Settings */}
+          <Route path="/configuracoes" element={<Settings />} />
           
           {/* Activity Log (Admin Only) */}
           <Route path="/atividades" element={<ActivityLog />} />

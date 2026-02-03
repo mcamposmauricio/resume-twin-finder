@@ -22,6 +22,15 @@ export default function PublicApplication() {
   const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  
+  // Profile branding
+  const [profileBranding, setProfileBranding] = useState<{
+    company_name: string | null;
+    company_logo_url: string | null;
+    brand_color: string | null;
+    careers_page_slug: string | null;
+    careers_page_enabled: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -55,6 +64,17 @@ export default function PublicApplication() {
                 }
               : undefined,
           });
+
+          // Fetch profile branding for the job owner
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('company_name, company_logo_url, brand_color, careers_page_slug, careers_page_enabled')
+            .eq('user_id', data.user_id)
+            .maybeSingle();
+
+          if (profileData) {
+            setProfileBranding(profileData);
+          }
         }
       } catch (error) {
         console.error('Error fetching job:', error);
@@ -198,7 +218,13 @@ export default function PublicApplication() {
   }
 
   const fields = job.form_template?.fields || [];
-  const brandColor = job.brand_color || '#3B82F6';
+  
+  // Use profile branding if available, fallback to job branding for backwards compatibility
+  const brandColor = profileBranding?.brand_color || job.brand_color || '#3B82F6';
+  const companyName = profileBranding?.company_name || job.company_name;
+  const companyLogoUrl = profileBranding?.company_logo_url || job.company_logo_url;
+  const careersPageSlug = profileBranding?.careers_page_slug;
+  const careersPageEnabled = profileBranding?.careers_page_enabled;
 
   return (
     <div className="min-h-screen bg-background">
@@ -207,25 +233,36 @@ export default function PublicApplication() {
         className="border-b bg-card"
         style={{ borderBottomColor: brandColor }}
       >
-        <div className="container mx-auto px-4 py-4">
-          {job.company_logo_url ? (
-            <img 
-              src={job.company_logo_url} 
-              alt={job.company_name || 'Logo'} 
-              className="h-10 object-contain"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          ) : job.company_name ? (
-            <span 
-              className="text-xl font-bold"
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div>
+            {companyLogoUrl ? (
+              <img 
+                src={companyLogoUrl} 
+                alt={companyName || 'Logo'} 
+                className="h-10 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : companyName ? (
+              <span 
+                className="text-xl font-bold"
+                style={{ color: brandColor }}
+              >
+                {companyName}
+              </span>
+            ) : (
+              <img src={logoBlue} alt="Logo" className="h-8" />
+            )}
+          </div>
+          {careersPageEnabled && careersPageSlug && (
+            <a
+              href={`/carreiras/${careersPageSlug}`}
+              className="text-sm font-medium hover:underline"
               style={{ color: brandColor }}
             >
-              {job.company_name}
-            </span>
-          ) : (
-            <img src={logoBlue} alt="Logo" className="h-8" />
+              Ver outras vagas
+            </a>
           )}
         </div>
       </header>
@@ -235,12 +272,12 @@ export default function PublicApplication() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="text-2xl">{job.title}</CardTitle>
-            {job.company_name && (
+            {companyName && (
               <p 
                 className="text-sm font-medium"
                 style={{ color: brandColor }}
               >
-                {job.company_name}
+                {companyName}
               </p>
             )}
             <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap mt-2">
