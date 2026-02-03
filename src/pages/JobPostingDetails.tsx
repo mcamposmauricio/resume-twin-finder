@@ -405,7 +405,17 @@ export default function JobPostingDetails() {
         {/* Applications Kanban */}
         <Card>
           <CardHeader>
-            <CardTitle>Candidaturas ({applications.length})</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Candidaturas ({applications.length})</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/configuracoes?tab=pipeline')}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Editar etapas do processo
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <ApplicationKanban

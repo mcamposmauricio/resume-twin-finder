@@ -11,13 +11,17 @@ export interface PipelineStage {
 }
 
 export const DEFAULT_STAGES: Omit<PipelineStage, 'id' | 'user_id' | 'created_at'>[] = [
-  { name: 'Nova candidatura', slug: 'new', color: '#6B7280', icon: 'inbox', order: 0, is_default: true },
-  { name: 'Baixa aderência', slug: 'low_fit', color: '#EA580C', icon: 'thumbs-down', order: 1, is_default: false },
-  { name: 'Merece análise', slug: 'deserves_analysis', color: '#3B82F6', icon: 'star', order: 2, is_default: false },
+  { name: 'Análise de currículo', slug: 'new', color: '#8B5CF6', icon: 'file-text', order: 0, is_default: true },
+  { name: 'Análise comportamental', slug: 'behavioral', color: '#8B5CF6', icon: 'user', order: 1, is_default: false },
+  { name: 'Entrevista Técnica', slug: 'technical_interview', color: '#8B5CF6', icon: 'briefcase', order: 2, is_default: false },
+  { name: 'Carta Proposta', slug: 'proposal', color: '#8B5CF6', icon: 'send', order: 3, is_default: false },
 ];
 
 export const STAGE_ICONS = [
   'inbox',
+  'file-text',
+  'user',
+  'briefcase',
   'thumbs-down',
   'star',
   'check',
@@ -25,8 +29,6 @@ export const STAGE_ICONS = [
   'calendar',
   'phone',
   'mail',
-  'user',
-  'briefcase',
   'clock',
   'heart',
   'flag',
