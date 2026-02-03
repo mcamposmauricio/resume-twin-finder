@@ -1,333 +1,313 @@
 
-## Plano: Etapas Configuraveis de Candidatos e Melhorias no Kanban
 
-### Visao Geral
+## Plano: Seção "Sobre Nós" e Redesign da Página de Carreiras
 
-Implementar tres melhorias principais:
-1. Permitir configurar etapas/colunas do kanban na pagina de configuracoes
-2. Implementar drag and drop real no kanban de candidaturas
-3. Melhorar a visualizacao de informacoes do candidato e navegacao entre etapas
+### Visão Geral
+
+Implementar duas melhorias principais:
+1. Nova seção nas configurações para informações da empresa (Sobre Nós, benefícios, cultura)
+2. Redesign completo da página de carreiras com layout moderno e mais customizações
 
 ---
 
-### 1. Etapas Configuraveis (Settings)
+### 1. Novas Informações da Empresa (Configurações)
 
-**Situacao Atual:**
-- As etapas sao hardcoded em `ApplicationKanban.tsx` (linhas 17-21)
-- Tipos de `TriageStatus` sao fixos: `new`, `low_fit`, `deserves_analysis`
-- Labels estao em `TRIAGE_STATUS_LABELS` no arquivo `types/jobs.ts`
+**Campos a adicionar na tabela `profiles`:**
 
-**Mudanca:**
-- Criar nova tabela `pipeline_stages` para armazenar etapas personalizadas por usuario
-- Adicionar nova aba "Pipeline" na pagina de configuracoes
-- Permitir criar, editar, reordenar e excluir etapas
-- Cada etapa tem: nome, cor, icone, ordem
-- Incluir etapas padrao ao criar perfil de usuario
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `company_tagline` | text | Slogan/frase de impacto da empresa |
+| `company_about` | text | Texto "Sobre Nós" (suporta quebras de linha) |
+| `company_benefits` | jsonb | Lista de benefícios (ex: ["Home office", "Vale refeição"]) |
+| `company_culture` | text | Texto sobre cultura/valores |
+| `company_website` | text | URL do site da empresa |
+| `company_linkedin` | text | URL do LinkedIn |
+| `company_instagram` | text | URL do Instagram |
+| `careers_hero_image_url` | text | Imagem de capa para a página de carreiras |
+| `careers_cta_text` | text | Texto do botão de CTA (ex: "Venha fazer parte!") |
 
-**Estrutura da tabela `pipeline_stages`:**
+---
+
+### 2. Nova Aba "Sobre a Empresa" em Configurações
+
+A aba "Marca" fica focada em identidade visual, e criamos uma nova aba para conteúdo textual da empresa:
+
 ```text
-id: uuid (PK)
-user_id: uuid (FK profiles)
-name: text (ex: "Triagem Inicial")
-slug: text (ex: "triagem_inicial") - usado como identificador
-color: text (ex: "#3B82F6")
-icon: text (ex: "inbox", "star", "check")
-order: integer
-is_default: boolean (etapa inicial para novos candidatos)
-created_at: timestamp
+Tabs:
+[Marca] [Sobre a Empresa] [Página de Carreiras] [Pipeline]
+```
+
+**Conteúdo da aba "Sobre a Empresa":**
+
+```text
++----------------------------------------------------------+
+| Sobre a Empresa                                           |
++----------------------------------------------------------+
+| Tagline / Slogan                                         |
+| [Transformando a gestão de pessoas desde 2018          ] |
+|                                                          |
+| Sobre Nós                                                |
+| [                                                       ]|
+| [   Textarea grande para texto descritivo               ]|
+| [                                                       ]|
+|                                                          |
+| Nossa Cultura                                            |
+| [                                                       ]|
+| [   Textarea para valores e cultura                     ]|
+| [                                                       ]|
++----------------------------------------------------------+
+| Benefícios                                               |
+| [+ Adicionar benefício]                                  |
+|                                                          |
+| [x] Home office flexível                                 |
+| [x] Vale refeição                                        |
+| [x] Plano de saúde                                       |
+| [x] Day off aniversário                                  |
++----------------------------------------------------------+
+| Redes Sociais                                            |
+|                                                          |
+| Website: [https://empresa.com.br                       ] |
+| LinkedIn: [https://linkedin.com/company/...            ] |
+| Instagram: [https://instagram.com/...                  ] |
++----------------------------------------------------------+
 ```
 
 ---
 
-### 2. Drag and Drop no Kanban
+### 3. Redesign da Página de Carreiras
 
-**Situacao Atual:**
-- Navegacao entre colunas usa botoes de seta (ArrowLeft/ArrowRight)
-- Nao existe drag and drop implementado
+**Layout atual → Layout proposto:**
 
-**Mudanca:**
-- Instalar `@dnd-kit/core` e `@dnd-kit/sortable` para drag and drop
-- Implementar drag entre colunas para mover candidatos
-- Manter botoes de seta como alternativa
-- Mostrar feedback visual durante o arraste
-- Atualizar status no banco ao soltar
+```text
+ANTES:
++------------------------------------------+
+| Logo                    Trabalhe Conosco |
++------------------------------------------+
+| Junte-se ao time!                        |
+| Confira nossas vagas...                  |
+|                                          |
+| [Filtros]                                |
+| [Card Vaga 1]                            |
+| [Card Vaga 2]                            |
++------------------------------------------+
+| Powered by CompareCV                     |
++------------------------------------------+
 
-**Componentes afetados:**
-- `ApplicationKanban.tsx` - wrapper com DndContext
-- `ApplicationCard.tsx` - tornar arrastavel com useDraggable
-- Criar `KanbanColumn.tsx` - area de drop com useDroppable
+
+DEPOIS:
++----------------------------------------------------------+
+| Logo                      [Site] [LinkedIn] [Instagram]  |
++----------------------------------------------------------+
+|                                                          |
+|  [                Hero Image                          ]  |
+|                                                          |
+|  "Tagline da empresa aqui"                               |
+|                                                          |
+|  [    Venha fazer parte do time!    ] <- CTA            |
+|                                                          |
++----------------------------------------------------------+
+| SOBRE NÓS                                                |
++----------------------------------------------------------+
+| [Icone]                                                  |
+| Texto sobre a empresa, história, missão...               |
+|                                                          |
+| NOSSA CULTURA                                            |
+| Valores e forma de trabalhar...                          |
++----------------------------------------------------------+
+| BENEFÍCIOS                                               |
++----------------------------------------------------------+
+| [Icon] Home office    [Icon] Vale refeição              |
+| [Icon] Plano saúde    [Icon] Day off                    |
++----------------------------------------------------------+
+| VAGAS ABERTAS (5)                                        |
++----------------------------------------------------------+
+| [Filtros: Tipo | Localização | Busca]                   |
+|                                                          |
+| +------------------------+ +------------------------+   |
+| | Desenvolvedor React    | | Product Manager        |   |
+| | Remote · São Paulo     | | Híbrido · SP           |   |
+| | R$ 8-12k               | | R$ 15-20k              |   |
+| | [Ver detalhes]         | | [Ver detalhes]         |   |
+| +------------------------+ +------------------------+   |
+|                                                          |
++----------------------------------------------------------+
+| Powered by CompareCV powered by MarQ                     |
++----------------------------------------------------------+
+```
 
 ---
 
-### 3. Melhorias na Visualizacao do Candidato
+### 4. Customizações Disponíveis
 
-**Situacao Atual:**
-- `ApplicationDetailPanel.tsx` mostra informacoes basicas
-- Select dropdown para mudar status
-- Navegacao prev/next entre candidatos
+**Aba "Página de Carreiras" expandida:**
 
-**Melhorias:**
-- Adicionar barra de navegacao de etapas visual (stepper)
-- Botoes grandes e claros para "Mover para proxima etapa" e "Mover para etapa anterior"
-- Exibir nome da etapa atual com destaque
-- Mostrar progresso visual do candidato no pipeline
-- Melhorar layout das informacoes do formulario
-- Adicionar acoes rapidas (rejeitar, aprovar, agendar entrevista)
+```text
++----------------------------------------------------------+
+| Página Pública de Carreiras                              |
++----------------------------------------------------------+
+| [Switch] Habilitar página de carreiras                   |
+|                                                          |
+| URL: /carreiras/[slug]          [Copiar] [Abrir]        |
++----------------------------------------------------------+
+| Personalização Visual                                    |
++----------------------------------------------------------+
+| Imagem de capa (Hero)                                    |
+| [https://...imagem.jpg                                 ] |
+| Preview: [Imagem]                                        |
+|                                                          |
+| Texto do botão principal                                 |
+| [Venha fazer parte!                                    ] |
+|                                                          |
+| [Switch] Exibir seção "Sobre Nós"                       |
+| [Switch] Exibir seção "Benefícios"                      |
+| [Switch] Exibir seção "Cultura"                         |
+| [Switch] Exibir redes sociais                           |
++----------------------------------------------------------+
+```
 
 ---
 
-### Detalhes Tecnicos
+### 5. Detalhes Técnicos
 
-**Migracao de Banco de Dados:**
+**Migração de banco de dados:**
+
 ```sql
--- Criar tabela de etapas do pipeline
-CREATE TABLE pipeline_stages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  slug TEXT NOT NULL,
-  color TEXT NOT NULL DEFAULT '#6B7280',
-  icon TEXT NOT NULL DEFAULT 'circle',
-  "order" INTEGER NOT NULL DEFAULT 0,
-  is_default BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Indice para performance
-CREATE INDEX idx_pipeline_stages_user ON pipeline_stages(user_id);
-
--- Constraint de slug unico por usuario
-CREATE UNIQUE INDEX idx_pipeline_stages_user_slug ON pipeline_stages(user_id, slug);
-
--- RLS
-ALTER TABLE pipeline_stages ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can manage their own stages"
-ON pipeline_stages FOR ALL
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
-
--- Funcao para criar etapas padrao ao criar perfil
-CREATE OR REPLACE FUNCTION create_default_pipeline_stages()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO pipeline_stages (user_id, name, slug, color, icon, "order", is_default)
-  VALUES 
-    (NEW.user_id, 'Nova candidatura', 'new', '#6B7280', 'inbox', 0, true),
-    (NEW.user_id, 'Baixa aderencia', 'low_fit', '#EA580C', 'thumbs-down', 1, false),
-    (NEW.user_id, 'Merece analise', 'deserves_analysis', '#3B82F6', 'star', 2, false);
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER on_profile_created_add_stages
-AFTER INSERT ON profiles
-FOR EACH ROW
-EXECUTE FUNCTION create_default_pipeline_stages();
-
--- Migrar dados existentes: criar etapas para usuarios que ja existem
-INSERT INTO pipeline_stages (user_id, name, slug, color, icon, "order", is_default)
-SELECT DISTINCT 
-  p.user_id, 
-  'Nova candidatura', 
-  'new', 
-  '#6B7280', 
-  'inbox', 
-  0, 
-  true
-FROM profiles p
-WHERE NOT EXISTS (SELECT 1 FROM pipeline_stages ps WHERE ps.user_id = p.user_id);
-
-INSERT INTO pipeline_stages (user_id, name, slug, color, icon, "order", is_default)
-SELECT DISTINCT p.user_id, 'Baixa aderencia', 'low_fit', '#EA580C', 'thumbs-down', 1, false
-FROM profiles p
-WHERE NOT EXISTS (SELECT 1 FROM pipeline_stages ps WHERE ps.user_id = p.user_id AND ps.slug = 'low_fit');
-
-INSERT INTO pipeline_stages (user_id, name, slug, color, icon, "order", is_default)
-SELECT DISTINCT p.user_id, 'Merece analise', 'deserves_analysis', '#3B82F6', 'star', 2, false
-FROM profiles p
-WHERE NOT EXISTS (SELECT 1 FROM pipeline_stages ps WHERE ps.user_id = p.user_id AND ps.slug = 'deserves_analysis');
-```
-
-**Dependencia NPM:**
-```bash
-npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+-- Adicionar campos na tabela profiles
+ALTER TABLE profiles
+ADD COLUMN company_tagline TEXT,
+ADD COLUMN company_about TEXT,
+ADD COLUMN company_benefits JSONB DEFAULT '[]',
+ADD COLUMN company_culture TEXT,
+ADD COLUMN company_website TEXT,
+ADD COLUMN company_linkedin TEXT,
+ADD COLUMN company_instagram TEXT,
+ADD COLUMN careers_hero_image_url TEXT,
+ADD COLUMN careers_cta_text TEXT DEFAULT 'Venha fazer parte!',
+ADD COLUMN careers_show_about BOOLEAN DEFAULT true,
+ADD COLUMN careers_show_benefits BOOLEAN DEFAULT true,
+ADD COLUMN careers_show_culture BOOLEAN DEFAULT true,
+ADD COLUMN careers_show_social BOOLEAN DEFAULT true;
 ```
 
 ---
 
-### Arquivos a Criar
+### 6. Arquivos a Modificar
 
-1. **`src/hooks/usePipelineStages.ts`**
-   - Hook para buscar, criar, atualizar, deletar etapas
-   - Reordenacao de etapas
-   - Cache local
+**1. `src/pages/Settings.tsx`**
+- Adicionar nova aba "Sobre a Empresa"
+- Campos para tagline, about, culture
+- Editor de lista de benefícios (adicionar/remover)
+- Campos para redes sociais
+- Expandir aba "Página de Carreiras" com toggles de exibição
 
-2. **`src/components/jobs/KanbanColumn.tsx`**
-   - Componente de coluna com useDroppable
-   - Header com nome, cor e contador
-   - Scroll area para cards
-
-3. **`src/components/jobs/DraggableApplicationCard.tsx`**
-   - Wrapper do ApplicationCard com useDraggable
-   - Overlay durante arraste
-
-4. **`src/components/settings/PipelineStagesEditor.tsx`**
-   - Interface para criar/editar/reordenar etapas
-   - Lista arrastavel de etapas
-   - Dialogs para criar/editar
-
-5. **`src/components/jobs/StageNavigator.tsx`**
-   - Componente de stepper visual para navegacao entre etapas
-   - Botoes de acao para mover candidato
+**2. `src/pages/PublicCareers.tsx`**
+- Redesign completo do layout
+- Hero section com imagem de capa
+- Seção "Sobre Nós" condicional
+- Grid de benefícios com ícones
+- Seção de cultura/valores
+- Links para redes sociais no header
+- Cards de vagas em grid (2 colunas desktop)
+- Melhor tipografia e espaçamento
 
 ---
 
-### Arquivos a Modificar
+### 7. Componentes da Página de Carreiras
 
-1. **`src/pages/Settings.tsx`**
-   - Adicionar terceira aba "Pipeline"
-   - Importar e renderizar PipelineStagesEditor
+**Hero Section:**
+- Imagem de fundo (se configurada) ou gradiente com cor da marca
+- Tagline em destaque
+- Botão CTA que scrolla para vagas
 
-2. **`src/components/jobs/ApplicationKanban.tsx`**
-   - Remover COLUMNS hardcoded
-   - Adicionar DndContext wrapper
-   - Receber stages como prop
-   - Implementar onDragEnd handler
+**About Section:**
+- Ícone e título "Sobre Nós"
+- Texto formatado (whitespace-pre-wrap)
+- Seção de cultura lado a lado ou abaixo
 
-3. **`src/components/jobs/ApplicationDetailPanel.tsx`**
-   - Adicionar StageNavigator no topo
-   - Melhorar botoes de navegacao entre etapas
-   - Receber stages como prop
-   - Layout mais claro e acoes diretas
+**Benefits Grid:**
+- Grid responsivo 2x2, 3x3 ou 4x2
+- Ícones (check ou custom) + texto
+- Fundo sutil com cor da marca
 
-4. **`src/components/jobs/ApplicationCard.tsx`**
-   - Remover dependencia de TriageStatus hardcoded
-   - Receber cor/icone da etapa como prop
+**Jobs Grid:**
+- Cards em grid de 2 colunas (1 no mobile)
+- Mais informações visíveis (tipo, local, salário)
+- Botão "Ver detalhes" mais destacado
+- Barra de busca/filtro sticky
 
-5. **`src/pages/JobPostingDetails.tsx`**
-   - Buscar etapas do usuario
-   - Passar stages para ApplicationKanban
-   - Passar stages para ApplicationDetailPanel
-
-6. **`src/types/jobs.ts`**
-   - Adicionar interface PipelineStage
-   - Manter TriageStatus para retrocompatibilidade
-   - Atualizar JobApplication para usar stage_id (opcional)
+**Footer:**
+- Links para redes sociais
+- Powered by CompareCV powered by MarQ
 
 ---
 
-### Interface Visual - Editor de Pipeline
+### 8. Interface do Editor de Benefícios
 
 ```text
-Aba "Pipeline" nas Configuracoes:
-+----------------------------------------------------------+
-| Etapas do Pipeline                            [+ Nova]   |
-+----------------------------------------------------------+
-| Arraste para reordenar                                   |
-|                                                          |
-| [=] Nova candidatura        [Inbox]    #6B7280  [Editar] |
-| [=] Triagem Inicial         [Filter]   #F59E0B  [Editar] |
-| [=] Entrevista Agendada     [Calendar] #10B981  [Editar] |
-| [=] Proposta Enviada        [Send]     #8B5CF6  [Editar] |
-| [=] Contratado              [Check]    #22C55E  [Editar] |
-| [=] Rejeitado               [X]        #EF4444  [Editar] |
-|                                                          |
-+----------------------------------------------------------+
-```
++------------------------------------------+
+| Benefícios                [+ Adicionar]  |
++------------------------------------------+
+| [x] Home office flexível        [Editar] |
+| [x] Vale refeição               [Editar] |
+| [x] Plano de saúde              [Editar] |
+| [x] Gympass                     [Editar] |
+|                                          |
++------------------------------------------+
 
-### Interface Visual - Kanban Melhorado
-
-```text
-+---------------+---------------+---------------+---------------+
-| Triagem (5)   | Entrevista (3)| Proposta (1) | Contratado (2)|
-+---------------+---------------+---------------+---------------+
-| [Card]        | [Card]        | [Card]       | [Card]        |
-| [Card]  <---> | [Card]        |              | [Card]        |
-| [Card]        | [Card]        |              |               |
-| ...           |               |              |               |
-|               |               |              |               |
-| <- -> setas   |               |              |               |
-+---------------+---------------+---------------+---------------+
-
-Drag visual:
-- Card fica semitransparente na origem
-- Overlay segue o cursor
-- Coluna destino destaca ao passar mouse
-```
-
-### Interface Visual - Painel do Candidato Melhorado
-
-```text
-+----------------------------------------------------------+
-| <- Voltar                                                 |
-+----------------------------------------------------------+
-| [1]--[2]--[3]--[4]--[5]  <- Stepper visual               |
-| Triagem > Entrevista > Proposta > Contratado             |
-|          ^^ ATUAL                                         |
-+----------------------------------------------------------+
-| Joao Silva                                                |
-| joao@email.com | Pendente                                 |
-| Aplicou em 03/02/2026 as 14:30                           |
-+----------------------------------------------------------+
-|                                                          |
-| [<- Voltar para Triagem]    [Avancar para Proposta ->]   |
-|                                                          |
-+----------------------------------------------------------+
-| Respostas do Formulario                                  |
-| +------------------------------------------------------+ |
-| | Nome: Joao Silva                                     | |
-| | Email: joao@email.com                                | |
-| | LinkedIn: linkedin.com/in/joaosilva                  | |
-| | Anos de experiencia: 5                               | |
-| +------------------------------------------------------+ |
-+----------------------------------------------------------+
-| Curriculo                                [Abrir] [Baixar]|
-| +------------------------------------------------------+ |
-| |                   PDF Preview                        | |
-| +------------------------------------------------------+ |
-+----------------------------------------------------------+
-| [1/5]                                 [<Anterior] [Prox>]|
-+----------------------------------------------------------+
+Dialog "Adicionar Benefício":
++------------------------------------------+
+| Adicionar Benefício                      |
+|                                          |
+| Texto: [Vale transporte                ] |
+|                                          |
+| [Cancelar]              [Adicionar]      |
++------------------------------------------+
 ```
 
 ---
 
-### Passos de Implementacao
+### 9. Passos de Implementação
 
 1. **Banco de dados:**
-   - Criar tabela `pipeline_stages`
-   - Adicionar trigger para criar etapas padrao
-   - Migrar usuarios existentes
+   - Executar migração para adicionar novos campos
 
-2. **Hook e tipos:**
-   - Criar `usePipelineStages.ts`
-   - Atualizar `types/jobs.ts`
+2. **Settings - Aba "Sobre a Empresa":**
+   - Criar componente para editor de benefícios
+   - Adicionar campos de texto para about/culture
+   - Campos para redes sociais
 
-3. **Instalar dependencia:**
-   - `@dnd-kit/core` para drag and drop
+3. **Settings - Expandir aba "Carreiras":**
+   - Campo para imagem hero
+   - Campo para texto CTA
+   - Toggles de exibição de seções
 
-4. **Componentes do Kanban:**
-   - Criar `KanbanColumn.tsx` e `DraggableApplicationCard.tsx`
-   - Atualizar `ApplicationKanban.tsx` com DndContext
+4. **PublicCareers - Redesign:**
+   - Buscar novos campos do profile
+   - Implementar Hero Section
+   - Implementar About Section
+   - Implementar Benefits Grid
+   - Redesenhar Jobs Grid
+   - Adicionar links sociais
 
-5. **Editor de Pipeline:**
-   - Criar `PipelineStagesEditor.tsx`
-   - Adicionar aba em `Settings.tsx`
-
-6. **Painel de Candidato:**
-   - Criar `StageNavigator.tsx`
-   - Atualizar `ApplicationDetailPanel.tsx`
-
-7. **Integracao:**
-   - Atualizar `JobPostingDetails.tsx` para buscar stages
-   - Conectar tudo com as novas etapas dinamicas
+5. **Responsividade:**
+   - Testar em mobile, tablet e desktop
+   - Ajustar grids e espaçamentos
 
 ---
 
-### Retrocompatibilidade
+### 10. Exemplos de Benefícios Pré-sugeridos
 
-- O campo `triage_status` continua existindo na tabela `job_applications`
-- Se usuario nao tiver etapas customizadas, usa as etapas padrao
-- Mapeamento automatico entre slugs antigos (`new`, `low_fit`, `deserves_analysis`) e novos
-- Transicao gradual sem quebrar dados existentes
+Ao adicionar benefícios, sugerir opções comuns:
+- Home office / Trabalho remoto
+- Vale refeição
+- Vale alimentação
+- Vale transporte
+- Plano de saúde
+- Plano odontológico
+- Gympass / Academia
+- Day off aniversário
+- PLR / Bônus
+- Cursos e capacitação
+- Horário flexível
+- Auxílio home office
+
