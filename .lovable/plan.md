@@ -1,228 +1,283 @@
 
-
-## Plano: Painel de Usuarios com Gerenciamento Completo
+## Plano: Configuracoes de Plataforma, Clonagem de Vagas e Pagina Publica de Carreiras
 
 ### Visao Geral
 
-Adicionar uma nova aba "Usuarios" na pagina de Log de Atividades com lista completa de usuarios, estatisticas de uso, funcionalidade para adicionar tokens e botao para bloquear usuarios de realizar analises.
+Refatorar o sistema para:
+1. Mover personalizacao (logo, cor, nome) para nivel de plataforma (profiles)
+2. Adicionar opcao de criar vaga do zero ou clonar uma existente
+3. Criar pagina publica de carreiras com todas as vagas ativas da empresa
 
 ---
 
-### O Que Sera Implementado
+### 1. Personalizacao a Nivel de Plataforma
 
-**1. Nova coluna `is_blocked` na tabela profiles**
-- Adicionar campo booleano para controlar se o usuario esta bloqueado
-- Default: `false`
-- Usuarios bloqueados nao poderao iniciar novas analises
+**Situacao Atual:**
+- Campos `company_name`, `company_logo_url` e `brand_color` estao na tabela `job_postings`
+- Cada vaga pode ter branding diferente
 
-**2. Interface com abas**
-- Aba "Atividades" (log atual)
-- Aba "Usuarios" (nova lista de usuarios)
+**Mudanca:**
+- Mover campos de branding para a tabela `profiles`:
+  - `company_logo_url` (novo)
+  - `brand_color` (novo)
+  - `careers_page_slug` (novo - slug unico para pagina de carreiras)
+  - `careers_page_enabled` (novo - controla se a pagina esta ativa)
+- O campo `company_name` ja existe em `profiles`
+- Remover esses campos do formulario de criacao de vaga
+- Criar nova pagina de configuracoes para personalizar a marca
 
-**3. Tabela de Usuarios com as seguintes colunas:**
-- Nome
-- Email
-- Empresa
-- Telefone
-- Cargo
-- Data de cadastro
-- Role (lead/full_access)
-- Curriculos analisados
-- Tokens usados
-- Saldo disponivel
-- Status (Ativo/Bloqueado/Apenas cadastro)
-- Acoes (+ Tokens, Bloquear/Desbloquear)
-
-**4. Funcionalidade de adicionar tokens:**
-- Botao "+ Tokens" em cada linha
-- Dialog modal com campo para quantidade
-- Atualizacao do campo `total_resumes` no perfil do usuario
-- Registro de log de atividade
-
-**5. Funcionalidade de bloquear usuario:**
-- Botao "Bloquear" em cada linha (muda para "Desbloquear" se bloqueado)
-- Confirmacao antes de bloquear
-- Usuarios bloqueados: badge vermelho na lista
-- Impede realizacao de analises (verificacao no frontend e backend)
-
-**6. Validacao de bloqueio no fluxo de analise:**
-- Adicionar verificacao no Edge Function `analyze-resumes` antes de processar
-- Adicionar verificacao no frontend antes de iniciar analise
-- Manter estrutura de permissionamento existente (lead/full_access) intacta
-
-**7. Dados retroativos:**
-- A query ja busca dados de todas as tabelas existentes (profiles, user_roles, analyses)
-- Todas as informacoes historicas serao exibidas automaticamente
+**Nova Rota:**
+- `/configuracoes` - Pagina com configuracoes de marca e pagina de carreiras
 
 ---
 
-### Indicadores Visuais
+### 2. Criar Vaga: Do Zero ou Clonar
 
-- Badge "Apenas cadastro" (cinza): usuarios com 0 analises
-- Badge "Ativo" (verde): usuarios que ja usaram o sistema
-- Badge "Bloqueado" (vermelho): usuarios que nao podem analisar
-- Alerta visual para saldo baixo (menos de 3 curriculos)
+**Fluxo Proposto:**
+1. Ao clicar em "Nova Vaga", abre um Dialog
+2. Usuario escolhe:
+   - "Comecar do zero" → navega para `/vagas/nova`
+   - "Clonar vaga existente" → lista de vagas para selecionar
+3. Ao clonar, todos os campos sao pre-preenchidos:
+   - Titulo, descricao, requisitos, localizacao, faixa salarial, tipo de trabalho
+   - Formulario de candidatura (form_template_id)
+4. A vaga clonada inicia como rascunho com novo ID e slug
+
+---
+
+### 3. Pagina Publica de Carreiras
+
+**URL:** `/carreiras/:slug`
+
+**Funcionalidades:**
+- Exibe header com logo/nome da empresa (da tabela profiles)
+- Lista todas as vagas com status `active` do usuario
+- Cada vaga mostra: titulo, localizacao, tipo de trabalho
+- Ao clicar em uma vaga, redireciona para `/apply/:job_slug`
+- Filtros opcionais: tipo de trabalho, localizacao
+
+**Componentes:**
+- Header com branding da empresa
+- Grid/Lista de vagas
+- Card de vaga com informacoes resumidas
+- Estado vazio quando nao ha vagas
 
 ---
 
 ### Detalhes Tecnicos
 
-**Arquivos a criar:**
-- `src/components/admin/UserManagementTab.tsx` - Componente da aba de usuarios
-- `src/components/admin/AddTokensDialog.tsx` - Dialog para adicionar tokens
-- `src/components/admin/BlockUserDialog.tsx` - Dialog de confirmacao de bloqueio
-
-**Arquivos a modificar:**
-- `src/pages/ActivityLog.tsx` - Adicionar sistema de abas
-- `src/pages/Index.tsx` - Verificar bloqueio antes de iniciar analise
-- `src/pages/JobPostingDetails.tsx` - Verificar bloqueio antes de analise de vagas
-- `supabase/functions/analyze-resumes/index.ts` - Verificar bloqueio no backend
-
-**Migracao de banco de dados:**
+**Migracao de Banco de Dados:**
 ```sql
--- Adicionar coluna is_blocked
-ALTER TABLE profiles ADD COLUMN is_blocked BOOLEAN NOT NULL DEFAULT false;
-```
+-- Adicionar campos de branding na tabela profiles
+ALTER TABLE profiles 
+  ADD COLUMN company_logo_url TEXT,
+  ADD COLUMN brand_color TEXT DEFAULT '#3B82F6',
+  ADD COLUMN careers_page_slug TEXT UNIQUE,
+  ADD COLUMN careers_page_enabled BOOLEAN DEFAULT false;
 
-**Nova funcao RPC para admin gerenciar usuarios:**
-```sql
-CREATE OR REPLACE FUNCTION public.admin_update_user_profile(
-  _target_user_id uuid, 
-  _resumes_to_add integer DEFAULT NULL,
-  _set_blocked boolean DEFAULT NULL
-)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
+-- Migrar dados existentes das vagas para profiles
+-- (executar UPDATE para cada usuario, pegando os valores da primeira vaga)
+UPDATE profiles p
+SET 
+  company_logo_url = COALESCE(p.company_logo_url, (
+    SELECT company_logo_url FROM job_postings jp 
+    WHERE jp.user_id = p.user_id AND jp.company_logo_url IS NOT NULL 
+    LIMIT 1
+  )),
+  brand_color = COALESCE(p.brand_color, (
+    SELECT brand_color FROM job_postings jp 
+    WHERE jp.user_id = p.user_id AND jp.brand_color IS NOT NULL 
+    LIMIT 1
+  ));
+
+-- Criar funcao para gerar slug unico de carreiras
+CREATE OR REPLACE FUNCTION generate_careers_slug(company text)
+RETURNS text AS $$
+DECLARE
+  base_slug text;
+  final_slug text;
+  counter int := 0;
 BEGIN
-  IF NOT is_admin_email() THEN
-    RAISE EXCEPTION 'Acesso negado';
-  END IF;
+  base_slug := lower(regexp_replace(company, '[^a-zA-Z0-9]+', '-', 'g'));
+  base_slug := regexp_replace(base_slug, '^-|-$', '', 'g');
+  final_slug := base_slug;
   
-  IF _resumes_to_add IS NOT NULL THEN
-    UPDATE profiles 
-    SET total_resumes = total_resumes + _resumes_to_add
-    WHERE user_id = _target_user_id;
-  END IF;
+  WHILE EXISTS(SELECT 1 FROM profiles WHERE careers_page_slug = final_slug) LOOP
+    counter := counter + 1;
+    final_slug := base_slug || '-' || counter;
+  END LOOP;
   
-  IF _set_blocked IS NOT NULL THEN
-    UPDATE profiles 
-    SET is_blocked = _set_blocked
-    WHERE user_id = _target_user_id;
-  END IF;
+  RETURN final_slug;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 ```
 
-**Nova funcao para verificar bloqueio (usada pelo Edge Function):**
+**RLS para Pagina de Carreiras:**
 ```sql
-CREATE OR REPLACE FUNCTION public.is_user_blocked(_user_id uuid)
-RETURNS boolean
-LANGUAGE sql
-STABLE SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT COALESCE(
-    (SELECT is_blocked FROM profiles WHERE user_id = _user_id),
-    false
-  )
-$$;
+-- Permitir acesso publico a profiles com careers_page_enabled
+CREATE POLICY "Public can view careers-enabled profiles"
+ON profiles FOR SELECT
+USING (careers_page_enabled = true);
 ```
 
-**Query para buscar usuarios (roda apenas para admin):**
-```sql
-SELECT 
-  p.user_id, p.email, p.name, p.company_name, 
-  p.phone, p.cargo, p.total_resumes, p.is_blocked,
-  p.created_at, ur.role,
-  COUNT(a.id) as total_analyses,
-  COALESCE(SUM(a.tokens_used), 0) as total_tokens_used,
-  COALESCE(SUM(jsonb_array_length(a.candidates)), 0) as resumes_analyzed
-FROM profiles p
-LEFT JOIN user_roles ur ON p.user_id = ur.user_id
-LEFT JOIN analyses a ON a.user_id = p.user_id AND a.status = 'completed'
-GROUP BY p.user_id, p.email, p.name, p.company_name, 
-         p.phone, p.cargo, p.total_resumes, p.is_blocked,
-         p.created_at, ur.role
-ORDER BY p.created_at DESC
-```
+**Arquivos a Criar:**
+
+1. `src/pages/Settings.tsx`
+   - Configuracoes de marca (nome, logo, cor)
+   - Configuracoes da pagina de carreiras (slug, habilitar/desabilitar)
+   - Preview em tempo real
+
+2. `src/pages/PublicCareers.tsx`
+   - Pagina publica de carreiras
+   - Lista vagas ativas do usuario pelo slug
+
+3. `src/components/jobs/NewJobDialog.tsx`
+   - Dialog para escolher: comecar do zero ou clonar
+   - Lista de vagas existentes para clonar
+
+**Arquivos a Modificar:**
+
+1. `src/pages/JobPostingForm.tsx`
+   - Remover secao "Personalizacao da Pagina"
+   - Receber props de vaga clonada (via query params ou state)
+
+2. `src/pages/JobPostings.tsx`
+   - Trocar navegacao direta por abertura do NewJobDialog
+
+3. `src/pages/PublicApplication.tsx`
+   - Buscar branding do profile em vez da job_posting
+   - Adicionar link "Ver outras vagas" para pagina de carreiras
+
+4. `src/hooks/useJobPostings.ts`
+   - Adicionar funcao `cloneJobPosting`
+
+5. `src/App.tsx`
+   - Adicionar rota `/configuracoes`
+   - Adicionar rota `/carreiras/:slug`
+
+6. `src/types/jobs.ts`
+   - Remover campos de branding do JobPosting type (opcional - pode manter para compatibilidade)
 
 ---
 
-### Preservacao da Estrutura de Permissionamento
+### Interface Visual - Dialog Nova Vaga
 
-A estrutura atual de roles (`lead` / `full_access`) permanece completamente intacta:
+```text
++------------------------------------------+
+|           Criar Nova Vaga                |
++------------------------------------------+
+|                                          |
+|  Como deseja criar a vaga?               |
+|                                          |
+|  [        Comecar do Zero           ]    |
+|  Crie uma vaga completamente nova        |
+|                                          |
+|  [    Clonar Vaga Existente        ]     |
+|  Copie os dados de uma vaga anterior     |
+|                                          |
++------------------------------------------+
 
-| Funcionalidade | Lead | Full Access | Bloqueado |
-|----------------|------|-------------|-----------|
-| Dashboard      | Sim  | Sim         | Sim       |
-| Nova Analise   | Sim  | Sim         | NAO       |
-| Ver Analises   | Sim  | Sim         | Sim       |
-| Gerenciar Vagas| NAO  | Sim         | (depende) |
-| Formularios    | NAO  | Sim         | (depende) |
-| Log Atividades | NAO  | Somente admin| NAO      |
+Ao clicar em "Clonar Vaga Existente":
 
-O campo `is_blocked` afeta APENAS a capacidade de iniciar novas analises, nao as permissoes de visualizacao ou acesso a funcionalidades baseadas em role.
++------------------------------------------+
+|       Selecione a vaga para clonar       |
++------------------------------------------+
+|  [Buscar...]                             |
+|                                          |
+|  - Desenvolvedor Full Stack (Ativa)      |
+|  - Analista de Marketing (Encerrada)     |
+|  - Designer UX/UI (Rascunho)             |
+|                                          |
+|  [Cancelar]             [Clonar]         |
++------------------------------------------+
+```
 
----
-
-### Interface Visual
+### Interface Visual - Pagina de Configuracoes
 
 ```text
 +----------------------------------------------------------+
-|  <- Log de Atividades                                     |
+|  <- Configuracoes                                         |
 |                                                          |
-|  [Atividades]  [Usuarios]                                |
-|                =========                                  |
-|                                                          |
-|  Filtros: [Email...] [Empresa...] [Status: Todos v]      |
-|                                                          |
-|  152 usuarios encontrados                                |
+|  [Marca]  [Pagina de Carreiras]                          |
+|  ======                                                   |
 |                                                          |
 |  +------------------------------------------------------+|
-|  | Nome   | Email   | Empresa | CVs  | Tokens | Saldo   ||
-|  |--------|---------|---------|------|--------|---------|+
-|  | Maria  | m@x.com | ACME    | 15   | 5000   | 5    [+]||
-|  |        |         |         |      |        | [Block] ||
-|  |--------|---------|---------|------|--------|---------|+
-|  | Joao   | j@y.com | XYZ     | 0    | 0      | 10   [+]||
-|  | [Apenas cadastro]|         |      |        | [Block] ||
-|  |--------|---------|---------|------|--------|---------|+
-|  | Ana    | a@z.com | ABC     | 8    | 3200   | 0 [!][+]||
-|  | [BLOQUEADO]      |         |      |        |[Unbck] ||
+|  | Identidade Visual                                     ||
+|  |                                                       ||
+|  | Nome da empresa: [MarQ Ponto                    ]     ||
+|  |                                                       ||
+|  | Logo da empresa:                                      ||
+|  | [https://exemplo.com/logo.png                   ]     ||
+|  | [Preview do logo se URL valida]                       ||
+|  |                                                       ||
+|  | Cor principal: [#3B82F6] [===]                        ||
 |  +------------------------------------------------------+|
 |                                                          |
-|  Pagina 1 de 4                            [<] [>]        |
+|  [Salvar Alteracoes]                                     |
++----------------------------------------------------------+
+
+Aba Pagina de Carreiras:
+
++----------------------------------------------------------+
+|  +------------------------------------------------------+|
+|  | Pagina Publica de Carreiras                          ||
+|  |                                                       ||
+|  | [x] Habilitar pagina de carreiras                    ||
+|  |                                                       ||
+|  | URL da pagina:                                        ||
+|  | /carreiras/[marq-ponto                          ]     ||
+|  |                                                       ||
+|  | Link completo:                                        ||
+|  | https://site.com/carreiras/marq-ponto [Copiar]       ||
+|  +------------------------------------------------------+|
 +----------------------------------------------------------+
 ```
 
----
+### Interface Visual - Pagina de Carreiras
 
-### Fluxo de Bloqueio
-
-1. Admin clica em "Bloquear" na linha do usuario
-2. Dialog de confirmacao aparece: "Tem certeza que deseja bloquear este usuario?"
-3. Ao confirmar, a funcao RPC `admin_update_user_profile` e chamada
-4. Log de atividade e registrado com tipo `user_blocked`
-5. Usuario aparece com badge "Bloqueado" na lista
-6. Quando usuario tenta iniciar analise:
-   - Frontend verifica `is_blocked` do perfil e exibe mensagem
-   - Backend (Edge Function) tambem verifica antes de processar
+```text
++----------------------------------------------------------+
+|  [Logo MarQ]                      Trabalhe Conosco        |
++----------------------------------------------------------+
+|                                                          |
+|  Junte-se ao time MarQ Ponto!                            |
+|  Confira nossas vagas abertas                            |
+|                                                          |
+|  Filtros: [Todos os tipos v] [Todas localidades v]       |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Desenvolvedor Full Stack Senior                       ||
+|  | Remoto | Sao Paulo, SP                                ||
+|  | R$ 12.000 - R$ 18.000                                 ||
+|  |                                          [Candidatar] ||
+|  +------------------------------------------------------+|
+|  | Analista de RH                                        ||
+|  | Hibrido | Rio de Janeiro, RJ                          ||
+|  |                                          [Candidatar] ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  Powered by Resume AI                                    |
++----------------------------------------------------------+
+```
 
 ---
 
 ### Passos de Implementacao
 
-1. Criar migracao para adicionar coluna `is_blocked` e funcoes RPC
-2. Criar componente `AddTokensDialog.tsx`
-3. Criar componente `BlockUserDialog.tsx`
-4. Criar componente `UserManagementTab.tsx` com tabela, filtros e paginacao
-5. Modificar `ActivityLog.tsx` para usar Tabs e integrar os componentes
-6. Adicionar verificacao de bloqueio em `Index.tsx` (handleAnalyze)
-7. Adicionar verificacao de bloqueio em `JobPostingDetails.tsx`
-8. Modificar Edge Function `analyze-resumes` para verificar bloqueio
-9. Adicionar novos tipos de atividade: `user_blocked`, `user_unblocked`, `admin_add_resumes`
-10. Atualizar hook `useActivityLog.ts` com os novos tipos
+1. **Migracoes de banco**: Adicionar campos no profiles e criar politicas RLS
+2. **Criar NewJobDialog**: Dialog para escolher modo de criacao
+3. **Modificar JobPostings.tsx**: Integrar dialog ao botao Nova Vaga
+4. **Modificar JobPostingForm.tsx**: Remover personalizacao, aceitar clone state
+5. **Criar Settings.tsx**: Pagina de configuracoes com abas
+6. **Criar PublicCareers.tsx**: Pagina publica de carreiras
+7. **Atualizar PublicApplication.tsx**: Buscar branding do profile
+8. **Atualizar App.tsx**: Adicionar novas rotas
+9. **Atualizar navegacao**: Adicionar link para configuracoes no dashboard
 
+---
+
+### Compatibilidade e Migracao
+
+- Os campos de branding na `job_postings` serao mantidos por retrocompatibilidade
+- A `PublicApplication` primeiro tentara usar o branding do profile; se nao existir, usa da vaga
+- Isso permite que vagas antigas continuem funcionando enquanto usuarios migram para o novo sistema
