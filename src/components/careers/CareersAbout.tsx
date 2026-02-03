@@ -1,5 +1,4 @@
 import { Building2, Heart } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 
 interface CareersAboutProps {
   about: string | null;
@@ -21,45 +20,41 @@ export function CareersAbout({
   }
 
   return (
-    <section className="py-12 md:py-16">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="grid md:grid-cols-2 gap-8">
+    <section className="py-6 md:py-8">
+      <div className="container mx-auto px-4 max-w-5xl">
+        <div className="grid md:grid-cols-2 gap-4">
           {showAbout && about && (
-            <Card className="border-none shadow-md">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className="p-2 rounded-lg"
-                    style={{ backgroundColor: `${brandColor}15` }}
-                  >
-                    <Building2 className="h-5 w-5" style={{ color: brandColor }} />
-                  </div>
-                  <h2 className="text-xl font-semibold">Sobre Nós</h2>
+            <div className="p-4 bg-card rounded-lg border">
+              <div className="flex items-center gap-2 mb-2">
+                <div
+                  className="p-1.5 rounded"
+                  style={{ backgroundColor: `${brandColor}15` }}
+                >
+                  <Building2 className="h-4 w-4" style={{ color: brandColor }} />
                 </div>
-                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {about}
-                </p>
-              </CardContent>
-            </Card>
+                <h3 className="text-base font-semibold">Sobre Nós</h3>
+              </div>
+              <p className="text-sm text-muted-foreground line-clamp-4">
+                {about}
+              </p>
+            </div>
           )}
 
           {showCulture && culture && (
-            <Card className="border-none shadow-md">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className="p-2 rounded-lg"
-                    style={{ backgroundColor: `${brandColor}15` }}
-                  >
-                    <Heart className="h-5 w-5" style={{ color: brandColor }} />
-                  </div>
-                  <h2 className="text-xl font-semibold">Nossa Cultura</h2>
+            <div className="p-4 bg-card rounded-lg border">
+              <div className="flex items-center gap-2 mb-2">
+                <div
+                  className="p-1.5 rounded"
+                  style={{ backgroundColor: `${brandColor}15` }}
+                >
+                  <Heart className="h-4 w-4" style={{ color: brandColor }} />
                 </div>
-                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {culture}
-                </p>
-              </CardContent>
-            </Card>
+                <h3 className="text-base font-semibold">Nossa Cultura</h3>
+              </div>
+              <p className="text-sm text-muted-foreground line-clamp-4">
+                {culture}
+              </p>
+            </div>
           )}
         </div>
       </div>
