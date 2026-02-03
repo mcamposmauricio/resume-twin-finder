@@ -173,9 +173,7 @@ export default function PublicCareers() {
         companyName={profile.company_name}
         tagline={profile.company_tagline}
         heroImageUrl={profile.careers_hero_image_url}
-        ctaText={profile.careers_cta_text}
         brandColor={brandColor}
-        onCtaClick={scrollToJobs}
       />
 
       <CareersAbout
