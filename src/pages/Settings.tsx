@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { PipelineStagesEditor } from '@/components/settings/PipelineStagesEditor';
 
 interface ProfileSettings {
   company_name: string;
@@ -165,9 +166,10 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="brand" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="brand">Marca</TabsTrigger>
             <TabsTrigger value="careers">Página de Carreiras</TabsTrigger>
+            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           </TabsList>
 
           <TabsContent value="brand">
@@ -326,6 +328,10 @@ export default function Settings() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="pipeline">
+            <PipelineStagesEditor userId={userId} />
           </TabsContent>
         </Tabs>
 
