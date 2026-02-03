@@ -1,5 +1,6 @@
 import {
   Inbox,
+  FileText,
   ThumbsDown,
   Star,
   Check,
@@ -20,6 +21,7 @@ import { cn } from '@/lib/utils';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   inbox: Inbox,
+  'file-text': FileText,
   'thumbs-down': ThumbsDown,
   star: Star,
   check: Check,
