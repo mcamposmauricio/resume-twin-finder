@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Briefcase, ArrowLeft } from 'lucide-react';
+import { Plus, Briefcase, ArrowLeft, Globe, ExternalLink, Copy, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -27,6 +27,8 @@ export default function JobPostings() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<TimelineStatus>('draft');
   const [showNewJobDialog, setShowNewJobDialog] = useState(false);
+  const [careersPageSlug, setCareersPageSlug] = useState<string | null>(null);
+  const [careersPageEnabled, setCareersPageEnabled] = useState(false);
   const { jobPostings, loading, deleteJobPosting, changeStatus } = useJobPostings(userId);
   const { isFullAccess, loading: roleLoading } = useUserRole(userId);
 
@@ -36,6 +38,18 @@ export default function JobPostings() {
         navigate('/auth');
       } else {
         setUserId(session.user.id);
+        // Fetch careers page settings
+        supabase
+          .from('profiles')
+          .select('careers_page_slug, careers_page_enabled')
+          .eq('user_id', session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              setCareersPageSlug(data.careers_page_slug);
+              setCareersPageEnabled(data.careers_page_enabled || false);
+            }
+          });
       }
     });
   }, [navigate]);
@@ -131,6 +145,61 @@ export default function JobPostings() {
             Nova Vaga
           </Button>
         </div>
+
+        {/* Careers Page Banner */}
+        <Card className={`mb-6 ${careersPageEnabled ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950' : 'border-muted'}`}>
+          <CardContent className="py-4">
+            <div className="flex items-center gap-3">
+              <Globe className={`h-5 w-5 ${careersPageEnabled ? 'text-green-600' : 'text-muted-foreground'}`} />
+              <div className="flex-1">
+                <p className="font-medium text-sm">
+                  {careersPageEnabled ? 'Página de Carreiras Ativa' : 'Página de Carreiras'}
+                </p>
+                {careersPageEnabled && careersPageSlug ? (
+                  <p className="text-xs text-muted-foreground">
+                    {window.location.origin}/carreiras/{careersPageSlug}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Configure sua página pública de vagas
+                  </p>
+                )}
+              </div>
+              {careersPageEnabled && careersPageSlug ? (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/carreiras/${careersPageSlug}`);
+                      toast.success('Link copiado!');
+                    }}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copiar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(`/carreiras/${careersPageSlug}`, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    Abrir
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/configuracoes')}
+                >
+                  <Settings className="h-4 w-4 mr-1" />
+                  Configurar
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Timeline */}
         <div className="mb-8 p-4 bg-card rounded-lg border">
