@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { JobPostingCard } from '@/components/jobs/JobPostingCard';
 import { JobTimeline, TimelineStatus } from '@/components/jobs/JobTimeline';
+import { NewJobDialog } from '@/components/jobs/NewJobDialog';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -25,6 +26,7 @@ export default function JobPostings() {
   const [userId, setUserId] = useState<string>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<TimelineStatus>('draft');
+  const [showNewJobDialog, setShowNewJobDialog] = useState(false);
   const { jobPostings, loading, deleteJobPosting, changeStatus } = useJobPostings(userId);
   const { isFullAccess, loading: roleLoading } = useUserRole(userId);
 
@@ -124,7 +126,7 @@ export default function JobPostings() {
               Acompanhe o ciclo de vida das suas vagas
             </p>
           </div>
-          <Button onClick={() => navigate('/vagas/nova')}>
+          <Button onClick={() => setShowNewJobDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nova Vaga
           </Button>
@@ -194,6 +196,13 @@ export default function JobPostings() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* New job dialog */}
+        <NewJobDialog
+          open={showNewJobDialog}
+          onOpenChange={setShowNewJobDialog}
+          jobPostings={jobPostings}
+        />
       </div>
     </div>
   );

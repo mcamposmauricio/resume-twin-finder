@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Send, Sparkles } from 'lucide-react';
 import { ShareJobLink } from '@/components/jobs/ShareJobLink';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,34 +25,44 @@ import { useToast } from '@/hooks/use-toast';
 export default function JobPostingForm() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
   const { toast } = useToast();
   const [userId, setUserId] = useState<string>();
   const [saving, setSaving] = useState(false);
   const [currentJob, setCurrentJob] = useState<JobPosting | null>(null);
+  const [profileCompanyName, setProfileCompanyName] = useState<string>('');
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [requirements, setRequirements] = useState('');
-  const [location, setLocation] = useState('');
+  const [location_, setLocation_] = useState('');
   const [salaryRange, setSalaryRange] = useState('');
   const [workType, setWorkType] = useState<WorkType | ''>('');
   const [formTemplateId, setFormTemplateId] = useState<string>('');
-  const [companyName, setCompanyName] = useState('');
-  const [companyLogoUrl, setCompanyLogoUrl] = useState('');
-  const [brandColor, setBrandColor] = useState('#3B82F6');
 
   const { createJobPosting, updateJobPosting, getJobById } = useJobPostings(userId);
   const { templates } = useFormTemplates(userId);
   const { isFullAccess, loading: roleLoading } = useUserRole(userId);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const loadSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate('/auth');
       } else {
         setUserId(session.user.id);
+        // Fetch company name from profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('company_name')
+          .eq('user_id', session.user.id)
+          .single();
+        if (profile?.company_name) {
+          setProfileCompanyName(profile.company_name);
+        }
       }
-    });
+    };
+    loadSession();
   }, [navigate]);
 
   // Redirect non-full-access users - only check after role is loaded
@@ -66,6 +76,21 @@ export default function JobPostingForm() {
     }
   }, [roleLoading, isFullAccess, userId, navigate]);
 
+  // Load clone data from navigation state
+  useEffect(() => {
+    const state = location.state as { cloneFrom?: Partial<JobPosting> } | null;
+    if (state?.cloneFrom && !id) {
+      const clone = state.cloneFrom;
+      setTitle(clone.title ? `${clone.title} (Cópia)` : '');
+      setDescription(clone.description || '');
+      setRequirements(clone.requirements || '');
+      setLocation_(clone.location || '');
+      setSalaryRange(clone.salary_range || '');
+      setWorkType(clone.work_type || '');
+      setFormTemplateId(clone.form_template_id || '');
+    }
+  }, [location.state, id]);
+
   useEffect(() => {
     if (id && userId) {
       getJobById(id).then((job) => {
@@ -74,13 +99,10 @@ export default function JobPostingForm() {
           setTitle(job.title);
           setDescription(job.description);
           setRequirements(job.requirements || '');
-          setLocation(job.location || '');
+          setLocation_(job.location || '');
           setSalaryRange(job.salary_range || '');
           setWorkType(job.work_type || '');
           setFormTemplateId(job.form_template_id || '');
-          setCompanyName(job.company_name || '');
-          setCompanyLogoUrl(job.company_logo_url || '');
-          setBrandColor(job.brand_color || '#3B82F6');
         }
       });
     }
@@ -101,7 +123,7 @@ Responsabilidades:
 • Familiaridade com metodologias ágeis
 • Boa comunicação e trabalho em equipe
 • Inglês intermediário/avançado`);
-    setLocation('São Paulo, SP');
+    setLocation_('São Paulo, SP');
     setSalaryRange('R$ 12.000 - R$ 18.000');
     setWorkType('remote');
   };
@@ -131,13 +153,10 @@ Responsabilidades:
         title,
         description,
         requirements: requirements || undefined,
-        location: location || undefined,
+        location: location_ || undefined,
         salary_range: salaryRange || undefined,
         work_type: workType || undefined,
         form_template_id: formTemplateId || undefined,
-        company_name: companyName || undefined,
-        company_logo_url: companyLogoUrl || undefined,
-        brand_color: brandColor || undefined,
         status,
       };
 
@@ -186,7 +205,7 @@ Responsabilidades:
                 <ShareJobLink 
                   slug={currentJob.public_slug} 
                   jobTitle={currentJob.title}
-                  companyName={companyName || undefined}
+                  companyName={profileCompanyName || undefined}
                   variant="compact"
                 />
               </CardContent>
@@ -231,15 +250,15 @@ Responsabilidades:
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="location">Localização</Label>
-                  <Input
-                    id="location"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Ex: São Paulo, SP"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="location">Localização</Label>
+                <Input
+                  id="location"
+                  value={location_}
+                  onChange={(e) => setLocation_(e.target.value)}
+                  placeholder="Ex: São Paulo, SP"
+                />
+              </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="workType">Tipo de trabalho</Label>
@@ -303,59 +322,6 @@ Responsabilidades:
                     Crie um novo
                   </Button>
                 </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Personalização da Página</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Personalize a página pública de candidatura com a identidade da sua empresa.
-              </p>
-              
-              <div className="space-y-2">
-                <Label htmlFor="companyName">Nome da empresa</Label>
-                <Input
-                  id="companyName"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Ex: Minha Empresa LTDA"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="companyLogoUrl">URL do logo</Label>
-                <Input
-                  id="companyLogoUrl"
-                  value={companyLogoUrl}
-                  onChange={(e) => setCompanyLogoUrl(e.target.value)}
-                  placeholder="https://exemplo.com/logo.png"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Cole a URL de uma imagem do logo da empresa (recomendado: PNG ou SVG transparente)
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="brandColor">Cor principal</Label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    id="brandColor"
-                    value={brandColor}
-                    onChange={(e) => setBrandColor(e.target.value)}
-                    className="w-12 h-10 rounded border cursor-pointer"
-                  />
-                  <Input
-                    value={brandColor}
-                    onChange={(e) => setBrandColor(e.target.value)}
-                    placeholder="#3B82F6"
-                    className="flex-1"
-                  />
-                </div>
               </div>
             </CardContent>
           </Card>

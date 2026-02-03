@@ -343,7 +343,11 @@ export type Database = {
       }
       profiles: {
         Row: {
+          brand_color: string | null
+          careers_page_enabled: boolean | null
+          careers_page_slug: string | null
           cargo: string | null
+          company_logo_url: string | null
           company_name: string | null
           created_at: string
           email: string | null
@@ -363,7 +367,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          brand_color?: string | null
+          careers_page_enabled?: boolean | null
+          careers_page_slug?: string | null
           cargo?: string | null
+          company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
           email?: string | null
@@ -383,7 +391,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          brand_color?: string | null
+          careers_page_enabled?: boolean | null
+          careers_page_slug?: string | null
           cargo?: string | null
+          company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
           email?: string | null
@@ -456,6 +468,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      generate_careers_slug: { Args: { company: string }; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
       get_user_password_hash: { Args: { p_user_id: string }; Returns: string }
       has_role: {
