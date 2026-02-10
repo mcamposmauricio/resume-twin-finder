@@ -1,0 +1,1 @@
+ALTER TABLE public.activity_logs ADD COLUMN is_error BOOLEAN DEFAULT false;

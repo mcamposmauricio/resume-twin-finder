@@ -12,6 +12,7 @@ import { ReferralDialog } from "@/components/ReferralDialog";
 import { MarqBanner } from "@/components/MarqBanner";
 import { useResumeBalance } from "@/hooks/useResumeBalance";
 import { useUserRole } from "@/hooks/useUserRole";
+import { logActivity } from "@/hooks/useActivityLog";
 import type { AppStep, UploadedFile, AnalysisResult, CandidateResult } from "@/types";
 
 interface DraftData {
@@ -569,6 +570,19 @@ export default function Index() {
     } catch (error: any) {
       console.error("Analysis error:", error);
       
+      // Log error activity
+      logActivity({
+        userId: user?.id || 'unknown',
+        userEmail: user?.email || 'unknown',
+        actionType: 'analysis_error',
+        isError: true,
+        metadata: {
+          error_message: error.message || 'Unknown error',
+          context: 'analyze-resumes edge function',
+          files_count: files.length,
+        },
+      });
+      
       // Stop polling if active
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
@@ -634,6 +648,13 @@ export default function Index() {
       setCurrentDraft(null);
     } catch (error: any) {
       console.error("Error saving draft:", error);
+      logActivity({
+        userId: user?.id || 'unknown',
+        userEmail: user?.email || 'unknown',
+        actionType: 'draft_save_error',
+        isError: true,
+        metadata: { error_message: error.message },
+      });
       toast.error("Erro ao salvar rascunho. Tente novamente.");
     }
   };

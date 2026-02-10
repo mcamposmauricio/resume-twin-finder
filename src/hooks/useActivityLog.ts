@@ -21,7 +21,19 @@ export type ActionType =
   | 'referral_bonus'
   | 'admin_add_resumes'
   | 'user_blocked'
-  | 'user_unblocked';
+  | 'user_unblocked'
+  // Error types
+  | 'login_error'
+  | 'signup_error'
+  | 'analysis_error'
+  | 'analysis_poll_error'
+  | 'job_create_error'
+  | 'job_update_error'
+  | 'job_publish_error'
+  | 'application_submit_error'
+  | 'form_template_error'
+  | 'settings_save_error'
+  | 'draft_save_error';
 
 const ACTION_LABELS: Record<ActionType, string> = {
   user_signup: 'Novo usuário cadastrado',
@@ -45,6 +57,18 @@ const ACTION_LABELS: Record<ActionType, string> = {
   admin_add_resumes: 'Currículos adicionados por admin',
   user_blocked: 'Usuário bloqueado',
   user_unblocked: 'Usuário desbloqueado',
+  // Error labels
+  login_error: 'Erro no login',
+  signup_error: 'Erro no cadastro',
+  analysis_error: 'Erro na análise',
+  analysis_poll_error: 'Erro no polling da análise',
+  job_create_error: 'Erro ao criar vaga',
+  job_update_error: 'Erro ao atualizar vaga',
+  job_publish_error: 'Erro ao publicar vaga',
+  application_submit_error: 'Erro ao enviar candidatura',
+  form_template_error: 'Erro em formulário',
+  settings_save_error: 'Erro ao salvar configurações',
+  draft_save_error: 'Erro ao salvar rascunho',
 };
 
 interface LogActivityParams {
@@ -55,6 +79,7 @@ interface LogActivityParams {
   entityType?: string;
   entityId?: string;
   metadata?: Record<string, unknown>;
+  isError?: boolean;
 }
 
 export async function logActivity(params: LogActivityParams): Promise<void> {
@@ -68,6 +93,7 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
       entity_type: string | null;
       entity_id: string | null;
       metadata: Record<string, unknown>;
+      is_error: boolean;
     } = {
       user_id: params.userId,
       user_email: params.userEmail,
@@ -77,6 +103,7 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
       entity_type: params.entityType || null,
       entity_id: params.entityId || null,
       metadata: params.metadata || {},
+      is_error: params.isError || false,
     };
 
     const { error } = await supabase.from('activity_logs').insert(insertData as any);

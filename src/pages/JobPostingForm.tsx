@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { logActivity } from '@/hooks/useActivityLog';
 
 export default function JobPostingForm() {
   const navigate = useNavigate();
@@ -149,6 +150,20 @@ export default function JobPostingForm() {
         await createJobPosting(data);
       }
       navigate('/vagas');
+    } catch (error: any) {
+      console.error('Error saving job:', error);
+      logActivity({
+        userId: userId || 'unknown',
+        userEmail: 'unknown',
+        actionType: id ? 'job_update_error' : 'job_create_error',
+        isError: true,
+        metadata: { error_message: error.message, job_id: id },
+      });
+      toast({
+        title: 'Erro ao salvar vaga',
+        description: error.message || 'Tente novamente.',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }

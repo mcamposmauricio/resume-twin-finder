@@ -17,6 +17,7 @@ import { FieldConfigDialog } from '@/components/forms/FieldConfigDialog';
 import { DynamicFormRenderer } from '@/components/forms/DynamicFormRenderer';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
+import { logActivity } from '@/hooks/useActivityLog';
 
 export default function FormTemplateEditor() {
   const navigate = useNavigate();
@@ -147,6 +148,20 @@ export default function FormTemplateEditor() {
         await createTemplate(name, description, orderedFields);
       }
       navigate('/formularios');
+    } catch (error: any) {
+      console.error('Error saving form template:', error);
+      logActivity({
+        userId: userId || 'unknown',
+        userEmail: 'unknown',
+        actionType: 'form_template_error',
+        isError: true,
+        metadata: { error_message: error.message, template_id: id },
+      });
+      toast({
+        title: 'Erro ao salvar formulário',
+        description: error.message || 'Tente novamente.',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }

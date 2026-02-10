@@ -342,6 +342,19 @@ export default function Auth() {
       }
     } catch (error: any) {
       console.error("Auth error:", error);
+      
+      // Log error activity
+      logActivity({
+        userId: 'unknown',
+        userEmail: email,
+        actionType: isLogin ? 'login_error' : 'signup_error',
+        isError: true,
+        metadata: {
+          error_message: error.message || 'Unknown error',
+          context: isLogin ? 'supabase_login' : 'supabase_signup',
+        },
+      });
+      
       if (isLogin) {
         if (error.message.includes("Invalid login credentials")) {
           toast.error("Email ou senha incorretos.");

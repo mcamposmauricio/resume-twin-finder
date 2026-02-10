@@ -28,6 +28,7 @@ import { SendToAnalysisDialog } from '@/components/jobs/SendToAnalysisDialog';
 import { ShareJobLink } from '@/components/jobs/ShareJobLink';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
+import { logActivity } from '@/hooks/useActivityLog';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -224,6 +225,13 @@ export default function JobPostingDetails() {
       }
     } catch (error: any) {
       console.error('Error sending to analysis:', error);
+      logActivity({
+        userId: userId || 'unknown',
+        userEmail: 'unknown',
+        actionType: 'analysis_error',
+        isError: true,
+        metadata: { error_message: error.message, context: 'job_posting_analysis', job_id: job?.id },
+      });
       toast({
         title: 'Erro ao enviar para análise',
         description: error.message || 'Tente novamente.',

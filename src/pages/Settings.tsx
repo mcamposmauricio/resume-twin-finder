@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { PipelineStagesEditor } from '@/components/settings/PipelineStagesEditor';
+import { logActivity } from '@/hooks/useActivityLog';
 import { CompanyInfoTab } from '@/components/settings/CompanyInfoTab';
 import { CareersPageTab } from '@/components/settings/CareersPageTab';
 
@@ -175,6 +176,13 @@ export default function Settings() {
       toast.success('Configurações salvas com sucesso!');
     } catch (error: any) {
       console.error('Error saving settings:', error);
+      logActivity({
+        userId: userId || 'unknown',
+        userEmail: 'unknown',
+        actionType: 'settings_save_error',
+        isError: true,
+        metadata: { error_message: error.message },
+      });
       toast.error('Erro ao salvar configurações');
     } finally {
       setSaving(false);

@@ -80,6 +80,13 @@ const LoginHub = () => {
         navigate("/", { replace: true });
       } catch (err: any) {
         console.error("Auto-login error:", err);
+        logActivity({
+          userId: 'unknown',
+          userEmail: 'unknown',
+          actionType: 'login_error',
+          isError: true,
+          metadata: { error_message: err.message, context: 'hr_hub_auto_login' },
+        });
         setAutoLoginError(err.message || "Falha na autenticação automática. Use o login manual.");
         setIsAutoLogin(false);
       }
@@ -132,6 +139,13 @@ const LoginHub = () => {
       navigate("/", { replace: true });
     } catch (err: any) {
       console.error("Manual login error:", err);
+      logActivity({
+        userId: 'unknown',
+        userEmail: email,
+        actionType: 'login_error',
+        isError: true,
+        metadata: { error_message: err.message, context: 'hr_hub_manual_login' },
+      });
       setError(err.message || "Falha no login. Verifique suas credenciais.");
     } finally {
       setIsLoading(false);

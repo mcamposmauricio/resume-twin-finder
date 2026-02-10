@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { DynamicFormRenderer } from '@/components/forms/DynamicFormRenderer';
 import { useToast } from '@/hooks/use-toast';
+import { logActivity } from '@/hooks/useActivityLog';
 import logoBlue from '@/assets/logo-marq-blue.png';
 
 export default function PublicApplication() {
@@ -150,6 +151,13 @@ export default function PublicApplication() {
       setSubmitted(true);
     } catch (error: any) {
       console.error('Error submitting application:', error);
+      logActivity({
+        userId: 'anonymous',
+        userEmail: formValues[Object.keys(formValues).find(k => k.includes('email')) || ''] || 'unknown',
+        actionType: 'application_submit_error',
+        isError: true,
+        metadata: { error_message: error.message, job_id: job?.id, job_title: job?.title },
+      });
       toast({
         title: 'Erro ao enviar candidatura',
         description: error.message || 'Tente novamente mais tarde.',

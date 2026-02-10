@@ -23,6 +23,7 @@ export type Database = {
           entity_id: string | null
           entity_type: string | null
           id: string
+          is_error: boolean | null
           metadata: Json | null
           user_email: string
           user_id: string
@@ -35,6 +36,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          is_error?: boolean | null
           metadata?: Json | null
           user_email: string
           user_id: string
@@ -47,6 +49,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          is_error?: boolean | null
           metadata?: Json | null
           user_email?: string
           user_id?: string
