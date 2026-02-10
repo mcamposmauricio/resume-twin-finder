@@ -1,121 +1,45 @@
 
 
-## Plano: Logs de Erros no Sistema de Atividades + Prompt Reutilizável
+## Atualizar o Prompt Reutilizavel em `docs/activity-log-prompt.md`
 
-### Visão Geral
+Reescrever o arquivo `docs/activity-log-prompt.md` com um prompt completo e generico que descreve todo o Painel Administrativo do CompareCV (nao apenas o log de atividades), mas de forma que qualquer pessoa possa copiar e colar em outro projeto Lovable para replicar a estrutura.
 
-Duas entregas:
-1. Adicionar novos tipos de ação para erros no `useActivityLog` e instrumentar os pontos de falha existentes no código
-2. Atualizar o painel de atividades para exibir erros visualmente (badge vermelha, filtro por erros)
-3. Gerar um prompt reutilizável para replicar toda a estrutura de activity log em outros projetos Lovable
+### O que o prompt vai descrever (baseado no que existe hoje no CompareCV):
 
----
+**Painel Administrativo completo com 2 abas:**
 
-### 1. Mudanças no Banco de Dados
+1. **Aba "Usuarios"** - Gerenciamento de usuarios
+   - Tabela com: nome, email, empresa, telefone, metricas de uso (itens consumidos, tokens, saldo)
+   - Filtros: busca por email, busca por empresa, filtro por status (todos/ativos/apenas cadastro/bloqueados)
+   - Acoes por usuario: adicionar creditos/tokens (dialog com saldo atual e preview do novo saldo), bloquear/desbloquear (dialog de confirmacao com aviso)
+   - Badges de status: verde (ativo), cinza (apenas cadastro), vermelho (bloqueado)
+   - Alerta visual quando saldo esta baixo
+   - Paginacao server-side (25 por pagina)
+   - Precisa de uma database function (RPC) para buscar usuarios com stats agregadas
 
-Adicionar coluna `is_error` na tabela `activity_logs` para facilitar filtro:
+2. **Aba "Atividades"** - Log de atividades e telemetria
+   - Tabela com: data/hora, usuario, empresa, acao, detalhes
+   - Filtros avancados: email, empresa, tipo de acao (multi-select com checkboxes), data (dia unico ou periodo com calendario), toggle "Apenas erros"
+   - Badges coloridas: azul para acoes normais, vermelha com icone de alerta para erros
+   - Exibicao de `error_message` do metadata nos detalhes
+   - Botao de limpar filtros
+   - Contagem total de registros
+   - Paginacao server-side (50 por pagina)
 
-```sql
-ALTER TABLE activity_logs ADD COLUMN is_error BOOLEAN DEFAULT false;
-```
+**Componentes do sistema:**
 
----
+- Tabela `activity_logs` com RLS (INSERT aberto, SELECT restrito ao admin)
+- Hook `useActivityLog.ts` com funcao fire-and-forget
+- Tipos de acao genericos (sucesso + erro) que o usuario adapta
+- Instrumentacao em catch blocks de todas as paginas
+- Database function RPC para agregar stats de usuarios
+- Backfill retroativo via SQL
+- Protecao: verificacao de email no frontend + RLS no backend
 
-### 2. Novos Tipos de Ação (Erros)
-
-Adicionar ao `useActivityLog.ts`:
-
-| ActionType | Label |
-|---|---|
-| `login_error` | Erro no login |
-| `signup_error` | Erro no cadastro |
-| `analysis_error` | Erro na análise |
-| `analysis_poll_error` | Erro no polling da análise |
-| `job_create_error` | Erro ao criar vaga |
-| `job_update_error` | Erro ao atualizar vaga |
-| `job_publish_error` | Erro ao publicar vaga |
-| `application_submit_error` | Erro ao enviar candidatura |
-| `form_template_error` | Erro em formulário |
-| `settings_save_error` | Erro ao salvar configurações |
-| `draft_save_error` | Erro ao salvar rascunho |
-
----
-
-### 3. Atualização da Função `logActivity`
-
-- Aceitar novo parâmetro opcional `isError?: boolean`
-- Quando `isError=true`, incluir `is_error: true` no insert
-- O metadata já suporta dados livres, onde incluiremos `error_message` e `error_code`
-
----
-
-### 4. Instrumentação dos Pontos de Erro
-
-Arquivos a modificar para adicionar `logActivity` nos `catch` blocks:
-
-**`src/pages/Auth.tsx`** - Erros de signup e login
-**`src/pages/LoginHub.tsx`** - Erros de auto-login e login manual
-**`src/pages/Index.tsx`** - Erros de análise (edge function, polling, draft save)
-**`src/pages/JobPostingForm.tsx`** - Erros ao criar/editar vaga
-**`src/pages/JobPostingDetails.tsx`** - Erros ao publicar/pausar/fechar vaga
-**`src/pages/FormTemplateEditor.tsx`** - Erros em templates de formulário
-**`src/pages/Settings.tsx`** - Erros ao salvar configurações
-**`src/pages/PublicApplication.tsx`** - Erros ao enviar candidatura
-
-Em cada catch, adicionar chamada como:
-```typescript
-logActivity({
-  userId: user?.id || 'unknown',
-  userEmail: user?.email || 'unknown',
-  actionType: 'analysis_error',
-  isError: true,
-  metadata: {
-    error_message: error.message,
-    error_code: error.code,
-    context: 'analyze-resumes edge function',
-  },
-});
-```
-
----
-
-### 5. Atualização do Painel de Atividades
-
-**`src/pages/ActivityLog.tsx`:**
-
-- Adicionar os novos tipos de erro na lista `ACTION_TYPES` do filtro
-- Adicionar filtro rápido "Apenas erros" (checkbox ou botão toggle)
-- Badge de erro: quando `is_error=true`, exibir a action_label com badge vermelha ao invés da azul padrão
-- Na coluna "Detalhes", exibir `error_message` do metadata quando presente
-
----
-
-### 6. Prompt Reutilizável
-
-Ao final da implementacao, gerar um documento Markdown com o prompt completo para criar essa estrutura de activity log em qualquer projeto Lovable, incluindo:
-
-- SQL de criacao da tabela `activity_logs` com RLS
-- Codigo do hook `useActivityLog.ts`
-- Instrucoes de instrumentacao
-- Codigo da pagina `ActivityLog.tsx` completa
-- Backfill retroativo a partir de tabelas existentes
-
----
-
-### 7. Arquivos a Criar/Modificar
+### Arquivo a modificar
 
 | Arquivo | Acao |
 |---|---|
-| `supabase/migrations/...` | Adicionar coluna `is_error` |
-| `src/hooks/useActivityLog.ts` | Novos tipos de erro + param `isError` |
-| `src/pages/ActivityLog.tsx` | Filtro de erros + badge vermelha |
-| `src/pages/Auth.tsx` | Instrumentar catch blocks |
-| `src/pages/LoginHub.tsx` | Instrumentar catch blocks |
-| `src/pages/Index.tsx` | Instrumentar catch blocks |
-| `src/pages/JobPostingForm.tsx` | Instrumentar catch blocks |
-| `src/pages/JobPostingDetails.tsx` | Instrumentar catch blocks |
-| `src/pages/FormTemplateEditor.tsx` | Instrumentar catch blocks |
-| `src/pages/Settings.tsx` | Instrumentar catch blocks |
-| `src/pages/PublicApplication.tsx` | Instrumentar catch blocks |
-| `docs/activity-log-prompt.md` | Prompt reutilizavel para outros projetos |
+| `docs/activity-log-prompt.md` | Reescrever com prompt generico completo |
 
+O prompt sera escrito em portugues, com instrucoes claras de onde substituir valores especificos do projeto (email admin, nomes de tabelas, etc.), e com placeholders marcados como `[SUBSTITUIR]`.
