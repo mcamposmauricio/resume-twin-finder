@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Filter, Calendar as CalendarIcon, Search, X, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { ArrowLeft, Filter, Calendar as CalendarIcon, Search, X, ChevronLeft, ChevronRight, Eye, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +40,7 @@ interface ActivityLog {
   entity_id: string | null;
   metadata: Json;
   created_at: string;
+  is_error: boolean | null;
 }
 
 const ACTION_TYPES = [
@@ -64,6 +65,18 @@ const ACTION_TYPES = [
   { value: 'admin_add_resumes', label: 'Currículos adicionados' },
   { value: 'user_blocked', label: 'Usuário bloqueado' },
   { value: 'user_unblocked', label: 'Usuário desbloqueado' },
+  // Error types
+  { value: 'login_error', label: '❌ Erro no login' },
+  { value: 'signup_error', label: '❌ Erro no cadastro' },
+  { value: 'analysis_error', label: '❌ Erro na análise' },
+  { value: 'analysis_poll_error', label: '❌ Erro no polling' },
+  { value: 'job_create_error', label: '❌ Erro ao criar vaga' },
+  { value: 'job_update_error', label: '❌ Erro ao atualizar vaga' },
+  { value: 'job_publish_error', label: '❌ Erro ao publicar vaga' },
+  { value: 'application_submit_error', label: '❌ Erro na candidatura' },
+  { value: 'form_template_error', label: '❌ Erro em formulário' },
+  { value: 'settings_save_error', label: '❌ Erro em configurações' },
+  { value: 'draft_save_error', label: '❌ Erro ao salvar rascunho' },
 ];
 
 const ITEMS_PER_PAGE = 50;
@@ -83,6 +96,7 @@ export default function ActivityLog() {
   const [dateMode, setDateMode] = useState<'single' | 'range'>('range');
   const [singleDate, setSingleDate] = useState<Date | undefined>();
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [onlyErrors, setOnlyErrors] = useState(false);
 
   // Analysis preview
   const [previewAnalysisId, setPreviewAnalysisId] = useState<string | null>(null);
@@ -113,7 +127,7 @@ export default function ActivityLog() {
     if (user) {
       fetchLogs();
     }
-  }, [user, page, emailFilter, companyFilter, selectedActions, singleDate, dateRange, dateMode]);
+  }, [user, page, emailFilter, companyFilter, selectedActions, singleDate, dateRange, dateMode, onlyErrors]);
 
   const fetchLogs = async () => {
     try {
@@ -133,6 +147,10 @@ export default function ActivityLog() {
 
       if (selectedActions.length > 0) {
         query = query.in('action_type', selectedActions);
+      }
+
+      if (onlyErrors) {
+        query = query.eq('is_error', true);
       }
 
       // Date filters
@@ -181,11 +199,12 @@ export default function ActivityLog() {
     setSelectedActions([]);
     setSingleDate(undefined);
     setDateRange(undefined);
+    setOnlyErrors(false);
     setPage(1);
   };
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
-  const hasActiveFilters = emailFilter || companyFilter || selectedActions.length > 0 || singleDate || dateRange?.from;
+  const hasActiveFilters = emailFilter || companyFilter || selectedActions.length > 0 || singleDate || dateRange?.from || onlyErrors;
 
   if (loading) {
     return (
@@ -251,6 +270,19 @@ export default function ActivityLog() {
                       Limpar filtros
                     </Button>
                   )}
+                </div>
+
+                {/* Error toggle */}
+                <div className="flex items-center gap-2 mb-4">
+                  <Button
+                    variant={onlyErrors ? 'destructive' : 'outline'}
+                    size="sm"
+                    onClick={() => { setOnlyErrors(!onlyErrors); setPage(1); }}
+                    className="h-7 text-xs"
+                  >
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    {onlyErrors ? 'Mostrando apenas erros' : 'Apenas erros'}
+                  </Button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -429,30 +461,43 @@ export default function ActivityLog() {
                               {log.company_name || '-'}
                             </TableCell>
                             <TableCell>
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                              <span className={cn(
+                                "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
+                                log.is_error
+                                  ? "bg-destructive/10 text-destructive"
+                                  : "bg-primary/10 text-primary"
+                              )}>
+                                {log.is_error && <AlertTriangle className="w-3 h-3 mr-1" />}
                                 {log.action_label}
                               </span>
                             </TableCell>
                             <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                              <div className="flex items-center gap-2">
-                                {log.entity_type && (
-                                  <span className="truncate block max-w-[150px]">
-                                    {log.entity_type}: {log.entity_id?.substring(0, 8)}...
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  {log.entity_type && (
+                                    <span className="truncate block max-w-[150px]">
+                                      {log.entity_type}: {log.entity_id?.substring(0, 8)}...
+                                    </span>
+                                  )}
+                                  {(log.action_type === 'analysis_completed' || log.action_type === 'application_analyzed') && log.entity_id && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 px-2"
+                                      onClick={() => {
+                                        setPreviewAnalysisId(log.entity_id);
+                                        setPreviewUserEmail(log.user_email);
+                                      }}
+                                      title="Ver análise"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                                {log.is_error && log.metadata && typeof log.metadata === 'object' && !Array.isArray(log.metadata) && (log.metadata as Record<string, unknown>).error_message && (
+                                  <span className="text-xs text-destructive truncate block max-w-[250px]" title={String((log.metadata as Record<string, unknown>).error_message)}>
+                                    {String((log.metadata as Record<string, unknown>).error_message)}
                                   </span>
-                                )}
-                                {(log.action_type === 'analysis_completed' || log.action_type === 'application_analyzed') && log.entity_id && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 px-2"
-                                    onClick={() => {
-                                      setPreviewAnalysisId(log.entity_id);
-                                      setPreviewUserEmail(log.user_email);
-                                    }}
-                                    title="Ver análise"
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
                                 )}
                               </div>
                             </TableCell>
