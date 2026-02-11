@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -94,8 +95,11 @@ export function NewJobDialog({ open, onOpenChange, jobPostings }: NewJobDialogPr
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'choice' ? 'Criar Nova Vaga' : 'Selecione a vaga para clonar'}
+            {mode === 'choice' ? 'Criar Nova Vaga' : mode === 'clone' ? 'Selecione a vaga para clonar' : 'Selecione o modelo'}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {mode === 'choice' ? 'Escolha como deseja criar a vaga' : mode === 'clone' ? 'Selecione uma vaga existente para clonar' : 'Selecione um modelo de cargo'}
+          </DialogDescription>
         </DialogHeader>
 
         {mode === 'choice' ? (
