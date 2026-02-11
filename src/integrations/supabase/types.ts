@@ -344,6 +344,39 @@ export type Database = {
           },
         ]
       }
+      job_templates: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          location: string | null
+          requirements: string | null
+          salary_range: string | null
+          title: string
+          work_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          location?: string | null
+          requirements?: string | null
+          salary_range?: string | null
+          title: string
+          work_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          location?: string | null
+          requirements?: string | null
+          salary_range?: string | null
+          title?: string
+          work_type?: string | null
+        }
+        Relationships: []
+      }
       pipeline_stages: {
         Row: {
           color: string
