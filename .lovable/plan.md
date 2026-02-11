@@ -1,80 +1,51 @@
 
 
-## Modelos de Vagas a partir dos PDFs
+## Corrigir acesso aos modelos de vagas
+
+### Situacao atual
+
+Os 9 modelos de vagas ja estao cadastrados corretamente na tabela `job_templates` com todos os dados dos PDFs. O problema e que a policy RLS atual tenta acessar `auth.users` diretamente, o que causa erro de permissao (403). A correcao proposta anteriormente (funcao `is_template_authorized_email`) nao foi aplicada.
 
 ### O que sera feito
 
-Criar uma tabela de **modelos de vagas** (job templates) pre-preenchidos com os dados extraidos dos 9 PDFs enviados. Ao criar uma nova vaga, os usuarios autorizados poderao escolher "Usar Modelo" e selecionar um dos modelos disponíveis para pre-preencher o formulario.
+Criar uma migration SQL que:
 
-### Modelos que serao criados (extraidos dos PDFs)
+1. Cria a funcao `is_template_authorized_email()` com `SECURITY DEFINER` que verifica se o email do usuario logado esta na lista autorizada
+2. Remove a policy existente que nao funciona
+3. Recria a policy usando a nova funcao
 
-| Cargo | Piso Salarial |
-|---|---|
-| Analista de Area de Gente | R$ 3.120,00 |
-| Analista de Manutencao | R$ 3.120,00 |
-| Assistente da Area de Gente | R$ 2.080,00 |
-| Gerente de Loja | - |
-| Gerente Regional Comercial | R$ 4.368,00 |
-| Motorista | R$ 1.666,01 |
-| Operador(a) de Loja | - |
-| Operador(a) de Monitoramento | R$ 1.690,93 |
-| Supervisor(a) de Loja | R$ 2.000,00 |
+### Emails autorizados
 
-### Controle de acesso
-
-Os modelos ficarao disponiveis apenas para os emails especificados:
 - rebeca.liberato@letsmake.com.br
 - mauricio@marqponto.com.br
 - thaina@marqponto.com.br
 
-### Fluxo do usuario
-
-1. Clica em "Nova Vaga"
-2. Ve 3 opcoes: **Comecar do Zero**, **Clonar Vaga Existente**, **Usar Modelo**
-3. Ao escolher "Usar Modelo", ve a lista dos 9 modelos com titulo e descricao resumida
-4. Ao selecionar um modelo, o formulario de nova vaga abre pre-preenchido com titulo, descricao, requisitos, habilidades e piso salarial
-
----
-
 ### Detalhes tecnicos
 
-**1. Nova tabela: `job_templates`**
+**Migration SQL:**
 
-| Coluna | Tipo | Descricao |
-|---|---|---|
-| id | uuid | PK |
-| title | text | Titulo do cargo |
-| description | text | Descricao do cargo |
-| requirements | text | Requisitos e habilidades |
-| salary_range | text | Piso salarial |
-| work_type | text | Tipo de trabalho (nullable) |
-| location | text | Localizacao (nullable) |
-| created_at | timestamptz | Data de criacao |
+```sql
+-- Funcao SECURITY DEFINER para verificar email autorizado
+CREATE OR REPLACE FUNCTION public.is_template_authorized_email()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = 'public'
+AS $$
+  SELECT (SELECT email FROM auth.users WHERE id = auth.uid()) 
+    IN ('rebeca.liberato@letsmake.com.br', 'mauricio@marqponto.com.br', 'thaina@marqponto.com.br')
+$$;
 
-- RLS: SELECT permitido apenas para usuarios cujo email esta na lista autorizada (usando `auth.jwt() ->> 'email'`)
-- Sem INSERT/UPDATE/DELETE por usuarios - dados gerenciados via migration
+-- Remover policy antiga
+DROP POLICY IF EXISTS "Authorized users can view job templates" ON public.job_templates;
 
-**2. Migration SQL**
-- Cria a tabela `job_templates`
-- Habilita RLS com policy restrita aos 3 emails
-- Insere os 9 registros com dados extraidos dos PDFs (titulo, descricao completa, requisitos/habilidades, piso salarial)
+-- Recriar policy com a funcao segura
+CREATE POLICY "Authorized users can view job templates"
+ON public.job_templates
+FOR SELECT
+USING (is_template_authorized_email());
+```
 
-**3. Arquivos a modificar/criar**
-
-| Arquivo | Acao |
-|---|---|
-| Migration SQL | Criar tabela + seed dos 9 modelos |
-| `src/components/jobs/NewJobDialog.tsx` | Adicionar opcao "Usar Modelo" e tela de selecao |
-| `src/types/jobs.ts` | Adicionar tipo `JobTemplate` |
-| `src/hooks/useJobTemplates.ts` | Criar hook para buscar templates |
-
-**4. Alteracoes no NewJobDialog**
-- Novo modo `'template'` alem de `'choice'` e `'clone'`
-- Botao "Usar Modelo" com icone `FileText` na tela de escolha
-- Tela de selecao de modelo com busca, similar a tela de clone
-- Ao selecionar, navega para `/vagas/nova` com state `cloneFrom` (reutiliza o fluxo existente de pre-preenchimento)
-
-**5. Hook useJobTemplates**
-- Busca da tabela `job_templates` via Supabase client
-- Retorna lista de templates disponiveis (RLS filtra automaticamente por email)
+**Nenhuma alteracao em codigo frontend** - o hook `useJobTemplates.ts` e o `NewJobDialog.tsx` ja estao prontos e funcionando. Apenas a policy do banco precisa ser corrigida para liberar o acesso.
 
