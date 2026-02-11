@@ -1,36 +1,61 @@
 
 
-## Ajustes adicionais ao plano
+## Plano de Correcoes e Melhorias
 
-### 1. Esconder elementos para full_access (ja aprovado)
-- Remover badge de curriculos, ReferralDialog e "Nova Analise" do menu em `src/pages/JobPostings.tsx` (linhas 171-176 e 186-189)
-- Alterar botao "Configurar" para navegar para `/configuracoes?tab=careers` (linha 288)
+---
 
-### 2. Remover "Compartilhar em" de dentro das vagas
+### 1. Sincronizacao bidirecional da etapa do candidato + trocar timeline por select
 
-O componente `ShareJobLink` exibe botoes de compartilhamento em redes sociais (WhatsApp, LinkedIn, Twitter, Telegram, Email). Sera removido de 3 locais:
+**Problema**: Quando o candidato e movido no Kanban, o estado `viewingApplication` no `JobPostingDetails.tsx` nao se atualiza porque e uma copia separada do array `applications`. Alem disso, a `StageNavigator` (timeline com botoes) e complexa demais para esse contexto.
 
-- **`src/components/jobs/JobPostingCard.tsx`** (linhas 204-211): Remover o bloco `ShareJobLink` que aparece nos cards de vagas ativas
-- **`src/pages/JobPostingDetails.tsx`** (linhas 301-307): Remover o `ShareJobLink` da pagina de detalhes da vaga
-- **`src/pages/JobPostingForm.tsx`** (linhas 194-198): Remover o `ShareJobLink` do card de sucesso apos publicacao
+**Solucao**:
 
-Em todos os casos, manter apenas o link copiavel basico se existir, ou remover completamente o componente de compartilhamento.
+- **`src/pages/JobPostingDetails.tsx`**: Adicionar um `useEffect` que sincroniza `viewingApplication` sempre que o array `applications` mudar. Quando o Kanban atualiza a etapa, o `updateTriageStatus` ja atualiza o array local -- basta propagar isso para o `viewingApplication`:
 
-### 3. Nao adicionar "(Copia)" ao titulo ao usar modelo
-
-No arquivo `src/pages/JobPostingForm.tsx`, linha 85, alterar de:
-```
-setTitle(clone.title ? `${clone.title} (Cópia)` : '');
-```
-para:
-```
-setTitle(clone.title || '');
+```typescript
+useEffect(() => {
+  if (viewingApplication) {
+    const updated = applications.find(a => a.id === viewingApplication.id);
+    if (updated) setViewingApplication(updated);
+  }
+}, [applications]);
 ```
 
-Isso faz com que o titulo do modelo seja usado exatamente como esta, sem o sufixo "(Copia)".
+- **`src/components/jobs/ApplicationDetailPanel.tsx`**: Substituir o componente `StageNavigator` por um simples `Select` (dropdown) que mostra a etapa atual e permite trocar. Quando o usuario muda no select, chama `onUpdateTriageStatus` que atualiza o banco, que atualiza o array `applications`, que sincroniza de volta no painel. Remover import do `StageNavigator`.
+
+---
+
+### 2. Link publico da vaga de volta
+
+O `ShareJobLink` (compartilhamento em redes sociais) foi removido conforme solicitado, mas o link publico copiavel tambem sumiu. Precisa voltar apenas o link, sem os botoes de compartilhamento.
+
+**Mudancas**:
+
+- **`src/pages/JobPostingDetails.tsx`**: Para vagas ativas, exibir no card de "Informacoes" o link publico (`/vaga/{public_slug}`) com botao de copiar e abrir em nova aba. Simples, sem componente de compartilhamento social.
+
+- **`src/components/jobs/JobPostingCard.tsx`**: Para vagas ativas, exibir um pequeno link copiavel no rodape do card (apenas icone de link + "Copiar link").
+
+---
+
+### 3. Melhorias de design e usabilidade na pagina de vagas
+
+**`src/pages/JobPostings.tsx`**:
+- Simplificar o banner de Pagina de Carreiras -- esta ocupando muito espaco visual. Tornar mais compacto.
+
+**`src/pages/JobPostingDetails.tsx`**:
+- Melhorar o card de acoes: agrupar botoes de forma mais clara com labels descritivos.
+- Adicionar informacao de "Link publico" no card lateral de Informacoes para vagas ativas.
+
+**`src/components/jobs/ApplicationDetailPanel.tsx`**:
+- Garantir que textos longos nos form_data nao quebrem o layout (ja tem `break-words` mas revisar containers).
+
+---
 
 ### Arquivos alterados
-- `src/pages/JobPostings.tsx` -- Remover badge, ReferralDialog, "Nova Analise"; corrigir link Configurar
-- `src/components/jobs/JobPostingCard.tsx` -- Remover ShareJobLink
-- `src/pages/JobPostingDetails.tsx` -- Remover ShareJobLink
-- `src/pages/JobPostingForm.tsx` -- Remover ShareJobLink e "(Copia)" do titulo
+
+| Arquivo | Mudanca |
+|---|---|
+| `src/pages/JobPostingDetails.tsx` | Sync do viewingApplication + link publico no card de info |
+| `src/components/jobs/ApplicationDetailPanel.tsx` | Trocar StageNavigator por Select simples |
+| `src/components/jobs/JobPostingCard.tsx` | Adicionar link publico copiavel para vagas ativas |
+
