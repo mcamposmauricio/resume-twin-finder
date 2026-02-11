@@ -14,7 +14,9 @@ import {
   PauseCircle,
   XCircle,
   BarChart3,
+  Link as LinkIcon,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -201,6 +203,22 @@ export function JobPostingCard({
           </div>
         </div>
 
+
+        {job.status === 'active' && job.public_slug && (
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(`${window.location.origin}/vaga/${job.public_slug}`);
+                toast.success('Link copiado!');
+              }}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              <LinkIcon className="h-3 w-3" />
+              Copiar link público
+            </button>
+          </div>
+        )}
 
         {job.status === 'closed' && (job.applications_count || 0) > 0 && !job.analyzed_at && (
           <div className="flex items-center gap-2 pt-2 border-t">

@@ -18,12 +18,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   JobApplication,
   FormField,
   APPLICATION_STATUS_LABELS,
 } from '@/types/jobs';
 import { PipelineStage } from '@/types/pipeline';
-import { StageNavigator } from './StageNavigator';
+import { StageIcon } from './StageIcon';
 
 interface ApplicationDetailPanelProps {
   open: boolean;
@@ -132,17 +139,44 @@ export function ApplicationDetailPanel({
 
         <Separator className="my-6" />
 
-        {/* Stage Navigator */}
+        {/* Stage Select */}
         {stages.length > 0 && (
           <>
             <div className="space-y-2">
               <h3 className="font-semibold text-sm text-muted-foreground">Etapa do Processo</h3>
-              <StageNavigator
-                stages={stages}
-                currentStageSlug={application.triage_status || 'new'}
-                onMoveToStage={handleStageChange}
+              <Select
+                value={application.triage_status || 'new'}
+                onValueChange={handleStageChange}
                 disabled={updatingStage}
-              />
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {currentStage && (
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: currentStage.color }}
+                        />
+                        <span>{currentStage.name}</span>
+                      </div>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {stages.map((stage) => (
+                    <SelectItem key={stage.id} value={stage.slug}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: stage.color }}
+                        />
+                        <StageIcon icon={stage.icon} className="h-3.5 w-3.5" />
+                        <span>{stage.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Separator className="my-6" />
           </>
