@@ -592,6 +592,7 @@ export type Database = {
       is_admin_email: { Args: never; Returns: boolean }
       is_corporate_email: { Args: { email: string }; Returns: boolean }
       is_full_access: { Args: { _user_id: string }; Returns: boolean }
+      is_template_authorized_email: { Args: never; Returns: boolean }
       is_user_blocked: { Args: { _user_id: string }; Returns: boolean }
       update_user_password_hash: {
         Args: { p_password_hash: string; p_user_id: string }
