@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Send } from 'lucide-react';
-import { ShareJobLink } from '@/components/jobs/ShareJobLink';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { useFormTemplates } from '@/hooks/useFormTemplates';
@@ -82,7 +82,7 @@ export default function JobPostingForm() {
     const state = location.state as { cloneFrom?: Partial<JobPosting> } | null;
     if (state?.cloneFrom && !id) {
       const clone = state.cloneFrom;
-      setTitle(clone.title ? `${clone.title} (Cópia)` : '');
+      setTitle(clone.title || '');
       setDescription(clone.description || '');
       setRequirements(clone.requirements || '');
       setLocation_(clone.location || '');
@@ -191,12 +191,6 @@ export default function JobPostingForm() {
                 <div className="flex items-center gap-2 text-green-800 dark:text-green-200 mb-3">
                   <span className="font-medium">✅ Vaga Publicada!</span>
                 </div>
-                <ShareJobLink 
-                  slug={currentJob.public_slug} 
-                  jobTitle={currentJob.title}
-                  companyName={profileCompanyName || undefined}
-                  variant="compact"
-                />
               </CardContent>
             </Card>
           )}

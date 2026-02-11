@@ -4,13 +4,13 @@ import { Plus, Briefcase, Globe, ExternalLink, Copy, Settings, LogOut, FileText,
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useResumeBalance } from '@/hooks/useResumeBalance';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { JobPostingCard } from '@/components/jobs/JobPostingCard';
 import { JobTimeline, TimelineStatus } from '@/components/jobs/JobTimeline';
 import { NewJobDialog } from '@/components/jobs/NewJobDialog';
-import { ReferralDialog } from '@/components/ReferralDialog';
+
 import { MarqBanner } from '@/components/MarqBanner';
 import { toast } from 'sonner';
 import {
@@ -43,7 +43,7 @@ export default function JobPostings() {
   const [userEmail, setUserEmail] = useState<string>('');
   const { jobPostings, loading, deleteJobPosting, changeStatus } = useJobPostings(userId);
   const { isFullAccess, loading: roleLoading } = useUserRole(userId);
-  const { availableResumes, loading: balanceLoading } = useResumeBalance(userId);
+  
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -168,12 +168,6 @@ export default function JobPostings() {
           </button>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            {!balanceLoading && (
-              <span className="text-xs sm:text-sm bg-primary/10 text-primary px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-medium whitespace-nowrap">
-                {availableResumes} {availableResumes === 1 ? 'currículo' : 'currículos'} <span className="hidden sm:inline">para analisar</span>
-              </span>
-            )}
-            {userId && <ReferralDialog userId={userId} />}
 
             {/* Menu dropdown */}
             <DropdownMenu>
@@ -183,10 +177,6 @@ export default function JobPostings() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => navigate('/')} className="cursor-pointer py-3">
-                  <FileText className="w-4 h-4 mr-3 text-primary" />
-                  <span>Nova Análise</span>
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowNewJobDialog(true)} className="cursor-pointer py-3">
                   <Briefcase className="w-4 h-4 mr-3 text-blue-600" />
                   <span>Nova Vaga</span>
@@ -285,7 +275,7 @@ export default function JobPostings() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate('/configuracoes')}
+                  onClick={() => navigate('/configuracoes?tab=careers')}
                 >
                   <Settings className="h-4 w-4 mr-1" />
                   Configurar
