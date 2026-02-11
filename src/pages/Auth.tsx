@@ -134,17 +134,22 @@ export default function Auth() {
   const { getUTMParams } = useUTMTracking();
 
   useEffect(() => {
+    const redirectByRole = async (session: any) => {
+      const { data: isFull } = await supabase.rpc('is_full_access', { _user_id: session.user.id });
+      navigate(isFull ? '/vagas' : '/', { replace: true });
+    };
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        navigate("/");
+        redirectByRole(session);
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/");
+        redirectByRole(session);
       }
     });
 

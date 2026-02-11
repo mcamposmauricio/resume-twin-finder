@@ -763,7 +763,8 @@ export default function Index() {
     }
   }, [loading, roleLoading, user, isFullAccess, step, navigate, searchParams]);
 
-  if (loading) {
+  // Show loading while checking role for full_access redirect (prevents flash)
+  if (loading || (!roleLoading && user && isFullAccess && step === 'welcome' && !searchParams.get('analysisJobId') && !searchParams.get('viewAnalysis'))) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-10 h-10 rounded-full border-4 border-muted border-t-primary animate-spin" />
