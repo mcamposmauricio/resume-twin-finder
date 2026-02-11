@@ -1,51 +1,25 @@
 
 
-## Corrigir acesso aos modelos de vagas
+## Corrigir modal de seleção de modelo de vaga
 
-### Situacao atual
+### Problemas identificados
 
-Os 9 modelos de vagas ja estao cadastrados corretamente na tabela `job_templates` com todos os dados dos PDFs. O problema e que a policy RLS atual tenta acessar `auth.users` diretamente, o que causa erro de permissao (403). A correcao proposta anteriormente (funcao `is_template_authorized_email`) nao foi aplicada.
+1. **Titulo incorreto**: O titulo do dialog mostra "Selecione a vaga para clonar" quando esta no modo template. Deveria mostrar "Selecione o modelo" para o modo template.
 
-### O que sera feito
+2. **Warning de acessibilidade**: O dialog nao tem `DialogDescription`, gerando warning no console ("Missing Description or aria-describedby").
 
-Criar uma migration SQL que:
+3. **Warning de ref**: O `DialogHeader` e um function component sem `forwardRef`, gerando warning quando o Radix tenta passar ref.
 
-1. Cria a funcao `is_template_authorized_email()` com `SECURITY DEFINER` que verifica se o email do usuario logado esta na lista autorizada
-2. Remove a policy existente que nao funciona
-3. Recria a policy usando a nova funcao
+### Correções no arquivo `src/components/jobs/NewJobDialog.tsx`
 
-### Emails autorizados
-
-- rebeca.liberato@letsmake.com.br
-- mauricio@marqponto.com.br
-- thaina@marqponto.com.br
-
-### Detalhes tecnicos
-
-**Migration SQL:**
-
-```sql
--- Funcao SECURITY DEFINER para verificar email autorizado
-CREATE OR REPLACE FUNCTION public.is_template_authorized_email()
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = 'public'
-AS $$
-  SELECT (SELECT email FROM auth.users WHERE id = auth.uid()) 
-    IN ('rebeca.liberato@letsmake.com.br', 'mauricio@marqponto.com.br', 'thaina@marqponto.com.br')
-$$;
-
--- Remover policy antiga
-DROP POLICY IF EXISTS "Authorized users can view job templates" ON public.job_templates;
-
--- Recriar policy com a funcao segura
-CREATE POLICY "Authorized users can view job templates"
-ON public.job_templates
-FOR SELECT
-USING (is_template_authorized_email());
+**Linha 97 - Titulo condicional para 3 modos:**
+```
+{mode === 'choice' ? 'Criar Nova Vaga' : mode === 'clone' ? 'Selecione a vaga para clonar' : 'Selecione o modelo'}
 ```
 
-**Nenhuma alteracao em codigo frontend** - o hook `useJobTemplates.ts` e o `NewJobDialog.tsx` ja estao prontos e funcionando. Apenas a policy do banco precisa ser corrigida para liberar o acesso.
+**Adicionar `DialogDescription`** importando do dialog e incluindo uma descricao visualmente oculta para acessibilidade (usando `className="sr-only"`).
+
+### Nenhuma outra alteracao necessaria
+
+O restante do componente (busca, lista de templates, navegacao) esta funcionando corretamente.
 
