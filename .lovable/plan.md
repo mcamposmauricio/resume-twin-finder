@@ -1,61 +1,36 @@
 
 
-## Plano de Correções e Melhorias
+## Ajustes adicionais ao plano
 
-Sao 4 frentes de trabalho conforme solicitado:
+### 1. Esconder elementos para full_access (ja aprovado)
+- Remover badge de curriculos, ReferralDialog e "Nova Analise" do menu em `src/pages/JobPostings.tsx` (linhas 171-176 e 186-189)
+- Alterar botao "Configurar" para navegar para `/configuracoes?tab=careers` (linha 288)
 
----
+### 2. Remover "Compartilhar em" de dentro das vagas
 
-### 1. Corrigir erro ao mover candidato de etapa
+O componente `ShareJobLink` exibe botoes de compartilhamento em redes sociais (WhatsApp, LinkedIn, Twitter, Telegram, Email). Sera removido de 3 locais:
 
-**Problema**: A tabela `job_applications` tem uma constraint CHECK que limita `triage_status` a apenas `['new', 'low_fit', 'deserves_analysis']`. Porem, as etapas do pipeline usam slugs como `'behavioral'`, `'technical_interview'`, `'proposal'` -- por isso o erro "violates check constraint".
+- **`src/components/jobs/JobPostingCard.tsx`** (linhas 204-211): Remover o bloco `ShareJobLink` que aparece nos cards de vagas ativas
+- **`src/pages/JobPostingDetails.tsx`** (linhas 301-307): Remover o `ShareJobLink` da pagina de detalhes da vaga
+- **`src/pages/JobPostingForm.tsx`** (linhas 194-198): Remover o `ShareJobLink` do card de sucesso apos publicacao
 
-**Solucao**: Remover a constraint CHECK via migracao SQL. O sistema ja usa etapas dinamicas definidas pelo usuario, entao restringir valores fixos nao faz sentido.
+Em todos os casos, manter apenas o link copiavel basico se existir, ou remover completamente o componente de compartilhamento.
 
-```sql
-ALTER TABLE public.job_applications DROP CONSTRAINT job_applications_triage_status_check;
+### 3. Nao adicionar "(Copia)" ao titulo ao usar modelo
+
+No arquivo `src/pages/JobPostingForm.tsx`, linha 85, alterar de:
+```
+setTitle(clone.title ? `${clone.title} (Cópia)` : '');
+```
+para:
+```
+setTitle(clone.title || '');
 ```
 
----
+Isso faz com que o titulo do modelo seja usado exatamente como esta, sem o sufixo "(Copia)".
 
-### 2. Revisar modais e textos que extrapolam o layout
-
-**Arquivos a revisar**:
-- `src/components/jobs/NewJobDialog.tsx` -- Ja corrigido em iteracoes anteriores. Verificar se ainda ha overflow nos templates com texto longo
-- `src/components/jobs/ApplicationDetailPanel.tsx` -- Garantir que o Sheet nao tenha overflow de texto nos dados do formulario
-- `src/components/jobs/ApplicationKanban.tsx` -- Cards no kanban com descricoes da vaga cortadas (visivel na screenshot: texto da vaga transbordando para a esquerda)
-
-**Correcoes especificas**:
-- Na pagina `JobPostingDetails.tsx`: adicionar `overflow-hidden` no container da descricao da vaga para evitar que textos longos extrapolem
-- Nos cards do Kanban: garantir `overflow-hidden` e `max-w-full` nos containers de texto
-- Na descricao da vaga exibida acima do kanban: aplicar `line-clamp` ou scroll para descricoes longas
-
----
-
-### 3. Pagina de Acompanhamento de Vagas como pagina inicial para full_access
-
-**Mudanca**: No `src/pages/Index.tsx`, quando o usuario e `full_access`, redirecionar automaticamente para `/vagas` (pagina de Acompanhamento de Vagas).
-
-**Mudanca no `src/pages/JobPostings.tsx`**: Alterar o `statusFilter` default de `'draft'` para `'active'` para que abra mostrando as vagas publicadas.
-
----
-
-### 4. Header e menu na pagina de Acompanhamento de Vagas
-
-**Mudanca no `src/pages/JobPostings.tsx`**: Substituir o header atual (que tem botao de voltar) por um header completo similar ao da Index, com:
-- Logo e nome do usuario
-- Botao de logout
-- Botao "+" com dropdown menu contendo:
-  - Nova Vaga
-  - Modelos de Formulario
-  - Gerenciar Vagas (link para /vagas)
-  - Configuracoes
-  - Log de Atividades (somente para mauricio@marqponto.com.br)
-- Manter o botao de "Nova Análise" que leva de volta a pagina principal (/)
-
-**Arquivos alterados**:
-- `supabase/migrations/` -- Nova migracao para dropar a CHECK constraint
-- `src/pages/Index.tsx` -- Redirect para /vagas se full_access
-- `src/pages/JobPostings.tsx` -- Default filter `'active'`, novo header com menu, buscar dados do perfil do usuario
-- `src/pages/JobPostingDetails.tsx` -- Overflow fixes na descricao da vaga
-
+### Arquivos alterados
+- `src/pages/JobPostings.tsx` -- Remover badge, ReferralDialog, "Nova Analise"; corrigir link Configurar
+- `src/components/jobs/JobPostingCard.tsx` -- Remover ShareJobLink
+- `src/pages/JobPostingDetails.tsx` -- Remover ShareJobLink
+- `src/pages/JobPostingForm.tsx` -- Remover ShareJobLink e "(Copia)" do titulo
