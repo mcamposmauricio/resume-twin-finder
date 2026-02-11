@@ -167,34 +167,38 @@ export default function JobPostings() {
             </div>
           </button>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Primary action: Nova Vaga */}
+            <Button
+              onClick={() => setShowNewJobDialog(true)}
+              size="sm"
+              className="gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Nova Vaga</span>
+            </Button>
 
-            {/* Menu dropdown */}
+            {/* Secondary actions menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105">
-                  <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
+                <Button variant="outline" size="icon" className="h-9 w-9">
+                  <Settings className="w-4 h-4" />
+                </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => setShowNewJobDialog(true)} className="cursor-pointer py-3">
-                  <Briefcase className="w-4 h-4 mr-3 text-blue-600" />
-                  <span>Nova Vaga</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/formularios')} className="cursor-pointer py-3">
-                  <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => navigate('/formularios')} className="cursor-pointer py-2.5">
+                  <FileText className="w-4 h-4 mr-2.5 text-muted-foreground" />
                   <span>Modelos de Formulário</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/configuracoes')} className="cursor-pointer py-3">
-                  <Settings className="w-4 h-4 mr-3 text-muted-foreground" />
+                <DropdownMenuItem onClick={() => navigate('/configuracoes')} className="cursor-pointer py-2.5">
+                  <Settings className="w-4 h-4 mr-2.5 text-muted-foreground" />
                   <span>Configurações</span>
                 </DropdownMenuItem>
                 {userEmail === 'mauricio@marqponto.com.br' && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/atividades')} className="cursor-pointer py-3">
-                      <Activity className="w-4 h-4 mr-3 text-orange-600" />
+                    <DropdownMenuItem onClick={() => navigate('/atividades')} className="cursor-pointer py-2.5">
+                      <Activity className="w-4 h-4 mr-2.5 text-muted-foreground" />
                       <span>Log de Atividades</span>
                     </DropdownMenuItem>
                   </>
