@@ -157,7 +157,7 @@ export function ApplicationDetailPanel({
                 <p className="text-sm font-medium text-muted-foreground">
                   {getFieldLabel(key)}
                 </p>
-                <p className="mt-1">{formatValue(value)}</p>
+                <p className="mt-1 break-words overflow-hidden">{formatValue(value)}</p>
               </div>
             ))}
             {Object.keys(application.form_data || {}).length === 0 && (

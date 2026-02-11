@@ -752,6 +752,17 @@ export default function Index() {
     setAnalysisStep("");
   };
 
+  // Redirect full_access users to /vagas when on welcome step
+  useEffect(() => {
+    if (!loading && !roleLoading && user && isFullAccess && step === 'welcome') {
+      // Only redirect if there's no pending analysis or URL params
+      const hasUrlParams = searchParams.get('analysisJobId') || searchParams.get('viewAnalysis');
+      if (!hasUrlParams) {
+        navigate('/vagas', { replace: true });
+      }
+    }
+  }, [loading, roleLoading, user, isFullAccess, step, navigate, searchParams]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

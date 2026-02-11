@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Briefcase, ArrowLeft, Globe, ExternalLink, Copy, Settings } from 'lucide-react';
+import { Plus, Briefcase, Globe, ExternalLink, Copy, Settings, LogOut, FileText, Activity } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useResumeBalance } from '@/hooks/useResumeBalance';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { JobPostingCard } from '@/components/jobs/JobPostingCard';
 import { JobTimeline, TimelineStatus } from '@/components/jobs/JobTimeline';
 import { NewJobDialog } from '@/components/jobs/NewJobDialog';
+import { ReferralDialog } from '@/components/ReferralDialog';
+import { MarqBanner } from '@/components/MarqBanner';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,17 +30,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import logoMarq from '@/assets/logo-marq-blue.png';
 
 export default function JobPostings() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<TimelineStatus>('draft');
+  const [statusFilter, setStatusFilter] = useState<TimelineStatus>('active');
   const [showNewJobDialog, setShowNewJobDialog] = useState(false);
   const [careersPageSlug, setCareersPageSlug] = useState<string | null>(null);
   const [careersPageEnabled, setCareersPageEnabled] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>('');
   const { jobPostings, loading, deleteJobPosting, changeStatus } = useJobPostings(userId);
   const { isFullAccess, loading: roleLoading } = useUserRole(userId);
+  const { availableResumes, loading: balanceLoading } = useResumeBalance(userId);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -38,6 +51,7 @@ export default function JobPostings() {
         navigate('/auth');
       } else {
         setUserId(session.user.id);
+        setUserEmail(session.user.email || '');
         // Fetch careers page settings
         supabase
           .from('profiles')
@@ -126,24 +140,104 @@ export default function JobPostings() {
     return null;
   }
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success('Logout realizado com sucesso!');
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="bg-card border-b border-border sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-8 py-3 sm:py-4 flex items-center justify-between gap-2">
+          <button
+            onClick={() => navigate('/vagas')}
+            className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity min-w-0 group"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] bg-clip-text text-transparent">
+                CompareCV
+              </span>
+              <div className="hidden sm:flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground font-medium">powered by</span>
+                <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                  <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
+                </a>
+              </div>
+            </div>
+          </button>
+
+          <div className="flex items-center gap-2 sm:gap-4">
+            {!balanceLoading && (
+              <span className="text-xs sm:text-sm bg-primary/10 text-primary px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-medium whitespace-nowrap">
+                {availableResumes} {availableResumes === 1 ? 'currículo' : 'currículos'} <span className="hidden sm:inline">para analisar</span>
+              </span>
+            )}
+            {userId && <ReferralDialog userId={userId} />}
+
+            {/* Menu dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105">
+                  <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => navigate('/')} className="cursor-pointer py-3">
+                  <FileText className="w-4 h-4 mr-3 text-primary" />
+                  <span>Nova Análise</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowNewJobDialog(true)} className="cursor-pointer py-3">
+                  <Briefcase className="w-4 h-4 mr-3 text-blue-600" />
+                  <span>Nova Vaga</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/formularios')} className="cursor-pointer py-3">
+                  <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
+                  <span>Modelos de Formulário</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/configuracoes')} className="cursor-pointer py-3">
+                  <Settings className="w-4 h-4 mr-3 text-muted-foreground" />
+                  <span>Configurações</span>
+                </DropdownMenuItem>
+                {userEmail === 'mauricio@marqponto.com.br' && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/atividades')} className="cursor-pointer py-3">
+                      <Activity className="w-4 h-4 mr-3 text-orange-600" />
+                      <span>Log de Atividades</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <span className="text-sm text-muted-foreground hidden lg:block truncate max-w-[150px]">
+              {userEmail}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* MarQ Banner */}
+      <MarqBanner userId={userId} />
+
+      <div className="container mx-auto px-4 py-8 max-w-5xl flex-1">
+        {/* Page Title */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
             <h1 className="text-2xl font-bold">Acompanhamento de Vagas</h1>
             <p className="text-muted-foreground">
               Acompanhe o ciclo de vida das suas vagas
             </p>
           </div>
-          <Button onClick={() => setShowNewJobDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Vaga
-          </Button>
         </div>
 
         {/* Careers Page Banner */}
@@ -273,6 +367,17 @@ export default function JobPostings() {
           jobPostings={jobPostings}
         />
       </div>
+
+      {/* Footer */}
+      <footer className="py-6 text-center text-sm text-muted-foreground border-t border-border bg-card">
+        <div className="flex items-center justify-center gap-2">
+          <span>CompareCV powered by</span>
+          <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
+            <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
+          </a>
+          <span>© {new Date().getFullYear()}</span>
+        </div>
+      </footer>
     </div>
   );
 }
