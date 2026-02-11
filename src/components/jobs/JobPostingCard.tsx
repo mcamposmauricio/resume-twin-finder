@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { JobPosting, JobStatus, STATUS_LABELS, WORK_TYPE_LABELS } from '@/types/jobs';
-import { ShareJobLink } from '@/components/jobs/ShareJobLink';
+
 
 interface JobPostingCardProps {
   job: JobPosting;
@@ -201,16 +201,6 @@ export function JobPostingCard({
           </div>
         </div>
 
-        {job.status === 'active' && (
-          <div className="pt-2 border-t">
-            <ShareJobLink 
-              slug={job.public_slug} 
-              jobTitle={job.title}
-              companyName={job.company_name || undefined}
-              variant="compact"
-            />
-          </div>
-        )}
 
         {job.status === 'closed' && (job.applications_count || 0) > 0 && !job.analyzed_at && (
           <div className="flex items-center gap-2 pt-2 border-t">

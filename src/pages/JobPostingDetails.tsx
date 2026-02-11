@@ -25,7 +25,7 @@ import { ApplicationKanban } from '@/components/jobs/ApplicationKanban';
 import { ApplicationDetailPanel } from '@/components/jobs/ApplicationDetailPanel';
 import { CloseJobDialog } from '@/components/jobs/CloseJobDialog';
 import { SendToAnalysisDialog } from '@/components/jobs/SendToAnalysisDialog';
-import { ShareJobLink } from '@/components/jobs/ShareJobLink';
+
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 import { logActivity } from '@/hooks/useActivityLog';
@@ -298,16 +298,6 @@ export default function JobPostingDetails() {
         <Card className="mb-6">
           <CardContent className="py-4">
             <div className="flex items-center justify-between flex-wrap gap-4">
-              {job.status === 'active' && (
-                <div className="flex-1">
-                  <ShareJobLink 
-                    slug={job.public_slug} 
-                    jobTitle={job.title}
-                    companyName={job.company_name || undefined}
-                    variant="full"
-                  />
-                </div>
-              )}
 
               <div className="flex items-center gap-2 ml-auto">
                 {(job.status === 'draft' || job.status === 'paused') && (
