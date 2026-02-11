@@ -92,7 +92,7 @@ export function NewJobDialog({ open, onOpenChange, jobPostings }: NewJobDialogPr
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             {mode === 'choice' ? 'Criar Nova Vaga' : mode === 'clone' ? 'Selecione a vaga para clonar' : 'Selecione o modelo'}
@@ -108,10 +108,12 @@ export function NewJobDialog({ open, onOpenChange, jobPostings }: NewJobDialogPr
               Como deseja criar a vaga?
             </p>
             
-            <Button
-              variant="outline"
-              className="w-full justify-start h-auto py-4 px-4"
+            <div
+              role="button"
+              tabIndex={0}
+              className="w-full flex items-center cursor-pointer border rounded-xl py-4 px-4 hover:bg-accent hover:text-accent-foreground transition-colors"
               onClick={handleFromScratch}
+              onKeyDown={(e) => e.key === 'Enter' && handleFromScratch()}
             >
               <FilePlus className="h-5 w-5 mr-3 shrink-0" />
               <div className="text-left">
@@ -120,13 +122,14 @@ export function NewJobDialog({ open, onOpenChange, jobPostings }: NewJobDialogPr
                   Crie uma vaga completamente nova
                 </div>
               </div>
-            </Button>
+            </div>
 
-            <Button
-              variant="outline"
-              className="w-full justify-start h-auto py-4 px-4"
-              onClick={() => setMode('clone')}
-              disabled={jobPostings.length === 0}
+            <div
+              role="button"
+              tabIndex={jobPostings.length === 0 ? -1 : 0}
+              className={`w-full flex items-center cursor-pointer border rounded-xl py-4 px-4 transition-colors ${jobPostings.length === 0 ? 'opacity-50 pointer-events-none' : 'hover:bg-accent hover:text-accent-foreground'}`}
+              onClick={() => jobPostings.length > 0 && setMode('clone')}
+              onKeyDown={(e) => e.key === 'Enter' && jobPostings.length > 0 && setMode('clone')}
             >
               <Copy className="h-5 w-5 mr-3 shrink-0" />
               <div className="text-left">
@@ -137,13 +140,14 @@ export function NewJobDialog({ open, onOpenChange, jobPostings }: NewJobDialogPr
                     : 'Copie os dados de uma vaga anterior'}
                 </div>
               </div>
-            </Button>
+            </div>
 
-            <Button
-              variant="outline"
-              className="w-full justify-start h-auto py-4 px-4"
-              onClick={() => setMode('template')}
-              disabled={templates.length === 0}
+            <div
+              role="button"
+              tabIndex={templates.length === 0 ? -1 : 0}
+              className={`w-full flex items-center cursor-pointer border rounded-xl py-4 px-4 transition-colors ${templates.length === 0 ? 'opacity-50 pointer-events-none' : 'hover:bg-accent hover:text-accent-foreground'}`}
+              onClick={() => templates.length > 0 && setMode('template')}
+              onKeyDown={(e) => e.key === 'Enter' && templates.length > 0 && setMode('template')}
             >
               <FileText className="h-5 w-5 mr-3 shrink-0" />
               <div className="text-left">
@@ -154,7 +158,7 @@ export function NewJobDialog({ open, onOpenChange, jobPostings }: NewJobDialogPr
                     : 'Comece a partir de um modelo de cargo'}
                 </div>
               </div>
-            </Button>
+            </div>
           </div>
         ) : mode === 'clone' ? (
           <div className="space-y-4">
@@ -235,9 +239,9 @@ export function NewJobDialog({ open, onOpenChange, jobPostings }: NewJobDialogPr
                       className="w-full justify-start h-auto py-3 px-3"
                       onClick={() => handleUseTemplate(tpl)}
                     >
-                      <div className="text-left flex-1 min-w-0">
+                        <div className="text-left flex-1 min-w-0 overflow-hidden break-words">
                         <div className="font-medium truncate">{tpl.title}</div>
-                        <div className="text-xs text-muted-foreground line-clamp-2">
+                        <div className="text-xs text-muted-foreground line-clamp-2 break-words">
                           {tpl.description.substring(0, 100)}...
                         </div>
                         {tpl.salary_range && (
