@@ -1,26 +1,61 @@
 
 
-## Corrigir overflow de texto no modal de seleção
+## Plano de Correções e Melhorias
 
-### Problema
+Sao 4 frentes de trabalho conforme solicitado:
 
-O conteúdo do modal (especialmente as descrições dos modelos de vagas) está transbordando para fora do container do dialog. Isso acontece porque:
+---
 
-1. O `DialogContent` não tem controle de overflow
-2. Os textos longos das descrições dos templates (extraídos dos PDFs) não estão sendo contidos corretamente dentro dos botões
-3. Os botões da tela de escolha (choice) contêm `<div>` dentro de `<button>`, causando warning de DOM nesting
+### 1. Corrigir erro ao mover candidato de etapa
 
-### Correções no `src/components/jobs/NewJobDialog.tsx`
+**Problema**: A tabela `job_applications` tem uma constraint CHECK que limita `triage_status` a apenas `['new', 'low_fit', 'deserves_analysis']`. Porem, as etapas do pipeline usam slugs como `'behavioral'`, `'technical_interview'`, `'proposal'` -- por isso o erro "violates check constraint".
 
-1. **Adicionar `overflow-hidden`** ao `DialogContent` para impedir que o conteúdo vaze para fora do modal
+**Solucao**: Remover a constraint CHECK via migracao SQL. O sistema ja usa etapas dinamicas definidas pelo usuario, entao restringir valores fixos nao faz sentido.
 
-2. **Trocar os `Button` da tela de escolha por `div` clicáveis** (com role="button" e estilos equivalentes) para eliminar o warning de `<button>` dentro de `<button>`, já que os Button contêm `<div>` internamente
+```sql
+ALTER TABLE public.job_applications DROP CONSTRAINT job_applications_triage_status_check;
+```
 
-3. **Adicionar `overflow-hidden` e `break-words`** nos containers de texto dos templates para garantir que descrições longas não quebrem o layout
+---
 
-### Alterações específicas
+### 2. Revisar modais e textos que extrapolam o layout
 
-- Linha 95: `DialogContent className="sm:max-w-md overflow-hidden"`
-- Linhas 111-157: Trocar os 3 `Button` da tela choice por `div` com `onClick`, `role="button"`, `tabIndex={0}` e classes de estilo equivalentes (`cursor-pointer border rounded-xl p-4 hover:bg-muted transition-colors`)
-- Linha 238: Adicionar `overflow-hidden break-words` ao container de texto dos templates
-- Linha 240: Adicionar `break-words` ao `line-clamp-2`
+**Arquivos a revisar**:
+- `src/components/jobs/NewJobDialog.tsx` -- Ja corrigido em iteracoes anteriores. Verificar se ainda ha overflow nos templates com texto longo
+- `src/components/jobs/ApplicationDetailPanel.tsx` -- Garantir que o Sheet nao tenha overflow de texto nos dados do formulario
+- `src/components/jobs/ApplicationKanban.tsx` -- Cards no kanban com descricoes da vaga cortadas (visivel na screenshot: texto da vaga transbordando para a esquerda)
+
+**Correcoes especificas**:
+- Na pagina `JobPostingDetails.tsx`: adicionar `overflow-hidden` no container da descricao da vaga para evitar que textos longos extrapolem
+- Nos cards do Kanban: garantir `overflow-hidden` e `max-w-full` nos containers de texto
+- Na descricao da vaga exibida acima do kanban: aplicar `line-clamp` ou scroll para descricoes longas
+
+---
+
+### 3. Pagina de Acompanhamento de Vagas como pagina inicial para full_access
+
+**Mudanca**: No `src/pages/Index.tsx`, quando o usuario e `full_access`, redirecionar automaticamente para `/vagas` (pagina de Acompanhamento de Vagas).
+
+**Mudanca no `src/pages/JobPostings.tsx`**: Alterar o `statusFilter` default de `'draft'` para `'active'` para que abra mostrando as vagas publicadas.
+
+---
+
+### 4. Header e menu na pagina de Acompanhamento de Vagas
+
+**Mudanca no `src/pages/JobPostings.tsx`**: Substituir o header atual (que tem botao de voltar) por um header completo similar ao da Index, com:
+- Logo e nome do usuario
+- Botao de logout
+- Botao "+" com dropdown menu contendo:
+  - Nova Vaga
+  - Modelos de Formulario
+  - Gerenciar Vagas (link para /vagas)
+  - Configuracoes
+  - Log de Atividades (somente para mauricio@marqponto.com.br)
+- Manter o botao de "Nova Análise" que leva de volta a pagina principal (/)
+
+**Arquivos alterados**:
+- `supabase/migrations/` -- Nova migracao para dropar a CHECK constraint
+- `src/pages/Index.tsx` -- Redirect para /vagas se full_access
+- `src/pages/JobPostings.tsx` -- Default filter `'active'`, novo header com menu, buscar dados do perfil do usuario
+- `src/pages/JobPostingDetails.tsx` -- Overflow fixes na descricao da vaga
+
