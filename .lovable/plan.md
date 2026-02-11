@@ -1,45 +1,80 @@
 
 
-## Atualizar o Prompt Reutilizavel em `docs/activity-log-prompt.md`
+## Modelos de Vagas a partir dos PDFs
 
-Reescrever o arquivo `docs/activity-log-prompt.md` com um prompt completo e generico que descreve todo o Painel Administrativo do CompareCV (nao apenas o log de atividades), mas de forma que qualquer pessoa possa copiar e colar em outro projeto Lovable para replicar a estrutura.
+### O que sera feito
 
-### O que o prompt vai descrever (baseado no que existe hoje no CompareCV):
+Criar uma tabela de **modelos de vagas** (job templates) pre-preenchidos com os dados extraidos dos 9 PDFs enviados. Ao criar uma nova vaga, os usuarios autorizados poderao escolher "Usar Modelo" e selecionar um dos modelos disponíveis para pre-preencher o formulario.
 
-**Painel Administrativo completo com 2 abas:**
+### Modelos que serao criados (extraidos dos PDFs)
 
-1. **Aba "Usuarios"** - Gerenciamento de usuarios
-   - Tabela com: nome, email, empresa, telefone, metricas de uso (itens consumidos, tokens, saldo)
-   - Filtros: busca por email, busca por empresa, filtro por status (todos/ativos/apenas cadastro/bloqueados)
-   - Acoes por usuario: adicionar creditos/tokens (dialog com saldo atual e preview do novo saldo), bloquear/desbloquear (dialog de confirmacao com aviso)
-   - Badges de status: verde (ativo), cinza (apenas cadastro), vermelho (bloqueado)
-   - Alerta visual quando saldo esta baixo
-   - Paginacao server-side (25 por pagina)
-   - Precisa de uma database function (RPC) para buscar usuarios com stats agregadas
+| Cargo | Piso Salarial |
+|---|---|
+| Analista de Area de Gente | R$ 3.120,00 |
+| Analista de Manutencao | R$ 3.120,00 |
+| Assistente da Area de Gente | R$ 2.080,00 |
+| Gerente de Loja | - |
+| Gerente Regional Comercial | R$ 4.368,00 |
+| Motorista | R$ 1.666,01 |
+| Operador(a) de Loja | - |
+| Operador(a) de Monitoramento | R$ 1.690,93 |
+| Supervisor(a) de Loja | R$ 2.000,00 |
 
-2. **Aba "Atividades"** - Log de atividades e telemetria
-   - Tabela com: data/hora, usuario, empresa, acao, detalhes
-   - Filtros avancados: email, empresa, tipo de acao (multi-select com checkboxes), data (dia unico ou periodo com calendario), toggle "Apenas erros"
-   - Badges coloridas: azul para acoes normais, vermelha com icone de alerta para erros
-   - Exibicao de `error_message` do metadata nos detalhes
-   - Botao de limpar filtros
-   - Contagem total de registros
-   - Paginacao server-side (50 por pagina)
+### Controle de acesso
 
-**Componentes do sistema:**
+Os modelos ficarao disponiveis apenas para os emails especificados:
+- rebeca.liberato@letsmake.com.br
+- mauricio@marqponto.com.br
+- thaina@marqponto.com.br
 
-- Tabela `activity_logs` com RLS (INSERT aberto, SELECT restrito ao admin)
-- Hook `useActivityLog.ts` com funcao fire-and-forget
-- Tipos de acao genericos (sucesso + erro) que o usuario adapta
-- Instrumentacao em catch blocks de todas as paginas
-- Database function RPC para agregar stats de usuarios
-- Backfill retroativo via SQL
-- Protecao: verificacao de email no frontend + RLS no backend
+### Fluxo do usuario
 
-### Arquivo a modificar
+1. Clica em "Nova Vaga"
+2. Ve 3 opcoes: **Comecar do Zero**, **Clonar Vaga Existente**, **Usar Modelo**
+3. Ao escolher "Usar Modelo", ve a lista dos 9 modelos com titulo e descricao resumida
+4. Ao selecionar um modelo, o formulario de nova vaga abre pre-preenchido com titulo, descricao, requisitos, habilidades e piso salarial
+
+---
+
+### Detalhes tecnicos
+
+**1. Nova tabela: `job_templates`**
+
+| Coluna | Tipo | Descricao |
+|---|---|---|
+| id | uuid | PK |
+| title | text | Titulo do cargo |
+| description | text | Descricao do cargo |
+| requirements | text | Requisitos e habilidades |
+| salary_range | text | Piso salarial |
+| work_type | text | Tipo de trabalho (nullable) |
+| location | text | Localizacao (nullable) |
+| created_at | timestamptz | Data de criacao |
+
+- RLS: SELECT permitido apenas para usuarios cujo email esta na lista autorizada (usando `auth.jwt() ->> 'email'`)
+- Sem INSERT/UPDATE/DELETE por usuarios - dados gerenciados via migration
+
+**2. Migration SQL**
+- Cria a tabela `job_templates`
+- Habilita RLS com policy restrita aos 3 emails
+- Insere os 9 registros com dados extraidos dos PDFs (titulo, descricao completa, requisitos/habilidades, piso salarial)
+
+**3. Arquivos a modificar/criar**
 
 | Arquivo | Acao |
 |---|---|
-| `docs/activity-log-prompt.md` | Reescrever com prompt generico completo |
+| Migration SQL | Criar tabela + seed dos 9 modelos |
+| `src/components/jobs/NewJobDialog.tsx` | Adicionar opcao "Usar Modelo" e tela de selecao |
+| `src/types/jobs.ts` | Adicionar tipo `JobTemplate` |
+| `src/hooks/useJobTemplates.ts` | Criar hook para buscar templates |
 
-O prompt sera escrito em portugues, com instrucoes claras de onde substituir valores especificos do projeto (email admin, nomes de tabelas, etc.), e com placeholders marcados como `[SUBSTITUIR]`.
+**4. Alteracoes no NewJobDialog**
+- Novo modo `'template'` alem de `'choice'` e `'clone'`
+- Botao "Usar Modelo" com icone `FileText` na tela de escolha
+- Tela de selecao de modelo com busca, similar a tela de clone
+- Ao selecionar, navega para `/vagas/nova` com state `cloneFrom` (reutiliza o fluxo existente de pre-preenchimento)
+
+**5. Hook useJobTemplates**
+- Busca da tabela `job_templates` via Supabase client
+- Retorna lista de templates disponiveis (RLS filtra automaticamente por email)
+
