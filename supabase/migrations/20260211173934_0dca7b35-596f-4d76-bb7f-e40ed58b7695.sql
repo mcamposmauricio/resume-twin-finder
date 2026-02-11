@@ -1,0 +1,1 @@
+ALTER TABLE public.job_applications DROP CONSTRAINT IF EXISTS job_applications_triage_status_check;

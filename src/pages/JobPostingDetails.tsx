@@ -369,13 +369,13 @@ export default function JobPostingDetails() {
             <CardHeader>
               <CardTitle>Descrição</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap">{job.description}</p>
+            <CardContent className="overflow-hidden">
+              <p className="whitespace-pre-wrap break-words">{job.description}</p>
               {job.requirements && (
                 <>
                   <Separator className="my-4" />
                   <h4 className="font-medium mb-2">Requisitos</h4>
-                  <p className="whitespace-pre-wrap text-muted-foreground">
+                  <p className="whitespace-pre-wrap break-words text-muted-foreground">
                     {job.requirements}
                   </p>
                 </>

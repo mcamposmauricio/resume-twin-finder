@@ -129,9 +129,9 @@ export function ApplicationKanban({
       onDragEnd={handleDragEnd}
     >
       <div
-        className="grid gap-4"
+        className="grid gap-4 overflow-x-auto pb-2"
         style={{
-          gridTemplateColumns: `repeat(${displayStages.length}, minmax(250px, 1fr))`,
+          gridTemplateColumns: `repeat(${displayStages.length}, minmax(220px, 1fr))`,
         }}
       >
         {displayStages.map((stage) => {
