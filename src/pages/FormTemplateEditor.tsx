@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Save, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFormTemplates } from '@/hooks/useFormTemplates';
@@ -22,6 +22,7 @@ import { logActivity } from '@/hooks/useActivityLog';
 export default function FormTemplateEditor() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [userId, setUserId] = useState<string>();
   const [name, setName] = useState('');
@@ -147,7 +148,12 @@ export default function FormTemplateEditor() {
       } else {
         await createTemplate(name, description, orderedFields);
       }
-      navigate('/formularios');
+      const returnTo = searchParams.get('returnTo');
+      if (returnTo === 'nova-vaga') {
+        navigate('/vagas/nova');
+      } else {
+        navigate('/formularios');
+      }
     } catch (error: any) {
       console.error('Error saving form template:', error);
       logActivity({

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { renderFormattedText } from '@/lib/formatText';
 import { useParams } from 'react-router-dom';
 import { MapPin, Briefcase, DollarSign, Upload, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -315,9 +316,9 @@ export default function PublicApplication() {
               <>
                 <Separator className="my-4" />
                 <h4 className="font-medium mb-2">Requisitos</h4>
-                <p className="whitespace-pre-wrap text-muted-foreground">
-                  {job.requirements}
-                </p>
+                <div className="text-muted-foreground">
+                  {renderFormattedText(job.requirements)}
+                </div>
               </>
             )}
           </CardContent>

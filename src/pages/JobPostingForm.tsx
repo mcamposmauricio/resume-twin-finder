@@ -300,7 +300,7 @@ export default function JobPostingForm() {
                   <Button
                     variant="link"
                     className="p-0 h-auto"
-                    onClick={() => navigate('/formularios/novo')}
+                    onClick={() => navigate('/formularios/novo?returnTo=nova-vaga')}
                   >
                     Crie um novo
                   </Button>

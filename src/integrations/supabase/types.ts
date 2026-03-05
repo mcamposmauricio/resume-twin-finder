@@ -423,7 +423,11 @@ export type Database = {
           careers_show_about: boolean | null
           careers_show_benefits: boolean | null
           careers_show_culture: boolean | null
+          careers_show_hero_text: boolean | null
+          careers_show_mission: boolean | null
           careers_show_social: boolean | null
+          careers_show_values: boolean | null
+          careers_show_vision: boolean | null
           cargo: string | null
           company_about: string | null
           company_benefits: Json | null
@@ -431,8 +435,11 @@ export type Database = {
           company_instagram: string | null
           company_linkedin: string | null
           company_logo_url: string | null
+          company_mission: string | null
           company_name: string | null
           company_tagline: string | null
+          company_values: string | null
+          company_vision: string | null
           company_website: string | null
           created_at: string
           email: string | null
@@ -460,7 +467,11 @@ export type Database = {
           careers_show_about?: boolean | null
           careers_show_benefits?: boolean | null
           careers_show_culture?: boolean | null
+          careers_show_hero_text?: boolean | null
+          careers_show_mission?: boolean | null
           careers_show_social?: boolean | null
+          careers_show_values?: boolean | null
+          careers_show_vision?: boolean | null
           cargo?: string | null
           company_about?: string | null
           company_benefits?: Json | null
@@ -468,8 +479,11 @@ export type Database = {
           company_instagram?: string | null
           company_linkedin?: string | null
           company_logo_url?: string | null
+          company_mission?: string | null
           company_name?: string | null
           company_tagline?: string | null
+          company_values?: string | null
+          company_vision?: string | null
           company_website?: string | null
           created_at?: string
           email?: string | null
@@ -497,7 +511,11 @@ export type Database = {
           careers_show_about?: boolean | null
           careers_show_benefits?: boolean | null
           careers_show_culture?: boolean | null
+          careers_show_hero_text?: boolean | null
+          careers_show_mission?: boolean | null
           careers_show_social?: boolean | null
+          careers_show_values?: boolean | null
+          careers_show_vision?: boolean | null
           cargo?: string | null
           company_about?: string | null
           company_benefits?: Json | null
@@ -505,8 +523,11 @@ export type Database = {
           company_instagram?: string | null
           company_linkedin?: string | null
           company_logo_url?: string | null
+          company_mission?: string | null
           company_name?: string | null
           company_tagline?: string | null
+          company_values?: string | null
+          company_vision?: string | null
           company_website?: string | null
           created_at?: string
           email?: string | null

@@ -17,6 +17,10 @@ interface CareersPageTabProps {
     careers_show_benefits: boolean;
     careers_show_culture: boolean;
     careers_show_social: boolean;
+    careers_show_hero_text: boolean;
+    careers_show_mission: boolean;
+    careers_show_vision: boolean;
+    careers_show_values: boolean;
   };
   onSettingsChange: (updates: Partial<CareersPageTabProps['settings']>) => void;
 }
@@ -174,6 +178,22 @@ export function CareersPageTab({ settings, onSettingsChange }: CareersPageTabPro
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
+                  <Label htmlFor="showHeroText">Frase de destaque no banner</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Exibe "Junte-se ao time" e tagline no banner
+                  </p>
+                </div>
+                <Switch
+                  id="showHeroText"
+                  checked={settings.careers_show_hero_text}
+                  onCheckedChange={(checked) =>
+                    onSettingsChange({ careers_show_hero_text: checked })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
                   <Label htmlFor="showAbout">Seção "Sobre Nós"</Label>
                   <p className="text-sm text-muted-foreground">
                     Exibe o texto sobre a empresa
@@ -200,6 +220,54 @@ export function CareersPageTab({ settings, onSettingsChange }: CareersPageTabPro
                   checked={settings.careers_show_culture}
                   onCheckedChange={(checked) =>
                     onSettingsChange({ careers_show_culture: checked })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="showMission">Seção "Missão"</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Exibe a missão da empresa
+                  </p>
+                </div>
+                <Switch
+                  id="showMission"
+                  checked={settings.careers_show_mission}
+                  onCheckedChange={(checked) =>
+                    onSettingsChange({ careers_show_mission: checked })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="showVision">Seção "Visão"</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Exibe a visão da empresa
+                  </p>
+                </div>
+                <Switch
+                  id="showVision"
+                  checked={settings.careers_show_vision}
+                  onCheckedChange={(checked) =>
+                    onSettingsChange({ careers_show_vision: checked })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="showValues">Seção "Valores"</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Exibe os valores da empresa
+                  </p>
+                </div>
+                <Switch
+                  id="showValues"
+                  checked={settings.careers_show_values}
+                  onCheckedChange={(checked) =>
+                    onSettingsChange({ careers_show_values: checked })
                   }
                 />
               </div>

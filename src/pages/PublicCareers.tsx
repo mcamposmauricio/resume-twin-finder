@@ -37,6 +37,13 @@ interface CompanyProfile {
   careers_show_benefits: boolean | null;
   careers_show_culture: boolean | null;
   careers_show_social: boolean | null;
+  careers_show_hero_text: boolean | null;
+  company_mission: string | null;
+  company_vision: string | null;
+  company_values: string | null;
+  careers_show_mission: boolean | null;
+  careers_show_vision: boolean | null;
+  careers_show_values: boolean | null;
 }
 
 export default function PublicCareers() {
@@ -63,7 +70,9 @@ export default function PublicCareers() {
             company_tagline, company_about, company_culture, company_benefits,
             company_website, company_linkedin, company_instagram,
             careers_hero_image_url, careers_cta_text,
-            careers_show_about, careers_show_benefits, careers_show_culture, careers_show_social
+            careers_show_about, careers_show_benefits, careers_show_culture, careers_show_social,
+            careers_show_hero_text, company_mission, company_vision, company_values,
+            careers_show_mission, careers_show_vision, careers_show_values
           `)
           .eq('careers_page_slug', slug)
           .eq('careers_page_enabled', true)
@@ -174,13 +183,20 @@ export default function PublicCareers() {
         tagline={profile.company_tagline}
         heroImageUrl={profile.careers_hero_image_url}
         brandColor={brandColor}
+        showHeroText={profile.careers_show_hero_text ?? true}
       />
 
       <CareersAbout
         about={profile.company_about}
         culture={profile.company_culture}
+        mission={profile.company_mission}
+        vision={profile.company_vision}
+        values={profile.company_values}
         showAbout={profile.careers_show_about ?? true}
         showCulture={profile.careers_show_culture ?? true}
+        showMission={profile.careers_show_mission ?? true}
+        showVision={profile.careers_show_vision ?? true}
+        showValues={profile.careers_show_values ?? true}
         brandColor={brandColor}
       />
 

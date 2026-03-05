@@ -14,6 +14,9 @@ interface CompanyInfoTabProps {
     company_website: string;
     company_linkedin: string;
     company_instagram: string;
+    company_mission: string;
+    company_vision: string;
+    company_values: string;
   };
   onSettingsChange: (updates: Partial<CompanyInfoTabProps['settings']>) => void;
 }
@@ -61,6 +64,39 @@ export function CompanyInfoTab({ settings, onSettingsChange }: CompanyInfoTabPro
               onChange={(e) => onSettingsChange({ company_culture: e.target.value })}
               placeholder="Descreva os valores e a cultura da sua empresa..."
               rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mission">Missão</Label>
+            <Textarea
+              id="mission"
+              value={settings.company_mission}
+              onChange={(e) => onSettingsChange({ company_mission: e.target.value })}
+              placeholder="Qual a missão da sua empresa..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="vision">Visão</Label>
+            <Textarea
+              id="vision"
+              value={settings.company_vision}
+              onChange={(e) => onSettingsChange({ company_vision: e.target.value })}
+              placeholder="Qual a visão de futuro da sua empresa..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="values">Valores</Label>
+            <Textarea
+              id="values"
+              value={settings.company_values}
+              onChange={(e) => onSettingsChange({ company_values: e.target.value })}
+              placeholder="Quais os valores que guiam sua empresa..."
+              rows={3}
             />
           </div>
         </CardContent>
