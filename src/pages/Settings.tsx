@@ -33,6 +33,13 @@ interface ProfileSettings {
   careers_show_benefits: boolean;
   careers_show_culture: boolean;
   careers_show_social: boolean;
+  careers_show_hero_text: boolean;
+  company_mission: string;
+  company_vision: string;
+  company_values: string;
+  careers_show_mission: boolean;
+  careers_show_vision: boolean;
+  careers_show_values: boolean;
 }
 
 const defaultSettings: ProfileSettings = {
@@ -54,6 +61,13 @@ const defaultSettings: ProfileSettings = {
   careers_show_benefits: true,
   careers_show_culture: true,
   careers_show_social: true,
+  careers_show_hero_text: true,
+  company_mission: '',
+  company_vision: '',
+  company_values: '',
+  careers_show_mission: true,
+  careers_show_vision: true,
+  careers_show_values: true,
 };
 
 export default function Settings() {
@@ -96,7 +110,9 @@ export default function Settings() {
             company_tagline, company_about, company_culture, company_benefits,
             company_website, company_linkedin, company_instagram,
             careers_hero_image_url, careers_cta_text,
-            careers_show_about, careers_show_benefits, careers_show_culture, careers_show_social
+            careers_show_about, careers_show_benefits, careers_show_culture, careers_show_social,
+            careers_show_hero_text, company_mission, company_vision, company_values,
+            careers_show_mission, careers_show_vision, careers_show_values
           `)
           .eq('user_id', userId)
           .single();
@@ -122,6 +138,13 @@ export default function Settings() {
           careers_show_benefits: data.careers_show_benefits ?? true,
           careers_show_culture: data.careers_show_culture ?? true,
           careers_show_social: data.careers_show_social ?? true,
+          careers_show_hero_text: data.careers_show_hero_text ?? true,
+          company_mission: data.company_mission || '',
+          company_vision: data.company_vision || '',
+          company_values: data.company_values || '',
+          careers_show_mission: data.careers_show_mission ?? true,
+          careers_show_vision: data.careers_show_vision ?? true,
+          careers_show_values: data.careers_show_values ?? true,
         });
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -167,6 +190,13 @@ export default function Settings() {
           careers_show_benefits: settings.careers_show_benefits,
           careers_show_culture: settings.careers_show_culture,
           careers_show_social: settings.careers_show_social,
+          careers_show_hero_text: settings.careers_show_hero_text,
+          company_mission: settings.company_mission || null,
+          company_vision: settings.company_vision || null,
+          company_values: settings.company_values || null,
+          careers_show_mission: settings.careers_show_mission,
+          careers_show_vision: settings.careers_show_vision,
+          careers_show_values: settings.careers_show_values,
         })
         .eq('user_id', userId);
 
@@ -305,6 +335,9 @@ export default function Settings() {
                 company_website: settings.company_website,
                 company_linkedin: settings.company_linkedin,
                 company_instagram: settings.company_instagram,
+                company_mission: settings.company_mission,
+                company_vision: settings.company_vision,
+                company_values: settings.company_values,
               }}
               onSettingsChange={updateSettings}
             />
@@ -321,6 +354,10 @@ export default function Settings() {
                 careers_show_benefits: settings.careers_show_benefits,
                 careers_show_culture: settings.careers_show_culture,
                 careers_show_social: settings.careers_show_social,
+                careers_show_hero_text: settings.careers_show_hero_text,
+                careers_show_mission: settings.careers_show_mission,
+                careers_show_vision: settings.careers_show_vision,
+                careers_show_values: settings.careers_show_values,
               }}
               onSettingsChange={updateSettings}
             />
