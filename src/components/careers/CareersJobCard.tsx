@@ -47,7 +47,7 @@ export function CareersJobCard({ job, brandColor, onApply }: CareersJobCardProps
         </div>
 
         <p className="text-sm text-muted-foreground line-clamp-3">
-          {job.description}
+          {stripHtmlToText(job.description)}
         </p>
 
         <Button

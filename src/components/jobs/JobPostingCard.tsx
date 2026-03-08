@@ -181,7 +181,7 @@ export function JobPostingCard({
 
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground line-clamp-2">
-          {job.description}
+          {stripHtmlToText(job.description)}
         </p>
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
