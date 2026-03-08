@@ -1,100 +1,65 @@
 
 
-## Plano de Implementacao -- 5 Melhorias
+## Plano: Correcoes para Migracao de Dados Externos
 
-### 1. Layout da capa da pagina de carreiras
-
-**Problema**: O texto "Junte-se ao time..." fica sobreposto a imagem de fundo, dificultando a leitura.
-
-**Solucao** em `src/components/careers/CareersHero.tsx`:
-- Quando ha imagem hero, renderizar a imagem como um `<img>` em bloco (nao background) seguido do texto abaixo, em vez de sobreposicao
-- Quando nao ha imagem, manter o layout atual com gradient
-
-**Solucao** em `src/components/settings/CareersPageTab.tsx`:
-- Adicionar um novo toggle "Exibir frase de destaque no banner" (`careers_show_hero_text`) na secao de Secoes Visiveis
-
-**Migracao de banco**: Adicionar coluna `careers_show_hero_text boolean default true` na tabela `profiles`
-
-**Arquivos**: `CareersHero.tsx`, `CareersPageTab.tsx`, `Settings.tsx`, `PublicCareers.tsx` + migracao
+Sao 5 pontos problematicos identificados na query `insert_migration_1.sql`. Proponho correcoes tanto na **query SQL** quanto no **codigo do sistema** para garantir compatibilidade com dados migrados.
 
 ---
 
-### 2. Templates de vaga -- requisitos em formato de lista
+### 1. HTML nas descricoes → Suporte a renderizacao HTML
 
-**Problema**: Ao preencher campos a partir de um template, requisitos aparecem como texto corrido sem quebras de linha.
+**Problema**: Campos `description` e `requirements` contem HTML (`<ul>`, `<li>`, `&aacute;` etc). O sistema renderiza texto plano.
 
-**Solucao** em `src/pages/PublicApplication.tsx` (linha 318) e `src/pages/JobPostingForm.tsx`:
-- Os campos `requirements` e `description` ja usam `whitespace-pre-wrap` na pagina publica -- ok
-- O problema esta nos templates do banco (`job_templates`): o conteudo provavelmente ja esta armazenado com `\n` mas ao exibir no `<Textarea>` funciona bem. O problema visual e na pagina publica e nos cards.
+**Correcao no codigo** (nao na query): Atualizar `src/lib/formatText.tsx` para detectar conteudo HTML e renderizar com `dangerouslySetInnerHTML` (sanitizado). Atualizar `PublicApplication.tsx` (linha 314) para usar `renderFormattedText` tambem no campo `description`. Isso beneficia tanto dados migrados quanto futuros conteudos.
 
-**Solucao real**: Nas paginas publicas e cards onde `requirements` e exibido, detectar linhas que comecam com `-` ou `•` ou sao itens numerados e renderizar como `<ul><li>` em vez de `<p>`. Criar um helper `renderFormattedText(text)` que converte texto com quebras em lista HTML quando detecta padrao de lista.
-
-**Arquivos**: Criar `src/lib/formatText.tsx`, atualizar `PublicApplication.tsx`, `CareersJobCard.tsx`
+**Arquivos**: `src/lib/formatText.tsx`, `src/pages/PublicApplication.tsx`
 
 ---
 
-### 3. Fluxo do formulario -- retorno apos criar modelo
+### 2. Slugs malformados → Normalizar na query
 
-**Problema**: Ao clicar "Crie um novo" em `JobPostingForm.tsx`, vai para `/formularios/novo`. Apos salvar, volta para `/formularios` em vez de voltar para a criacao da vaga.
+**Problema**: `public_slug` contem acentos, barras, parenteses (ex: `líder-de-operação-de-loja---natal/rn`).
 
-**Solucao**:
-- Em `JobPostingForm.tsx` linha 303: passar query param `?returnTo=nova-vaga` ao navegar para `/formularios/novo`
-- Em `FormTemplateEditor.tsx` linha 150: checar `searchParams.get('returnTo')`. Se for `nova-vaga`, navegar de volta para `/vagas/nova` com state contendo os dados preenchidos e o template recem-criado selecionado
-- Alternativa mais simples: usar `navigate(-1)` quando `returnTo` esta presente, mas isso nao garante estado. Melhor: passar o `returnTo` e redirecionar para `/vagas/nova`
+**Correcao na query**: Fornecer uma funcao SQL `normalize_slug(text)` que remove acentos via `unaccent`, substitui caracteres especiais por hifens, e limpa duplicatas. Aplicar nos INSERTs. Tambem garantir unicidade adicionando sufixo numerico se necessario.
 
-**Arquivos**: `JobPostingForm.tsx`, `FormTemplateEditor.tsx`
+**Acao**: Gerar query corrigida com slugs normalizados.
 
 ---
 
-### 4. "Sobre Nos / Nossa Cultura" -- texto completo
+### 3. URLs externas de curriculo (Azure) → Adaptar codigo
 
-**Problema**: `line-clamp-4` em `CareersAbout.tsx` (linhas 37 e 54) trunca o texto e nao ha como expandir.
+**Problema**: `resume_url` aponta para Azure Blob Storage. O `getResumeUrl` tenta gerar signed URL do bucket interno e falha.
 
-**Solucao** em `CareersAbout.tsx`:
-- Adicionar estado `expanded` por secao
-- Remover `line-clamp-4` quando expandido
-- Adicionar botao "Ver mais" / "Ver menos" abaixo do texto
+**Correcao no codigo**: Em `useJobApplications.ts`, modificar `getResumeUrl` para detectar URLs externas (comecam com `http`) e retorna-las diretamente sem passar pelo storage. Mesma logica no `downloadResume`.
 
-**Arquivos**: `CareersAbout.tsx`
+Em `ApplicationDetailPanel.tsx`, o iframe de preview ja funciona com URL direta -- nao precisa mudar.
 
----
-
-### 5. Campos separados para Missao, Visao e Valores
-
-**Problema**: Hoje existe apenas um campo generico "Nossa Cultura". O usuario quer campos individuais para Missao, Visao e Valores, cada um ativavel/desativavel.
-
-**Migracao de banco**: Adicionar 6 colunas na tabela `profiles`:
-- `company_mission text`
-- `company_vision text`
-- `company_values text`
-- `careers_show_mission boolean default true`
-- `careers_show_vision boolean default true`
-- `careers_show_values boolean default true`
-
-**Mudancas em codigo**:
-- `CompanyInfoTab.tsx`: Adicionar 3 novos `<Textarea>` para Missao, Visao e Valores
-- `CareersPageTab.tsx`: Adicionar 3 novos toggles na secao de Secoes Visiveis
-- `Settings.tsx`: Incluir novos campos no `ProfileSettings`, `fetchSettings` e `handleSave`
-- `CareersAbout.tsx` → renomear para `CareersCompanyInfo.tsx` ou estender: renderizar cards para Sobre Nos, Cultura, Missao, Visao e Valores conforme toggles
-- `PublicCareers.tsx`: Passar os novos campos e toggles para o componente
-
-**Arquivos**: Migracao SQL, `CompanyInfoTab.tsx`, `CareersPageTab.tsx`, `Settings.tsx`, `CareersAbout.tsx`, `PublicCareers.tsx`
+**Arquivos**: `src/hooks/useJobApplications.ts`
 
 ---
 
-### Resumo de arquivos alterados
+### 4. `resume_filename` com URL completa → Corrigir na query
 
-| Arquivo | Mudancas |
+**Problema**: Alguns registros tem a URL completa no campo `resume_filename` em vez de apenas o nome do arquivo.
+
+**Correcao na query**: Extrair apenas o nome do arquivo da URL usando `substring` ou regex. Para valores invalidos (ex: `'Pdf'`, `'Doce'`), setar como NULL.
+
+---
+
+### 5. `salary_range` com ponto-e-virgula → Corrigir na query
+
+**Problema**: Valores como `R$ 1;540.00` usam `;` como separador de milhar.
+
+**Correcao na query**: Substituir `;` por `.` nos valores de `salary_range`.
+
+---
+
+### Resumo de mudancas
+
+| Local | Mudanca |
 |---|---|
-| Migracao SQL | `careers_show_hero_text`, `company_mission`, `company_vision`, `company_values`, `careers_show_mission`, `careers_show_vision`, `careers_show_values` |
-| `CareersHero.tsx` | Layout imagem acima + texto abaixo; respeitar toggle de texto |
-| `CareersAbout.tsx` | Expandir texto completo; adicionar Missao/Visao/Valores |
-| `CareersPageTab.tsx` | Toggles para hero text, missao, visao, valores |
-| `CompanyInfoTab.tsx` | Campos Missao, Visao, Valores |
-| `Settings.tsx` | Novos campos no state, fetch e save |
-| `PublicCareers.tsx` | Passar novos props |
-| `src/lib/formatText.tsx` | Helper para renderizar texto como lista |
-| `PublicApplication.tsx` | Usar helper de formatacao nos requisitos |
-| `JobPostingForm.tsx` | Passar returnTo ao criar modelo |
-| `FormTemplateEditor.tsx` | Respeitar returnTo para voltar a criacao de vaga |
+| `src/lib/formatText.tsx` | Detectar HTML e renderizar com sanitizacao |
+| `src/pages/PublicApplication.tsx` | Usar `renderFormattedText` no campo `description` |
+| `src/hooks/useJobApplications.ts` | `getResumeUrl`/`downloadResume`: suportar URLs externas |
+| Query SQL (fornecida ao usuario) | Normalizar slugs, corrigir `resume_filename`, corrigir `salary_range` |
 
