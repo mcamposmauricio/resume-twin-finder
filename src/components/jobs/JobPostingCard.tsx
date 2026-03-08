@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { JobPosting, JobStatus, STATUS_LABELS, WORK_TYPE_LABELS } from '@/types/jobs';
+import { stripHtmlToText } from '@/lib/formatText';
 
 
 interface JobPostingCardProps {
