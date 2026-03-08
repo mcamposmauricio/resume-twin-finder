@@ -203,6 +203,11 @@ export function useJobApplications(jobPostingId?: string) {
 
   const getResumeUrl = async (path: string): Promise<string | null> => {
     try {
+      // External URL (e.g. Azure Blob Storage) — return directly
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        return path;
+      }
+
       const { data, error } = await supabase.storage
         .from('resumes')
         .createSignedUrl(path, 3600); // 1 hour expiry
@@ -217,6 +222,13 @@ export function useJobApplications(jobPostingId?: string) {
 
   const downloadResume = async (path: string): Promise<Blob | null> => {
     try {
+      // External URL — fetch directly
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        const response = await fetch(path);
+        if (!response.ok) throw new Error('Failed to download external file');
+        return await response.blob();
+      }
+
       const { data, error } = await supabase.storage
         .from('resumes')
         .download(path);

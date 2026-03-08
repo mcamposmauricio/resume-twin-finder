@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { JobPosting, WORK_TYPE_LABELS } from '@/types/jobs';
+import { stripHtmlToText } from '@/lib/formatText';
 
 interface CareersJobCardProps {
   job: JobPosting;
@@ -46,7 +47,7 @@ export function CareersJobCard({ job, brandColor, onApply }: CareersJobCardProps
         </div>
 
         <p className="text-sm text-muted-foreground line-clamp-3">
-          {job.description}
+          {stripHtmlToText(job.description)}
         </p>
 
         <Button

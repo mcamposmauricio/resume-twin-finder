@@ -311,7 +311,7 @@ export default function PublicApplication() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="whitespace-pre-wrap">{job.description}</p>
+            <div className="text-sm">{renderFormattedText(job.description)}</div>
             {job.requirements && (
               <>
                 <Separator className="my-4" />

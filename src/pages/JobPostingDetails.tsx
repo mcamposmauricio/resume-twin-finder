@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { renderFormattedText } from '@/lib/formatText';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -371,14 +372,14 @@ export default function JobPostingDetails() {
               <CardTitle>Descrição</CardTitle>
             </CardHeader>
             <CardContent className="overflow-hidden">
-              <p className="whitespace-pre-wrap break-words">{job.description}</p>
+              <div className="break-words">{renderFormattedText(job.description)}</div>
               {job.requirements && (
                 <>
                   <Separator className="my-4" />
                   <h4 className="font-medium mb-2">Requisitos</h4>
-                  <p className="whitespace-pre-wrap break-words text-muted-foreground">
-                    {job.requirements}
-                  </p>
+                  <div className="break-words text-muted-foreground">
+                    {renderFormattedText(job.requirements)}
+                  </div>
                 </>
               )}
             </CardContent>

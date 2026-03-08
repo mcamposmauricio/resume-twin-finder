@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { JobPosting, JobStatus, STATUS_LABELS, WORK_TYPE_LABELS } from '@/types/jobs';
+import { stripHtmlToText } from '@/lib/formatText';
 
 
 interface JobPostingCardProps {
@@ -181,7 +182,7 @@ export function JobPostingCard({
 
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground line-clamp-2">
-          {job.description}
+          {stripHtmlToText(job.description)}
         </p>
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
