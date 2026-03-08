@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { renderFormattedText } from '@/lib/formatText';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
