@@ -71,6 +71,7 @@ export function ApplicationDetailPanel({
   const [resumePreviewUrl, setResumePreviewUrl] = useState<string | null>(null);
   const [loadingResume, setLoadingResume] = useState(false);
   const [updatingStage, setUpdatingStage] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const currentIndex = application
     ? applications.findIndex((a) => a.id === application.id)
