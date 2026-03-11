@@ -115,6 +115,27 @@ export default function PublicApplication() {
 
     setSubmitting(true);
     try {
+      // Check for duplicate application
+      const emailField = fields.find((f) => f.type === 'email');
+      const applicantEmail = emailField ? formValues[emailField.id] : null;
+
+      if (applicantEmail) {
+        const { data: isDuplicate } = await supabase.rpc('check_duplicate_application', {
+          _job_posting_id: job.id,
+          _email: applicantEmail,
+        });
+
+        if (isDuplicate) {
+          toast({
+            title: 'Candidatura já registrada',
+            description: 'Você já se candidatou para esta vaga com este e-mail.',
+            variant: 'destructive',
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
+
       // Upload resume
       let resumeUrl = '';
       if (resumeFile) {

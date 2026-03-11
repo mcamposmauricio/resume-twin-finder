@@ -34,7 +34,7 @@ export default function Index() {
   const [currentDraft, setCurrentDraft] = useState<DraftData | null>(null);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStep, setAnalysisStep] = useState("");
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { availableResumes, maxPerAnalysis, loading: balanceLoading, refetch: refetchBalance } = useResumeBalance(user?.id);
