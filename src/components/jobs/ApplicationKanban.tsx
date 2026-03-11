@@ -33,6 +33,7 @@ export function ApplicationKanban({
   onViewDetails,
   onViewResume,
   onUpdateTriageStatus,
+  onDeleteApplication,
 }: ApplicationKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
