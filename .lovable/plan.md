@@ -1,67 +1,100 @@
 
 
-## Plano: Remover duplicatas e permitir exclusão de candidaturas
+## Plano de Implementacao -- 5 Melhorias
 
-### Parte 1 — Identificar e remover candidaturas duplicadas (Lets Make)
+### 1. Layout da capa da pagina de carreiras
 
-Criar uma query de análise para encontrar duplicatas na tabela `job_applications` (mesmo `applicant_email` + mesmo `job_posting_id`, mantendo apenas a mais recente) e executar a remoção via SQL.
+**Problema**: O texto "Junte-se ao time..." fica sobreposto a imagem de fundo, dificultando a leitura.
 
-**SQL a executar via insert tool (data operation):**
-```sql
-DELETE FROM job_applications
-WHERE id NOT IN (
-  SELECT DISTINCT ON (job_posting_id, lower(applicant_email)) id
-  FROM job_applications
-  WHERE applicant_email IS NOT NULL
-  ORDER BY job_posting_id, lower(applicant_email), created_at DESC
-);
-```
+**Solucao** em `src/components/careers/CareersHero.tsx`:
+- Quando ha imagem hero, renderizar a imagem como um `<img>` em bloco (nao background) seguido do texto abaixo, em vez de sobreposicao
+- Quando nao ha imagem, manter o layout atual com gradient
 
-Antes de deletar, rodar uma query de análise para mostrar quantas duplicatas existem.
+**Solucao** em `src/components/settings/CareersPageTab.tsx`:
+- Adicionar um novo toggle "Exibir frase de destaque no banner" (`careers_show_hero_text`) na secao de Secoes Visiveis
 
-### Parte 2 — Adicionar botão de excluir candidatura
+**Migracao de banco**: Adicionar coluna `careers_show_hero_text boolean default true` na tabela `profiles`
 
-Precisa de uma RLS policy para DELETE (atualmente não existe) e ajustes em 4 componentes:
+**Arquivos**: `CareersHero.tsx`, `CareersPageTab.tsx`, `Settings.tsx`, `PublicCareers.tsx` + migracao
 
-**1. Migration — RLS policy para DELETE:**
-```sql
-CREATE POLICY "Users can delete applications for their jobs"
-ON public.job_applications
-FOR DELETE
-TO public
-USING (job_posting_id IN (
-  SELECT id FROM job_postings WHERE user_id = auth.uid()
-));
-```
+---
 
-**2. `useJobApplications.ts`** — Adicionar função `deleteApplication`:
-- Chamar `supabase.from('job_applications').delete().eq('id', id)`
-- Atualizar estado local removendo o item
-- Retornar boolean de sucesso
+### 2. Templates de vaga -- requisitos em formato de lista
 
-**3. `ApplicationDetailPanel.tsx`** — Adicionar botão "Excluir candidatura":
-- Receber `onDelete` callback via props
-- Botão vermelho com confirmação (AlertDialog) na parte inferior do painel
-- Ao confirmar, chamar `onDelete`, fechar painel
+**Problema**: Ao preencher campos a partir de um template, requisitos aparecem como texto corrido sem quebras de linha.
 
-**4. `DraggableApplicationCard.tsx` / `ApplicationCard.tsx`** — Adicionar opção de excluir:
-- Ícone de lixeira no hover do card (junto aos botões existentes de visualizar/currículo)
-- Confirmação antes de deletar
+**Solucao** em `src/pages/PublicApplication.tsx` (linha 318) e `src/pages/JobPostingForm.tsx`:
+- Os campos `requirements` e `description` ja usam `whitespace-pre-wrap` na pagina publica -- ok
+- O problema esta nos templates do banco (`job_templates`): o conteudo provavelmente ja esta armazenado com `\n` mas ao exibir no `<Textarea>` funciona bem. O problema visual e na pagina publica e nos cards.
 
-**5. `ApplicationKanban.tsx`** — Receber e propagar `onDeleteApplication`
+**Solucao real**: Nas paginas publicas e cards onde `requirements` e exibido, detectar linhas que comecam com `-` ou `•` ou sao itens numerados e renderizar como `<ul><li>` em vez de `<p>`. Criar um helper `renderFormattedText(text)` que converte texto com quebras em lista HTML quando detecta padrao de lista.
 
-**6. `JobPostingDetails.tsx`** — Conectar tudo:
-- Passar `deleteApplication` do hook para o Kanban e DetailPanel
-- Após deletar, limpar `viewingApplication` se for o mesmo
+**Arquivos**: Criar `src/lib/formatText.tsx`, atualizar `PublicApplication.tsx`, `CareersJobCard.tsx`
 
-### Arquivos modificados
+---
 
-| Arquivo | Mudança |
+### 3. Fluxo do formulario -- retorno apos criar modelo
+
+**Problema**: Ao clicar "Crie um novo" em `JobPostingForm.tsx`, vai para `/formularios/novo`. Apos salvar, volta para `/formularios` em vez de voltar para a criacao da vaga.
+
+**Solucao**:
+- Em `JobPostingForm.tsx` linha 303: passar query param `?returnTo=nova-vaga` ao navegar para `/formularios/novo`
+- Em `FormTemplateEditor.tsx` linha 150: checar `searchParams.get('returnTo')`. Se for `nova-vaga`, navegar de volta para `/vagas/nova` com state contendo os dados preenchidos e o template recem-criado selecionado
+- Alternativa mais simples: usar `navigate(-1)` quando `returnTo` esta presente, mas isso nao garante estado. Melhor: passar o `returnTo` e redirecionar para `/vagas/nova`
+
+**Arquivos**: `JobPostingForm.tsx`, `FormTemplateEditor.tsx`
+
+---
+
+### 4. "Sobre Nos / Nossa Cultura" -- texto completo
+
+**Problema**: `line-clamp-4` em `CareersAbout.tsx` (linhas 37 e 54) trunca o texto e nao ha como expandir.
+
+**Solucao** em `CareersAbout.tsx`:
+- Adicionar estado `expanded` por secao
+- Remover `line-clamp-4` quando expandido
+- Adicionar botao "Ver mais" / "Ver menos" abaixo do texto
+
+**Arquivos**: `CareersAbout.tsx`
+
+---
+
+### 5. Campos separados para Missao, Visao e Valores
+
+**Problema**: Hoje existe apenas um campo generico "Nossa Cultura". O usuario quer campos individuais para Missao, Visao e Valores, cada um ativavel/desativavel.
+
+**Migracao de banco**: Adicionar 6 colunas na tabela `profiles`:
+- `company_mission text`
+- `company_vision text`
+- `company_values text`
+- `careers_show_mission boolean default true`
+- `careers_show_vision boolean default true`
+- `careers_show_values boolean default true`
+
+**Mudancas em codigo**:
+- `CompanyInfoTab.tsx`: Adicionar 3 novos `<Textarea>` para Missao, Visao e Valores
+- `CareersPageTab.tsx`: Adicionar 3 novos toggles na secao de Secoes Visiveis
+- `Settings.tsx`: Incluir novos campos no `ProfileSettings`, `fetchSettings` e `handleSave`
+- `CareersAbout.tsx` → renomear para `CareersCompanyInfo.tsx` ou estender: renderizar cards para Sobre Nos, Cultura, Missao, Visao e Valores conforme toggles
+- `PublicCareers.tsx`: Passar os novos campos e toggles para o componente
+
+**Arquivos**: Migracao SQL, `CompanyInfoTab.tsx`, `CareersPageTab.tsx`, `Settings.tsx`, `CareersAbout.tsx`, `PublicCareers.tsx`
+
+---
+
+### Resumo de arquivos alterados
+
+| Arquivo | Mudancas |
 |---|---|
-| `job_applications` (RLS) | Nova policy DELETE |
-| `useJobApplications.ts` | `deleteApplication()` |
-| `ApplicationDetailPanel.tsx` | Botão excluir + confirmação |
-| `ApplicationCard.tsx` | Ícone lixeira no hover |
-| `ApplicationKanban.tsx` | Prop `onDeleteApplication` |
-| `JobPostingDetails.tsx` | Conectar delete ao hook |
+| Migracao SQL | `careers_show_hero_text`, `company_mission`, `company_vision`, `company_values`, `careers_show_mission`, `careers_show_vision`, `careers_show_values` |
+| `CareersHero.tsx` | Layout imagem acima + texto abaixo; respeitar toggle de texto |
+| `CareersAbout.tsx` | Expandir texto completo; adicionar Missao/Visao/Valores |
+| `CareersPageTab.tsx` | Toggles para hero text, missao, visao, valores |
+| `CompanyInfoTab.tsx` | Campos Missao, Visao, Valores |
+| `Settings.tsx` | Novos campos no state, fetch e save |
+| `PublicCareers.tsx` | Passar novos props |
+| `src/lib/formatText.tsx` | Helper para renderizar texto como lista |
+| `PublicApplication.tsx` | Usar helper de formatacao nos requisitos |
+| `JobPostingForm.tsx` | Passar returnTo ao criar modelo |
+| `FormTemplateEditor.tsx` | Respeitar returnTo para voltar a criacao de vaga |
 

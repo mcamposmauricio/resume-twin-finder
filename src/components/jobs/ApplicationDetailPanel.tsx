@@ -7,6 +7,7 @@ import {
   Download,
   ExternalLink,
   ChevronLeft,
+  Trash2,
 } from 'lucide-react';
 import {
   Sheet,
@@ -17,6 +18,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Select,
   SelectContent,
@@ -42,6 +53,7 @@ interface ApplicationDetailPanelProps {
   onNavigate: (direction: 'prev' | 'next') => void;
   onUpdateTriageStatus: (id: string, status: string) => Promise<boolean>;
   getResumeUrl: (path: string) => Promise<string | null>;
+  onDelete?: () => void;
 }
 
 export function ApplicationDetailPanel({
@@ -54,10 +66,12 @@ export function ApplicationDetailPanel({
   onNavigate,
   onUpdateTriageStatus,
   getResumeUrl,
+  onDelete,
 }: ApplicationDetailPanelProps) {
   const [resumePreviewUrl, setResumePreviewUrl] = useState<string | null>(null);
   const [loadingResume, setLoadingResume] = useState(false);
   const [updatingStage, setUpdatingStage] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const currentIndex = application
     ? applications.findIndex((a) => a.id === application.id)
@@ -255,6 +269,21 @@ export function ApplicationDetailPanel({
           )}
         </div>
 
+        {/* Delete */}
+        {onDelete && (
+          <>
+            <Separator className="my-6" />
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir candidatura
+            </Button>
+          </>
+        )}
+
         {/* Navigation */}
         <div className="flex items-center justify-between mt-8 pt-4 border-t">
           <Button
@@ -278,6 +307,31 @@ export function ApplicationDetailPanel({
           </Button>
         </div>
       </SheetContent>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir candidatura</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a candidatura de{' '}
+              <strong>{application?.applicant_name || application?.applicant_email}</strong>?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                onDelete?.();
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }

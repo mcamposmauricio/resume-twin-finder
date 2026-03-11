@@ -241,12 +241,36 @@ export function useJobApplications(jobPostingId?: string) {
     }
   };
 
+  const deleteApplication = async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('job_applications')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setApplications(prev => prev.filter(a => a.id !== id));
+      toast({ title: 'Candidatura excluída com sucesso.' });
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting application:', error);
+      toast({
+        title: 'Erro ao excluir candidatura',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   return {
     applications,
     loading,
     createApplication,
     updateApplicationStatus,
     updateTriageStatus,
+    deleteApplication,
     linkToAnalysis,
     uploadResume,
     getResumeUrl,

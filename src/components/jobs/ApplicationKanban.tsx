@@ -24,6 +24,7 @@ interface ApplicationKanbanProps {
   onViewDetails: (application: JobApplication) => void;
   onViewResume: (application: JobApplication) => void;
   onUpdateTriageStatus: (id: string, status: string) => Promise<boolean>;
+  onDeleteApplication?: (id: string) => Promise<boolean>;
 }
 
 export function ApplicationKanban({
@@ -32,6 +33,7 @@ export function ApplicationKanban({
   onViewDetails,
   onViewResume,
   onUpdateTriageStatus,
+  onDeleteApplication,
 }: ApplicationKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -148,6 +150,7 @@ export function ApplicationKanban({
                   onViewDetails={() => onViewDetails(app)}
                   onViewResume={() => onViewResume(app)}
                   onMoveToStage={(slug) => handleMoveToStage(app.id, slug)}
+                  onDelete={onDeleteApplication ? () => onDeleteApplication(app.id) : undefined}
                 />
               ))}
 

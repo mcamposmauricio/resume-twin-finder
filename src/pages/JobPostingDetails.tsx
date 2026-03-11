@@ -54,7 +54,7 @@ export default function JobPostingDetails() {
   const [viewingApplication, setViewingApplication] = useState<JobApplication | null>(null);
 
   const { changeStatus, getJobById } = useJobPostings(userId);
-  const { applications, getResumeUrl, updateTriageStatus, refetch: refetchApplications } = useJobApplications(id);
+  const { applications, getResumeUrl, updateTriageStatus, deleteApplication, refetch: refetchApplications } = useJobApplications(id);
   const resumeBalance = useResumeBalance(userId);
   const balance = resumeBalance.availableResumes;
   const { isFullAccess, loading: roleLoading } = useUserRole(userId);
@@ -463,6 +463,13 @@ export default function JobPostingDetails() {
               onViewDetails={setViewingApplication}
               onViewResume={handleViewResume}
               onUpdateTriageStatus={updateTriageStatus}
+              onDeleteApplication={async (id) => {
+                const success = await deleteApplication(id);
+                if (success && viewingApplication?.id === id) {
+                  setViewingApplication(null);
+                }
+                return success;
+              }}
             />
           </CardContent>
         </Card>
@@ -500,6 +507,11 @@ export default function JobPostingDetails() {
           }}
           onUpdateTriageStatus={updateTriageStatus}
           getResumeUrl={getResumeUrl}
+          onDelete={async () => {
+            if (!viewingApplication) return;
+            const success = await deleteApplication(viewingApplication.id);
+            if (success) setViewingApplication(null);
+          }}
         />
       </div>
     </div>
