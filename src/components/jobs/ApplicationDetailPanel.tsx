@@ -269,6 +269,21 @@ export function ApplicationDetailPanel({
           )}
         </div>
 
+        {/* Delete */}
+        {onDelete && (
+          <>
+            <Separator className="my-6" />
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir candidatura
+            </Button>
+          </>
+        )}
+
         {/* Navigation */}
         <div className="flex items-center justify-between mt-8 pt-4 border-t">
           <Button
@@ -292,6 +307,31 @@ export function ApplicationDetailPanel({
           </Button>
         </div>
       </SheetContent>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir candidatura</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a candidatura de{' '}
+              <strong>{application?.applicant_name || application?.applicant_email}</strong>?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                onDelete?.();
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }
