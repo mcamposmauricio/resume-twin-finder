@@ -24,6 +24,7 @@ export function DraggableApplicationCard({
   onViewDetails,
   onViewResume,
   onMoveToStage,
+  onDelete,
 }: DraggableApplicationCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: application.id,
