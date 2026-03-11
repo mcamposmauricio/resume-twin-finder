@@ -24,6 +24,7 @@ interface ApplicationKanbanProps {
   onViewDetails: (application: JobApplication) => void;
   onViewResume: (application: JobApplication) => void;
   onUpdateTriageStatus: (id: string, status: string) => Promise<boolean>;
+  onDeleteApplication?: (id: string) => Promise<boolean>;
 }
 
 export function ApplicationKanban({
