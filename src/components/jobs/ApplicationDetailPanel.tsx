@@ -54,6 +54,7 @@ interface ApplicationDetailPanelProps {
   onNavigate: (direction: 'prev' | 'next') => void;
   onUpdateTriageStatus: (id: string, status: string) => Promise<boolean>;
   getResumeUrl: (path: string) => Promise<string | null>;
+  onDelete?: () => void;
 }
 
 export function ApplicationDetailPanel({
