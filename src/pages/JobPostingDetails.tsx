@@ -54,7 +54,7 @@ export default function JobPostingDetails() {
   const [viewingApplication, setViewingApplication] = useState<JobApplication | null>(null);
 
   const { changeStatus, getJobById } = useJobPostings(userId);
-  const { applications, getResumeUrl, updateTriageStatus, refetch: refetchApplications } = useJobApplications(id);
+  const { applications, getResumeUrl, updateTriageStatus, deleteApplication, refetch: refetchApplications } = useJobApplications(id);
   const resumeBalance = useResumeBalance(userId);
   const balance = resumeBalance.availableResumes;
   const { isFullAccess, loading: roleLoading } = useUserRole(userId);
