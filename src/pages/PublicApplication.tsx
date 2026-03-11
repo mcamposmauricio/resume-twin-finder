@@ -141,6 +141,18 @@ export default function PublicApplication() {
         }
       }
 
+      // Upload resume
+      let resumeUrl = '';
+      if (resumeFile) {
+        const fileName = `${job.id}/${crypto.randomUUID()}_${resumeFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('resumes')
+          .upload(fileName, resumeFile);
+
+        if (uploadError) throw uploadError;
+        resumeUrl = fileName;
+      }
+
       // Create application
       const { error: appError } = await supabase.from('job_applications').insert([
         {
