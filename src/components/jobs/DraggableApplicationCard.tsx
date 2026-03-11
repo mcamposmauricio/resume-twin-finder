@@ -14,6 +14,7 @@ interface DraggableApplicationCardProps {
   onViewDetails: () => void;
   onViewResume: () => void;
   onMoveToStage: (stageSlug: string) => void;
+  onDelete?: () => void;
 }
 
 export function DraggableApplicationCard({
