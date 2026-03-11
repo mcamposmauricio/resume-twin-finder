@@ -150,6 +150,7 @@ export function ApplicationKanban({
                   onViewDetails={() => onViewDetails(app)}
                   onViewResume={() => onViewResume(app)}
                   onMoveToStage={(slug) => handleMoveToStage(app.id, slug)}
+                  onDelete={onDeleteApplication ? () => onDeleteApplication(app.id) : undefined}
                 />
               ))}
 
