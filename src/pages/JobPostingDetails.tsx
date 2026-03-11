@@ -507,6 +507,11 @@ export default function JobPostingDetails() {
           }}
           onUpdateTriageStatus={updateTriageStatus}
           getResumeUrl={getResumeUrl}
+          onDelete={async () => {
+            if (!viewingApplication) return;
+            const success = await deleteApplication(viewingApplication.id);
+            if (success) setViewingApplication(null);
+          }}
         />
       </div>
     </div>
