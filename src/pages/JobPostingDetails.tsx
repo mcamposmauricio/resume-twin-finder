@@ -463,6 +463,13 @@ export default function JobPostingDetails() {
               onViewDetails={setViewingApplication}
               onViewResume={handleViewResume}
               onUpdateTriageStatus={updateTriageStatus}
+              onDeleteApplication={async (id) => {
+                const success = await deleteApplication(id);
+                if (success && viewingApplication?.id === id) {
+                  setViewingApplication(null);
+                }
+                return success;
+              }}
             />
           </CardContent>
         </Card>
