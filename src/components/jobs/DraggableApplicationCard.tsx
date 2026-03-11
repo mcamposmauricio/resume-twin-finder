@@ -60,6 +60,7 @@ export function DraggableApplicationCard({
         application={application}
         onViewDetails={onViewDetails}
         onViewResume={onViewResume}
+        onDelete={onDelete}
         stageColor={stage.color}
       />
 
