@@ -115,6 +115,32 @@ export default function PublicApplication() {
 
     setSubmitting(true);
     try {
+      // Extract name and email from form values
+      const formFields = job.form_template?.fields || [];
+      const nameField = formFields.find((f) => f.label.toLowerCase().includes('nome'));
+      const emailFormField = formFields.find((f) => f.type === 'email');
+
+      const applicantName = nameField ? formValues[nameField.id] : undefined;
+      const applicantEmail = emailFormField ? formValues[emailFormField.id] : undefined;
+
+      // Check for duplicate application
+      if (applicantEmail) {
+        const { data: isDuplicate } = await supabase.rpc('check_duplicate_application', {
+          _job_posting_id: job.id,
+          _email: applicantEmail,
+        });
+
+        if (isDuplicate) {
+          toast({
+            title: 'Candidatura já registrada',
+            description: 'Você já se candidatou para esta vaga com este e-mail.',
+            variant: 'destructive',
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
+
       // Upload resume
       let resumeUrl = '';
       if (resumeFile) {
@@ -126,14 +152,6 @@ export default function PublicApplication() {
         if (uploadError) throw uploadError;
         resumeUrl = fileName;
       }
-
-      // Extract name and email from form values
-      const fields = job.form_template?.fields || [];
-      const nameField = fields.find((f) => f.label.toLowerCase().includes('nome'));
-      const emailField = fields.find((f) => f.type === 'email');
-
-      const applicantName = nameField ? formValues[nameField.id] : undefined;
-      const applicantEmail = emailField ? formValues[emailField.id] : undefined;
 
       // Create application
       const { error: appError } = await supabase.from('job_applications').insert([

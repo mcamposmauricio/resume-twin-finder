@@ -600,6 +600,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      check_duplicate_application: {
+        Args: { _email: string; _job_posting_id: string }
+        Returns: boolean
+      }
       generate_careers_slug: { Args: { company: string }; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
       get_user_password_hash: { Args: { p_user_id: string }; Returns: string }
