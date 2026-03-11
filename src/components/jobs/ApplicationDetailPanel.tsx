@@ -7,6 +7,7 @@ import {
   Download,
   ExternalLink,
   ChevronLeft,
+  Trash2,
 } from 'lucide-react';
 import {
   Sheet,
