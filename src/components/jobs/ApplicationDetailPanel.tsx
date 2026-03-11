@@ -66,6 +66,7 @@ export function ApplicationDetailPanel({
   onNavigate,
   onUpdateTriageStatus,
   getResumeUrl,
+  onDelete,
 }: ApplicationDetailPanelProps) {
   const [resumePreviewUrl, setResumePreviewUrl] = useState<string | null>(null);
   const [loadingResume, setLoadingResume] = useState(false);
