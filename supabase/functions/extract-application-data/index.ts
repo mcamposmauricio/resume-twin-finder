@@ -64,15 +64,8 @@ serve(async (req) => {
           throw new Error("DOCX not supported by Gemini PDF parser, skipping");
         }
 
-        // Helper to encode ArrayBuffer to base64 without stack overflow
-        const toBase64 = (buf: ArrayBuffer): string => {
-          const bytes = new Uint8Array(buf);
-          let binary = "";
-          for (let i = 0; i < bytes.length; i++) {
-            binary += String.fromCharCode(bytes[i]);
-          }
-          return btoa(binary);
-        };
+        // Use Deno std base64 encoder (no stack overflow)
+        const toBase64 = (buf: ArrayBuffer): string => base64Encode(new Uint8Array(buf));
 
         if (resumeUrl.startsWith("http://") || resumeUrl.startsWith("https://")) {
           const resp = await fetch(resumeUrl);
