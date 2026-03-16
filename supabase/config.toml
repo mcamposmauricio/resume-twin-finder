@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.send-lead-to-rdstation]
 verify_jwt = false
+
+[functions.extract-application-data]
+verify_jwt = false
