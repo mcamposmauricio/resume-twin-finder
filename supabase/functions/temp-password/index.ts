@@ -1,5 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +20,6 @@ Deno.serve(async (req) => {
     );
 
     if (action === "set_temp") {
-      // Find user
       const { data: users } = await supabaseAdmin.auth.admin.listUsers();
       const user = users?.users?.find(u => u.email === email);
       if (!user) {
@@ -30,17 +28,21 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Get current hash
+      // Save current hash
       const { data: currentHash } = await supabaseAdmin.rpc("get_user_password_hash", {
         p_user_id: user.id,
       });
 
-      // Set temp password
-      const tempHash = await bcrypt.hash("123456");
-      await supabaseAdmin.rpc("update_user_password_hash", {
-        p_user_id: user.id,
-        p_password_hash: tempHash,
+      // Set temp password via admin API
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+        password: "123456",
       });
+
+      if (updateError) {
+        return new Response(JSON.stringify({ error: updateError.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
       return new Response(JSON.stringify({
         success: true,
