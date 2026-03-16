@@ -244,7 +244,14 @@ export default function PublicApplication() {
     );
   }
 
-  const fields = job.form_template?.fields || [];
+  // Fallback fields when no form template is associated
+  const FALLBACK_FIELDS: FormField[] = [
+    { id: 'fallback_name', label: 'Nome completo', type: 'text', required: true, order: 0 },
+    { id: 'fallback_email', label: 'Email', type: 'email', required: true, order: 1 },
+    { id: 'fallback_phone', label: 'Telefone', type: 'phone', required: false, order: 2 },
+  ];
+
+  const fields = job.form_template?.fields?.length ? job.form_template.fields : FALLBACK_FIELDS;
   
   // Use profile branding if available, fallback to job branding for backwards compatibility
   const brandColor = profileBranding?.brand_color || job.brand_color || '#3B82F6';
