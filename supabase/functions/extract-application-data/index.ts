@@ -56,21 +56,34 @@ serve(async (req) => {
         
         let pdfBase64: string;
         const resumeUrl = app.resume_url as string;
+        const filename = (app.resume_filename as string || "").toLowerCase();
+
+        // Skip non-PDF files
+        if (filename.endsWith(".docx") || filename.endsWith(".doc")) {
+          throw new Error("DOCX not supported by Gemini PDF parser, skipping");
+        }
+
+        // Helper to encode ArrayBuffer to base64 without stack overflow
+        const toBase64 = (buf: ArrayBuffer): string => {
+          const bytes = new Uint8Array(buf);
+          let binary = "";
+          const chunkSize = 8192;
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+          }
+          return btoa(binary);
+        };
 
         if (resumeUrl.startsWith("http://") || resumeUrl.startsWith("https://")) {
-          // External URL - download directly
           const resp = await fetch(resumeUrl);
           if (!resp.ok) throw new Error(`Failed to download: ${resp.status}`);
-          const buffer = await resp.arrayBuffer();
-          pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+          pdfBase64 = toBase64(await resp.arrayBuffer());
         } else {
-          // Internal storage path
           const { data: fileData, error: dlError } = await supabase.storage
             .from("resumes")
             .download(resumeUrl);
           if (dlError || !fileData) throw new Error(`Storage download failed: ${dlError?.message}`);
-          const buffer = await fileData.arrayBuffer();
-          pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+          pdfBase64 = toBase64(await fileData.arrayBuffer());
         }
 
         // Call Gemini to extract data
