@@ -337,7 +337,7 @@ export default function PublicApplication() {
           </CardHeader>
           <CardContent>
             <div className="text-sm">{renderFormattedText(job.description)}</div>
-            {job.requirements && (
+            {job.requirements && !job.description?.toLowerCase().includes('requisitos') && (
               <>
                 <Separator className="my-4" />
                 <h4 className="font-medium mb-2">Requisitos</h4>
