@@ -67,9 +67,8 @@ serve(async (req) => {
         const toBase64 = (buf: ArrayBuffer): string => {
           const bytes = new Uint8Array(buf);
           let binary = "";
-          const chunkSize = 8192;
-          for (let i = 0; i < bytes.length; i += chunkSize) {
-            binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+          for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
           }
           return btoa(binary);
         };
