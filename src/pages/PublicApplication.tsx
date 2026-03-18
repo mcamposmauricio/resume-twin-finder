@@ -424,7 +424,7 @@ export default function PublicApplication() {
                     type="file"
                     id="resume"
                     accept=".pdf,.doc,.docx"
-                    onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                    onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                     className="hidden"
                   />
                   <label htmlFor="resume" className="cursor-pointer">
