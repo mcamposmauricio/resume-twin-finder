@@ -24,6 +24,41 @@ export default function PublicApplication() {
   const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx'];
+
+  const sanitizeFileName = (name: string) =>
+    name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+
+  const validateFile = (file: File): string | null => {
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return 'Formato não suportado. Envie seu currículo em PDF ou DOC/DOCX.';
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return 'Seu arquivo excede o limite de 5MB. Tente salvar o PDF com qualidade reduzida ou remover imagens do currículo.';
+    }
+    return null;
+  };
+
+  const handleFileChange = (file: File | null) => {
+    if (!file) {
+      setResumeFile(null);
+      setFileError(null);
+      return;
+    }
+    const error = validateFile(file);
+    if (error) {
+      setResumeFile(null);
+      setFileError(error);
+      toast({ title: 'Arquivo inválido', description: error, variant: 'destructive' });
+    } else {
+      setResumeFile(file);
+      setFileError(null);
+    }
+  };
   
   // Profile branding
   const [profileBranding, setProfileBranding] = useState<{
