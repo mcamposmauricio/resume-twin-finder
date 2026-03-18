@@ -137,7 +137,7 @@ export default function PublicApplication() {
     });
 
     if (!resumeFile) {
-      newErrors.resume = 'Por favor, anexe seu currículo';
+      newErrors.resume = 'Você precisa anexar seu currículo para se candidatar. Aceitamos arquivos PDF ou DOC (máx. 5MB).';
     }
 
     setErrors(newErrors);
