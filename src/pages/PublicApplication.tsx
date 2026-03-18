@@ -441,8 +441,8 @@ export default function PublicApplication() {
                     )}
                   </label>
                 </div>
-                {errors.resume && (
-                  <p className="text-sm text-destructive">{errors.resume}</p>
+                {(errors.resume || fileError) && (
+                  <p className="text-sm text-destructive">{fileError || errors.resume}</p>
                 )}
               </div>
 
