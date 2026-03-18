@@ -179,12 +179,20 @@ export default function PublicApplication() {
       // Upload resume
       let resumeUrl = '';
       if (resumeFile) {
-        const fileName = `${job.id}/${crypto.randomUUID()}_${resumeFile.name}`;
+        const fileName = `${job.id}/${crypto.randomUUID()}_${sanitizeFileName(resumeFile.name)}`;
         const { error: uploadError } = await supabase.storage
           .from('resumes')
           .upload(fileName, resumeFile);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          toast({
+            title: 'Erro no envio do currículo',
+            description: 'Não conseguimos enviar seu currículo. Verifique sua conexão com a internet e tente novamente.',
+            variant: 'destructive',
+          });
+          setSubmitting(false);
+          return;
+        }
         resumeUrl = fileName;
       }
 
