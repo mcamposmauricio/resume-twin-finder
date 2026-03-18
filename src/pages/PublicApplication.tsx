@@ -24,6 +24,41 @@ export default function PublicApplication() {
   const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx'];
+
+  const sanitizeFileName = (name: string) =>
+    name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+
+  const validateFile = (file: File): string | null => {
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return 'Formato não suportado. Envie seu currículo em PDF ou DOC/DOCX.';
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return 'Seu arquivo excede o limite de 5MB. Tente salvar o PDF com qualidade reduzida ou remover imagens do currículo.';
+    }
+    return null;
+  };
+
+  const handleFileChange = (file: File | null) => {
+    if (!file) {
+      setResumeFile(null);
+      setFileError(null);
+      return;
+    }
+    const error = validateFile(file);
+    if (error) {
+      setResumeFile(null);
+      setFileError(error);
+      toast({ title: 'Arquivo inválido', description: error, variant: 'destructive' });
+    } else {
+      setResumeFile(file);
+      setFileError(null);
+    }
+  };
   
   // Profile branding
   const [profileBranding, setProfileBranding] = useState<{
@@ -102,7 +137,7 @@ export default function PublicApplication() {
     });
 
     if (!resumeFile) {
-      newErrors.resume = 'Por favor, anexe seu currículo';
+      newErrors.resume = 'Você precisa anexar seu currículo para se candidatar. Aceitamos arquivos PDF ou DOC (máx. 5MB).';
     }
 
     setErrors(newErrors);
@@ -144,12 +179,20 @@ export default function PublicApplication() {
       // Upload resume
       let resumeUrl = '';
       if (resumeFile) {
-        const fileName = `${job.id}/${crypto.randomUUID()}_${resumeFile.name}`;
+        const fileName = `${job.id}/${crypto.randomUUID()}_${sanitizeFileName(resumeFile.name)}`;
         const { error: uploadError } = await supabase.storage
           .from('resumes')
           .upload(fileName, resumeFile);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          toast({
+            title: 'Erro no envio do currículo',
+            description: 'Não conseguimos enviar seu currículo. Verifique sua conexão com a internet e tente novamente.',
+            variant: 'destructive',
+          });
+          setSubmitting(false);
+          return;
+        }
         resumeUrl = fileName;
       }
 
@@ -179,7 +222,7 @@ export default function PublicApplication() {
       });
       toast({
         title: 'Erro ao enviar candidatura',
-        description: error.message || 'Tente novamente mais tarde.',
+        description: 'Ocorreu um erro ao enviar sua candidatura. Tente novamente em alguns instantes. Se o problema persistir, entre em contato com a empresa.',
         variant: 'destructive',
       });
     } finally {
@@ -381,7 +424,7 @@ export default function PublicApplication() {
                     type="file"
                     id="resume"
                     accept=".pdf,.doc,.docx"
-                    onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                    onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                     className="hidden"
                   />
                   <label htmlFor="resume" className="cursor-pointer">
@@ -398,8 +441,8 @@ export default function PublicApplication() {
                     )}
                   </label>
                 </div>
-                {errors.resume && (
-                  <p className="text-sm text-destructive">{errors.resume}</p>
+                {(errors.resume || fileError) && (
+                  <p className="text-sm text-destructive">{fileError || errors.resume}</p>
                 )}
               </div>
 
