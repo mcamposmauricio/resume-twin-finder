@@ -222,7 +222,7 @@ export default function PublicApplication() {
       });
       toast({
         title: 'Erro ao enviar candidatura',
-        description: error.message || 'Tente novamente mais tarde.',
+        description: 'Ocorreu um erro ao enviar sua candidatura. Tente novamente em alguns instantes. Se o problema persistir, entre em contato com a empresa.',
         variant: 'destructive',
       });
     } finally {
