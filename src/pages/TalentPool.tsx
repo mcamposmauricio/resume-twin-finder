@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Users, LogOut, Settings, FileText, Activity, ArrowLeft, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTalentPool, TalentPoolRow, TalentFilters } from '@/hooks/useTalentPool';
-import { useUserRole } from '@/hooks/useUserRole';
+// [AI-FLOW] import { useUserRole } from '@/hooks/useUserRole';
 import { exportTalentsCSV } from '@/lib/exportTalents';
 
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ export default function TalentPool() {
   const [selectedTalent, setSelectedTalent] = useState<TalentPoolRow | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const { isFullAccess, loading: roleLoading } = useUserRole(userId);
+  // [AI-FLOW] Role check removed — all users have access
   const {
     talents,
     totalCount,
@@ -55,12 +55,7 @@ export default function TalentPool() {
     });
   }, [navigate]);
 
-  useEffect(() => {
-    if (!roleLoading && userId && !isFullAccess) {
-      toast.error('Você não tem acesso a esta funcionalidade.');
-      navigate('/');
-    }
-  }, [roleLoading, isFullAccess, userId, navigate]);
+  // [AI-FLOW] Role guard removed — all users have access
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -87,15 +82,13 @@ export default function TalentPool() {
     toast.success('CSV exportado com sucesso!');
   };
 
-  if (loading && page === 1 && !talents.length || roleLoading) {
+  if (loading && page === 1 && !talents.length) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
-
-  if (!isFullAccess) return null;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

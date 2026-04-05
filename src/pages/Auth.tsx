@@ -134,22 +134,18 @@ export default function Auth() {
   const { getUTMParams } = useUTMTracking();
 
   useEffect(() => {
-    const redirectByRole = async (session: any) => {
-      const { data: isFull } = await supabase.rpc('is_full_access', { _user_id: session.user.id });
-      navigate(isFull ? '/vagas' : '/', { replace: true });
-    };
-
+    // [AI-FLOW] All users redirect to /vagas — no role check needed
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        redirectByRole(session);
+        navigate('/vagas', { replace: true });
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        redirectByRole(session);
+        navigate('/vagas', { replace: true });
       }
     });
 
