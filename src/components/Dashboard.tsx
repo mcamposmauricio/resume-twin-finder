@@ -229,6 +229,10 @@ export function Dashboard({ user, isFullAccess, onNewAnalysis, onViewAnalysis, o
                 <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
                 <span>Modelos de Formulário</span>
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/banco-de-talentos')} className="cursor-pointer py-3">
+                <Users className="w-4 h-4 mr-3 text-violet-600" />
+                <span>Banco de Talentos</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onNavigateToJobs} className="cursor-pointer py-3">
                 <Palette className="w-4 h-4 mr-3 text-muted-foreground" />
                 <span>Gerenciar Vagas</span>
