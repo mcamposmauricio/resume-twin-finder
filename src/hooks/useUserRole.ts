@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+// [AI-FLOW] import { supabase } from '@/integrations/supabase/client';
 
 interface UserRole {
   isFullAccess: boolean;
@@ -8,44 +8,52 @@ interface UserRole {
 }
 
 export function useUserRole(userId?: string): UserRole {
-  const [isFullAccess, setIsFullAccess] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Keep loading true while waiting for userId
-    if (!userId) {
-      setLoading(true);
-      return;
-    }
-
-    setLoading(true);
-
-    const fetchRole = async () => {
-      try {
-        // Use the security definer function to check role
-        const { data, error } = await supabase
-          .rpc('is_full_access', { _user_id: userId });
-
-        if (error) {
-          console.error('Error fetching user role:', error);
-          setIsFullAccess(false);
-        } else {
-          setIsFullAccess(data === true);
-        }
-      } catch (err) {
-        console.error('Error in useUserRole:', err);
-        setIsFullAccess(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRole();
-  }, [userId]);
-
+  // [AI-FLOW] All users now have full access — AI analysis flow disabled
+  // [AI-FLOW] Original code commented below for future reactivation
   return {
-    isFullAccess,
-    isLead: !isFullAccess,
-    loading,
+    isFullAccess: true,
+    isLead: false,
+    loading: false,
   };
+
+  // [AI-FLOW] --- Original role check logic ---
+  // const [isFullAccess, setIsFullAccess] = useState(false);
+  // const [loading, setLoading] = useState(true);
+  //
+  // useEffect(() => {
+  //   if (!userId) {
+  //     setLoading(true);
+  //     return;
+  //   }
+  //
+  //   setLoading(true);
+  //
+  //   const fetchRole = async () => {
+  //     try {
+  //       const { data, error } = await supabase
+  //         .rpc('is_full_access', { _user_id: userId });
+  //
+  //       if (error) {
+  //         console.error('Error fetching user role:', error);
+  //         setIsFullAccess(false);
+  //       } else {
+  //         setIsFullAccess(data === true);
+  //       }
+  //     } catch (err) {
+  //       console.error('Error in useUserRole:', err);
+  //       setIsFullAccess(false);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //
+  //   fetchRole();
+  // }, [userId]);
+  //
+  // return {
+  //   isFullAccess,
+  //   isLead: !isFullAccess,
+  //   loading,
+  // };
+  // [AI-FLOW] --- End original logic ---
 }
