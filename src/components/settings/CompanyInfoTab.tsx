@@ -34,7 +34,7 @@ interface CompanyInfoTabProps {
 
 function FilledBadge({ filled }: { filled: boolean }) {
   return filled ? (
-    <Badge variant="secondary" className="text-xs px-1.5 py-0 ml-2 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+    <Badge variant="secondary" className="text-xs px-1.5 py-0 ml-2">
       Preenchido
     </Badge>
   ) : null;
