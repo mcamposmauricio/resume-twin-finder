@@ -1,77 +1,112 @@
 
 
-## Plano: Desabilitar fluxo de análise IA + Unificar acesso + Garantir fluxo funcional
+## Plano: Revisão completa de UI/UX e Performance do CompareCV
 
-### Objetivo
-1. Comentar todo o fluxo de análise de currículos com IA (mantendo código para reutilização futura)
-2. Todos os usuários acessam como `full_access` — visão de portal de vagas
-3. Garantir que todas as funcionalidades existentes continuam funcionais (banco de talentos, vincular candidato a vaga, filtros, exportação, etc.)
+### Problemas Identificados
 
-### Mudanças
+**UI/UX**
 
-**1. `src/hooks/useUserRole.ts` — Forçar todos como full_access**
-- Comentar a lógica de RPC `is_full_access`
-- Retornar `isFullAccess: true`, `isLead: false`, `loading: false` imediatamente
-- Código original fica comentado com `// [AI-FLOW] ...`
+1. **Header duplicado em todas as páginas** — O header é recriado manualmente em `JobPostings`, `TalentPool`, `Settings`, etc. Não há layout compartilhado. Isso gera inconsistência visual e código duplicado.
 
-**2. `src/pages/Auth.tsx` — Redirect universal para /vagas**
-- Após login bem-sucedido, redirecionar sempre para `/vagas` (sem verificar role)
-- Comentar qualquer lógica que diferencia lead vs full_access no redirect
+2. **Navegação escondida em dropdown** — Banco de Talentos, Formulários e Configurações ficam dentro de um menu dropdown (ícone de engrenagem). Usuários não descobrem essas funcionalidades facilmente. Falta uma sidebar ou nav bar fixa.
 
-**3. `src/pages/Index.tsx` — Redirect direto para /vagas**
-- Quando autenticado, redirecionar imediatamente para `/vagas`
-- Comentar todo o fluxo de análise: steps, polling, handleAnalyze, processAnalysisResult, useResumeBalance, ReferralDialog, MarqBanner
-- Manter apenas: auth check + redirect + loading spinner
-- Código comentado marcado com `// [AI-FLOW]`
+3. **Timeline de vagas com step "Analisadas" ainda visível** — O fluxo de IA foi desativado, mas o step "Analisadas" (com ícone BarChart3) permanece na timeline. Gera confusão.
 
-**4. `src/pages/JobPostings.tsx` — Remover guard de role**
-- Remover o `useEffect` que redireciona `!isFullAccess`
-- Remover a importação e uso de `useUserRole` (já que todos têm acesso)
-- Remover o `if (!isFullAccess) return null`
-- Manter o `roleLoading` check ou removê-lo do loading state
+4. **JobPostingCard ainda mostra "Enviar para Análise" e "Pronto para análise"** — Badges e menu items do fluxo de IA (linhas 142-154, 224-231) ainda aparecem no card de vagas.
 
-**5. `src/pages/TalentPool.tsx` — Remover guard de role**
-- Mesmo tratamento: remover redirect de `!isFullAccess` e `useUserRole`
-- O banco de talentos fica acessível a todos os autenticados
+5. **Auth page com mensagens sobre IA** — A landing/auth ainda diz "Triagem de currículos com inteligência artificial", "Análise com IA", etc. — funcionalidade desativada.
 
-**6. `src/pages/JobPostingDetails.tsx` — Comentar análise**
-- Comentar import e uso do `SendToAnalysisDialog`
-- Comentar `useResumeBalance`
-- Comentar botão "Enviar para Análise" e lógica associada
-- Manter todo o resto funcional (Kanban, detalhes, status changes)
+6. **Formulário público sem feedback visual de progresso** — O upload de currículo não mostra barra de progresso. Em conexões lentas, parece travado.
 
-**7. `src/components/Dashboard.tsx` — Comentar seções de análise**
-- Comentar stats de "CVs analisados", "Análises Recentes"
-- Comentar botão "Nova Análise"
-- Manter apenas o que for relevante para vagas (se o Dashboard ainda for usado em algum lugar)
+7. **Kanban sem scroll horizontal visível** — O Kanban usa `overflow-x-auto` mas sem indicador visual de que há mais colunas à direita (especialmente em mobile/tablet).
 
-### O que NÃO muda (garantindo fluxo funcional)
-- **Banco de Talentos**: `useTalentPool`, `TalentCard`, `TalentDetailPanel`, `TalentFilters`, `TalentTimeline`, `exportTalents` — tudo intacto
-- **Vincular a vaga**: `LinkToJobDialog` — funciona sem alteração
-- **Vagas**: CRUD, timeline, Kanban, candidaturas — sem mudança
-- **Formulários**: modelos de formulário — sem mudança
-- **Páginas públicas**: `/apply/:slug`, `/carreiras/:slug` — sem mudança
-- **Configurações**: todas as tabs — sem mudança
-- **Edge Functions**: ficam no servidor sem alteração (analyze-resumes, etc.)
-- **Tabelas e dados**: intactos
+8. **Empty states genéricos** — Vários empty states poderiam ter CTAs mais diretos (ex: "Criar primeira vaga" com botão, não só texto).
 
-### Arquivos alterados
+9. **Footer repetido** — Mesmo footer copiado em todas as páginas.
+
+10. **Ausência de breadcrumbs** — Ao navegar para detalhes de uma vaga, não há indicação clara de "onde estou" além do botão voltar.
+
+**Performance**
+
+11. **Auth check duplicado** — Cada página faz `supabase.auth.getSession()` independentemente no `useEffect`. Deveria haver um AuthContext global.
+
+12. **JobPostings refiltra array 5x** — Os `counts` recalculam filtrando `jobPostings` 5 vezes (linhas 97-103). Deveria ser um único loop com `useMemo`.
+
+13. **Careers page settings fetch inline** — O fetch de `profiles` no `useEffect` de `JobPostings` não tem tratamento de erro e não usa cache.
+
+14. **TalentCard re-renders** — Cards não são memoizados. Com muitos candidatos, cada mudança de filtro re-renderiza todos.
+
+---
+
+### Melhorias Propostas (priorizadas)
+
+#### Fase 1 — Limpeza de resíduos de IA + Consistência
 
 | Arquivo | Mudança |
 |---|---|
-| `src/hooks/useUserRole.ts` | Forçar `isFullAccess: true` sempre (comentar RPC) |
-| `src/pages/Auth.tsx` | Redirect direto para `/vagas` |
-| `src/pages/Index.tsx` | Redirect para `/vagas`, comentar fluxo de análise |
-| `src/pages/JobPostings.tsx` | Remover guard de role |
-| `src/pages/TalentPool.tsx` | Remover guard de role |
-| `src/pages/JobPostingDetails.tsx` | Comentar análise e saldo |
-| `src/components/Dashboard.tsx` | Comentar seções de análise |
+| `src/components/jobs/JobTimeline.tsx` | Remover step "Analisadas" |
+| `src/components/jobs/JobPostingCard.tsx` | Remover badge "Pronto para análise", menu "Enviar para Análise", "Já analisado", "Ver Análise" |
+| `src/pages/Auth.tsx` | Atualizar copy da landing: remover referências a IA, focar em "Portal de Vagas" |
+| `src/pages/JobPostings.tsx` | Remover filtro `analyzed` e contagem |
 
-### Verificação pós-implementação
-- Login redireciona para `/vagas`
-- Todas as páginas acessíveis sem restrição de role
-- Banco de talentos com filtros, score, paginação e exportação funcionando
-- "Vincular a uma vaga" funcionando no painel do candidato
-- Candidaturas via `/apply` continuam funcionando
-- Nenhum erro no console relacionado a roles ou análise
+#### Fase 2 — Layout compartilhado + Navegação
+
+| Arquivo | Mudança |
+|---|---|
+| `src/components/layout/AppLayout.tsx` | **Criar** — Layout com header, sidebar colapsável (mobile: bottom nav ou hamburger), footer. Centraliza auth check. |
+| `src/components/layout/AppSidebar.tsx` | **Criar** — Links: Vagas, Banco de Talentos, Formulários, Configurações. Badge com contagem de vagas ativas. |
+| `src/pages/JobPostings.tsx` | Envolver com AppLayout, remover header/footer duplicado |
+| `src/pages/TalentPool.tsx` | Envolver com AppLayout, remover header/footer duplicado |
+| `src/pages/Settings.tsx` | Envolver com AppLayout |
+| `src/pages/FormTemplates.tsx` | Envolver com AppLayout |
+
+#### Fase 3 — Performance
+
+| Arquivo | Mudança |
+|---|---|
+| `src/contexts/AuthContext.tsx` | **Criar** — Context com session, userId, userEmail. Elimina auth checks duplicados em cada página. |
+| `src/pages/JobPostings.tsx` | `useMemo` para counts (loop único) |
+| `src/components/talent/TalentCard.tsx` | `React.memo` para evitar re-renders desnecessários |
+| `src/components/jobs/JobPostingCard.tsx` | `React.memo` |
+
+#### Fase 4 — UX Polish
+
+| Arquivo | Mudança |
+|---|---|
+| `src/components/jobs/ApplicationKanban.tsx` | Adicionar indicador de scroll horizontal (fade/sombra nas bordas) |
+| `src/pages/PublicApplication.tsx` | Barra de progresso no upload do currículo |
+| `src/pages/JobPostings.tsx` | Empty state com botão CTA direto "Criar Vaga" |
+| `src/pages/JobPostingDetails.tsx` | Breadcrumb: "Vagas > [Título da vaga]" |
+
+---
+
+### Detalhes Técnicos
+
+**AppLayout** — Componente wrapper que recebe `children`. Inclui:
+- Header fixo com logo + user info + logout
+- Sidebar com `NavLink` components usando `useLocation` para highlight ativo
+- Mobile: sidebar colapsável via Sheet ou bottom navigation bar
+- Footer fixo
+- Auth guard: redireciona para `/auth` se não autenticado
+
+**AuthContext** — Provider no `App.tsx` que escuta `onAuthStateChange` e expõe `{ session, userId, userEmail, loading }`. Todas as páginas consomem via `useAuth()` hook.
+
+**Counts otimizado**:
+```typescript
+const counts = useMemo(() => {
+  const c = { draft: 0, active: 0, paused: 0, closed: 0, analyzed: 0 };
+  for (const j of jobPostings) {
+    if (j.analyzed_at) c.analyzed++;
+    else if (j.status in c) c[j.status]++;
+  }
+  return c;
+}, [jobPostings]);
+```
+
+### Ordem de execução
+
+1. Fase 1 (limpeza) — rápido, sem risco
+2. Fase 3 (AuthContext + memos) — fundação para Fase 2
+3. Fase 2 (layout) — maior mudança visual
+4. Fase 4 (polish) — refinamentos finais
 
