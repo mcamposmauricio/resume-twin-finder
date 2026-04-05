@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Save, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +12,7 @@ import { PipelineStagesEditor } from '@/components/settings/PipelineStagesEditor
 import { logActivity } from '@/hooks/useActivityLog';
 import { CompanyInfoTab } from '@/components/settings/CompanyInfoTab';
 import { CareersPageTab } from '@/components/settings/CareersPageTab';
+import { ImageUploader } from '@/components/settings/ImageUploader';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 interface ProfileSettings {
@@ -41,6 +41,10 @@ interface ProfileSettings {
   careers_show_mission: boolean;
   careers_show_vision: boolean;
   careers_show_values: boolean;
+  company_whatsapp: string;
+  company_youtube: string;
+  company_tiktok: string;
+  company_glassdoor: string;
 }
 
 const defaultSettings: ProfileSettings = {
@@ -69,6 +73,10 @@ const defaultSettings: ProfileSettings = {
   careers_show_mission: true,
   careers_show_vision: true,
   careers_show_values: true,
+  company_whatsapp: '',
+  company_youtube: '',
+  company_tiktok: '',
+  company_glassdoor: '',
 };
 
 export default function Settings() {
@@ -76,6 +84,12 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<ProfileSettings>(defaultSettings);
+  const [savedSnapshot, setSavedSnapshot] = useState<ProfileSettings>(defaultSettings);
+
+  const isDirty = useMemo(
+    () => JSON.stringify(settings) !== JSON.stringify(savedSnapshot),
+    [settings, savedSnapshot]
+  );
 
   useEffect(() => {
     if (!userId) return;
@@ -93,14 +107,15 @@ export default function Settings() {
             careers_hero_image_url, careers_cta_text,
             careers_show_about, careers_show_benefits, careers_show_culture, careers_show_social,
             careers_show_hero_text, company_mission, company_vision, company_values,
-            careers_show_mission, careers_show_vision, careers_show_values
+            careers_show_mission, careers_show_vision, careers_show_values,
+            company_whatsapp, company_youtube, company_tiktok, company_glassdoor
           `)
           .eq('user_id', userId)
           .single();
 
         if (error) throw error;
 
-        setSettings({
+        const loaded: ProfileSettings = {
           company_name: data.company_name || '',
           company_logo_url: data.company_logo_url || '',
           brand_color: data.brand_color || '#3B82F6',
@@ -126,7 +141,14 @@ export default function Settings() {
           careers_show_mission: data.careers_show_mission ?? true,
           careers_show_vision: data.careers_show_vision ?? true,
           careers_show_values: data.careers_show_values ?? true,
-        });
+          company_whatsapp: (data as any).company_whatsapp || '',
+          company_youtube: (data as any).company_youtube || '',
+          company_tiktok: (data as any).company_tiktok || '',
+          company_glassdoor: (data as any).company_glassdoor || '',
+        };
+
+        setSettings(loaded);
+        setSavedSnapshot(loaded);
       } catch (error) {
         console.error('Error fetching settings:', error);
       } finally {
@@ -178,12 +200,18 @@ export default function Settings() {
           careers_show_mission: settings.careers_show_mission,
           careers_show_vision: settings.careers_show_vision,
           careers_show_values: settings.careers_show_values,
-        })
+          company_whatsapp: settings.company_whatsapp || null,
+          company_youtube: settings.company_youtube || null,
+          company_tiktok: settings.company_tiktok || null,
+          company_glassdoor: settings.company_glassdoor || null,
+        } as any)
         .eq('user_id', userId);
 
       if (error) throw error;
 
-      setSettings((prev) => ({ ...prev, careers_page_slug: slug }));
+      const updatedSettings = { ...settings, careers_page_slug: slug };
+      setSettings(updatedSettings);
+      setSavedSnapshot(updatedSettings);
       toast.success('Configurações salvas com sucesso!');
     } catch (error: any) {
       console.error('Error saving settings:', error);
@@ -216,7 +244,7 @@ export default function Settings() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <div className="container mx-auto px-4 py-8 max-w-3xl pb-24">
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Configurações</h1>
           <p className="text-muted-foreground">
@@ -252,29 +280,14 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="companyLogoUrl">URL do logo</Label>
-                  <Input
-                    id="companyLogoUrl"
+                  <Label>Logo da empresa</Label>
+                  <ImageUploader
                     value={settings.company_logo_url}
-                    onChange={(e) => updateSettings({ company_logo_url: e.target.value })}
-                    placeholder="https://exemplo.com/logo.png"
+                    onChange={(url) => updateSettings({ company_logo_url: url })}
+                    hint="Recomendado: PNG ou SVG transparente"
+                    aspectRatio="3/1"
+                    maxSizeMB={5}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Cole a URL de uma imagem do logo da empresa (recomendado: PNG ou SVG transparente)
-                  </p>
-                  {settings.company_logo_url && (
-                    <div className="mt-2 p-4 bg-muted rounded-lg">
-                      <p className="text-xs text-muted-foreground mb-2">Preview:</p>
-                      <img
-                        src={settings.company_logo_url}
-                        alt="Logo preview"
-                        className="h-12 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -312,6 +325,10 @@ export default function Settings() {
                 company_mission: settings.company_mission,
                 company_vision: settings.company_vision,
                 company_values: settings.company_values,
+                company_whatsapp: settings.company_whatsapp,
+                company_youtube: settings.company_youtube,
+                company_tiktok: settings.company_tiktok,
+                company_glassdoor: settings.company_glassdoor,
               }}
               onSettingsChange={updateSettings}
             />
@@ -341,18 +358,26 @@ export default function Settings() {
             <PipelineStagesEditor userId={userId} />
           </TabsContent>
         </Tabs>
-
-        <div className="flex justify-end mt-6">
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            Salvar Alterações
-          </Button>
-        </div>
       </div>
+
+      {/* Sticky save bar */}
+      {isDirty && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-4 py-3">
+          <div className="container mx-auto max-w-3xl flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Você tem alterações não salvas
+            </p>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Salvar Alterações
+            </Button>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

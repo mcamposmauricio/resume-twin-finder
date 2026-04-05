@@ -36,6 +36,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -230,11 +240,21 @@ export function PipelineStagesEditor({ userId }: PipelineStagesEditorProps) {
     }
   };
 
-  const handleDelete = async (stage: PipelineStage) => {
-    if (stage.is_default) {
-      return;
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [stageToDelete, setStageToDelete] = useState<PipelineStage | null>(null);
+
+  const handleDeleteRequest = (stage: PipelineStage) => {
+    if (stage.is_default) return;
+    setStageToDelete(stage);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (stageToDelete) {
+      await deleteStage(stageToDelete.id);
+      setStageToDelete(null);
+      setDeleteDialogOpen(false);
     }
-    await deleteStage(stage.id);
   };
 
   if (loading) {
@@ -289,7 +309,7 @@ export function PipelineStagesEditor({ userId }: PipelineStagesEditorProps) {
                       key={stage.id}
                       stage={stage}
                       onEdit={() => openEditDialog(stage)}
-                      onDelete={() => handleDelete(stage)}
+                      onDelete={() => handleDeleteRequest(stage)}
                     />
                   ))}
                 </div>
@@ -386,6 +406,26 @@ export function PipelineStagesEditor({ userId }: PipelineStagesEditorProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir etapa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a etapa "{stageToDelete?.name}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
