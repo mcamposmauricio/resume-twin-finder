@@ -1,112 +1,100 @@
 
 
-## Plano: Revisão completa de UI/UX e Performance do CompareCV
+## Plano: Corrigir labels de form_data (UUIDs → labels legíveis) + Auditoria de pontas soltas
 
-### Problemas Identificados
+### Problema raiz
 
-**UI/UX**
+Quando o candidato se inscreve via `/apply` com um form template customizado, o `form_data` é salvo com **UUIDs como chaves** (ex: `{"9fad376f-...": "12981738779"}`). Isso acontece porque `PublicApplication.tsx` usa `field.id` como key no `formValues`.
 
-1. **Header duplicado em todas as páginas** — O header é recriado manualmente em `JobPostings`, `TalentPool`, `Settings`, etc. Não há layout compartilhado. Isso gera inconsistência visual e código duplicado.
+**Consequências:**
+1. A aba "Dados" no Banco de Talentos mostra UUIDs em vez de labels ("Nome completo", "Telefone", etc.)
+2. O `get_talent_pool` RPC busca por `form_data->>'Telefone'` e `form_data->>'Nome completo'`, mas quando as chaves são UUIDs, a busca por telefone/nome via form_data falha silenciosamente
+3. O `ApplicationDetailPanel` e `ApplicationDetailsDialog` funcionam porque recebem `formFields` como prop e fazem o mapeamento — mas o Banco de Talentos não tem acesso ao form template
 
-2. **Navegação escondida em dropdown** — Banco de Talentos, Formulários e Configurações ficam dentro de um menu dropdown (ícone de engrenagem). Usuários não descobrem essas funcionalidades facilmente. Falta uma sidebar ou nav bar fixa.
+### Correções
 
-3. **Timeline de vagas com step "Analisadas" ainda visível** — O fluxo de IA foi desativado, mas o step "Analisadas" (com ícone BarChart3) permanece na timeline. Gera confusão.
+**1. `src/pages/PublicApplication.tsx` — Salvar form_data com labels como chaves (fix going forward)**
 
-4. **JobPostingCard ainda mostra "Enviar para Análise" e "Pronto para análise"** — Badges e menu items do fluxo de IA (linhas 142-154, 224-231) ainda aparecem no card de vagas.
-
-5. **Auth page com mensagens sobre IA** — A landing/auth ainda diz "Triagem de currículos com inteligência artificial", "Análise com IA", etc. — funcionalidade desativada.
-
-6. **Formulário público sem feedback visual de progresso** — O upload de currículo não mostra barra de progresso. Em conexões lentas, parece travado.
-
-7. **Kanban sem scroll horizontal visível** — O Kanban usa `overflow-x-auto` mas sem indicador visual de que há mais colunas à direita (especialmente em mobile/tablet).
-
-8. **Empty states genéricos** — Vários empty states poderiam ter CTAs mais diretos (ex: "Criar primeira vaga" com botão, não só texto).
-
-9. **Footer repetido** — Mesmo footer copiado em todas as páginas.
-
-10. **Ausência de breadcrumbs** — Ao navegar para detalhes de uma vaga, não há indicação clara de "onde estou" além do botão voltar.
-
-**Performance**
-
-11. **Auth check duplicado** — Cada página faz `supabase.auth.getSession()` independentemente no `useEffect`. Deveria haver um AuthContext global.
-
-12. **JobPostings refiltra array 5x** — Os `counts` recalculam filtrando `jobPostings` 5 vezes (linhas 97-103). Deveria ser um único loop com `useMemo`.
-
-13. **Careers page settings fetch inline** — O fetch de `profiles` no `useEffect` de `JobPostings` não tem tratamento de erro e não usa cache.
-
-14. **TalentCard re-renders** — Cards não são memoizados. Com muitos candidatos, cada mudança de filtro re-renderiza todos.
-
----
-
-### Melhorias Propostas (priorizadas)
-
-#### Fase 1 — Limpeza de resíduos de IA + Consistência
-
-| Arquivo | Mudança |
-|---|---|
-| `src/components/jobs/JobTimeline.tsx` | Remover step "Analisadas" |
-| `src/components/jobs/JobPostingCard.tsx` | Remover badge "Pronto para análise", menu "Enviar para Análise", "Já analisado", "Ver Análise" |
-| `src/pages/Auth.tsx` | Atualizar copy da landing: remover referências a IA, focar em "Portal de Vagas" |
-| `src/pages/JobPostings.tsx` | Remover filtro `analyzed` e contagem |
-
-#### Fase 2 — Layout compartilhado + Navegação
-
-| Arquivo | Mudança |
-|---|---|
-| `src/components/layout/AppLayout.tsx` | **Criar** — Layout com header, sidebar colapsável (mobile: bottom nav ou hamburger), footer. Centraliza auth check. |
-| `src/components/layout/AppSidebar.tsx` | **Criar** — Links: Vagas, Banco de Talentos, Formulários, Configurações. Badge com contagem de vagas ativas. |
-| `src/pages/JobPostings.tsx` | Envolver com AppLayout, remover header/footer duplicado |
-| `src/pages/TalentPool.tsx` | Envolver com AppLayout, remover header/footer duplicado |
-| `src/pages/Settings.tsx` | Envolver com AppLayout |
-| `src/pages/FormTemplates.tsx` | Envolver com AppLayout |
-
-#### Fase 3 — Performance
-
-| Arquivo | Mudança |
-|---|---|
-| `src/contexts/AuthContext.tsx` | **Criar** — Context com session, userId, userEmail. Elimina auth checks duplicados em cada página. |
-| `src/pages/JobPostings.tsx` | `useMemo` para counts (loop único) |
-| `src/components/talent/TalentCard.tsx` | `React.memo` para evitar re-renders desnecessários |
-| `src/components/jobs/JobPostingCard.tsx` | `React.memo` |
-
-#### Fase 4 — UX Polish
-
-| Arquivo | Mudança |
-|---|---|
-| `src/components/jobs/ApplicationKanban.tsx` | Adicionar indicador de scroll horizontal (fade/sombra nas bordas) |
-| `src/pages/PublicApplication.tsx` | Barra de progresso no upload do currículo |
-| `src/pages/JobPostings.tsx` | Empty state com botão CTA direto "Criar Vaga" |
-| `src/pages/JobPostingDetails.tsx` | Breadcrumb: "Vagas > [Título da vaga]" |
-
----
-
-### Detalhes Técnicos
-
-**AppLayout** — Componente wrapper que recebe `children`. Inclui:
-- Header fixo com logo + user info + logout
-- Sidebar com `NavLink` components usando `useLocation` para highlight ativo
-- Mobile: sidebar colapsável via Sheet ou bottom navigation bar
-- Footer fixo
-- Auth guard: redireciona para `/auth` se não autenticado
-
-**AuthContext** — Provider no `App.tsx` que escuta `onAuthStateChange` e expõe `{ session, userId, userEmail, loading }`. Todas as páginas consomem via `useAuth()` hook.
-
-**Counts otimizado**:
+Atualmente (linha 203):
 ```typescript
-const counts = useMemo(() => {
-  const c = { draft: 0, active: 0, paused: 0, closed: 0, analyzed: 0 };
-  for (const j of jobPostings) {
-    if (j.analyzed_at) c.analyzed++;
-    else if (j.status in c) c[j.status]++;
-  }
-  return c;
-}, [jobPostings]);
+form_data: formValues, // keys são field.id (UUIDs)
 ```
 
-### Ordem de execução
+Novo:
+```typescript
+// Converter field IDs para labels antes de salvar
+const labeledFormData: Record<string, any> = {};
+for (const [fieldId, value] of Object.entries(formValues)) {
+  const field = fields.find(f => f.id === fieldId);
+  const key = field?.label || fieldId;
+  labeledFormData[key] = value;
+}
+form_data: labeledFormData,
+```
 
-1. Fase 1 (limpeza) — rápido, sem risco
-2. Fase 3 (AuthContext + memos) — fundação para Fase 2
-3. Fase 2 (layout) — maior mudança visual
-4. Fase 4 (polish) — refinamentos finais
+Isso também corrige automaticamente a busca no `get_talent_pool` (que busca por `form_data->>'Telefone'`, etc.)
+
+**2. `src/components/talent/TalentDetailPanel.tsx` — Resolver UUIDs existentes para labels**
+
+Alterar o RPC `get_talent_applications` para retornar também os campos do form_template associado, OU resolver no frontend buscando o form_template da vaga.
+
+Abordagem: Modificar o RPC para incluir `form_fields` (o JSON dos campos do template):
+
+```sql
+-- Adicionar coluna form_fields ao retorno
+SELECT ..., ft.fields AS form_fields
+FROM job_applications ja
+INNER JOIN job_postings jp ON jp.id = ja.job_posting_id
+LEFT JOIN form_templates ft ON ft.id = jp.form_template_id
+```
+
+No frontend, usar os `form_fields` para mapear UUIDs → labels na aba "Dados".
+
+**3. Migração de dados existentes — Converter form_data com UUIDs para labels**
+
+Criar uma migração SQL que atualiza os `form_data` existentes, substituindo UUIDs por labels consultando o `form_templates.fields`:
+
+```sql
+UPDATE job_applications ja SET form_data = (
+  SELECT jsonb_object_agg(
+    COALESCE((
+      SELECT f->>'label'
+      FROM jsonb_array_elements(ft.fields) f
+      WHERE f->>'id' = kv.key
+    ), kv.key),
+    kv.value
+  )
+  FROM jsonb_each(ja.form_data) kv
+)
+FROM job_postings jp
+LEFT JOIN form_templates ft ON ft.id = jp.form_template_id
+WHERE ja.job_posting_id = jp.id
+  AND ft.fields IS NOT NULL
+  AND ja.form_data::text ~ '[0-9a-f]{8}-[0-9a-f]{4}';
+```
+
+### Outros problemas encontrados na auditoria
+
+**4. Busca por telefone no `get_talent_pool` quebrada para dados com UUID keys**
+- Após a migração (item 3), isso será corrigido automaticamente pois as chaves passarão a ser "Telefone", "Nome completo" etc.
+
+**5. `TalentDetailPanel` — filtro de campos para excluir dados pessoais**
+- Atualmente filtra por nomes fixos: `['Nome completo', 'nome_completo', 'name', 'Email', 'email', ...]`
+- Quando as chaves são UUIDs, nada é filtrado, então nome/email/telefone aparecem duplicados na aba "Dados"
+- Após a migração, o filtro existente funcionará corretamente
+
+### Arquivos alterados
+
+| Arquivo | Mudança |
+|---|---|
+| `src/pages/PublicApplication.tsx` | Converter field IDs para labels antes de salvar no form_data |
+| Migração SQL | Converter form_data existentes de UUIDs para labels |
+| Migração SQL | Atualizar `get_talent_applications` para incluir `form_fields` como fallback |
+| `src/components/talent/TalentDetailPanel.tsx` | Usar form_fields do RPC para resolver chaves UUID em dados antigos |
+| `src/hooks/useTalentPool.ts` | Adicionar `form_fields` ao tipo `TalentApplication` |
+
+### Performance
+- A migração de dados roda uma vez
+- Após migração, nenhuma resolução de UUID necessária em runtime
+- O fallback no RPC só é usado para registros antigos não migrados
 
