@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Phone, FileText, Download, Flame, Thermometer, Snowflake } from 'lucide-react';
+import { User, Mail, Phone, FileText, Download, Flame, Thermometer, Snowflake, LinkIcon } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TalentPoolRow, TalentApplication, useTalentDetail } from '@/hooks/useTalentPool';
 import { TalentTimeline } from './TalentTimeline';
+import { LinkToJobDialog } from './LinkToJobDialog';
 
 function getScoreBadge(score: number) {
   if (score > 70) return { label: 'Quente', icon: Flame, className: 'bg-orange-100 text-orange-700 border-orange-200' };
@@ -30,6 +31,7 @@ interface TalentDetailPanelProps {
 
 export function TalentDetailPanel({ talent, open, onOpenChange, userId }: TalentDetailPanelProps) {
   const { applications, loading: detailLoading, fetchDetail } = useTalentDetail(userId);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
   useEffect(() => {
     if (open && talent?.email) {
@@ -109,6 +111,29 @@ export function TalentDetailPanel({ talent, open, onOpenChange, userId }: Talent
                 </Button>
               </div>
               <Separator className="mb-4" />
+            </>
+          )}
+
+          {/* Link to job */}
+          {userId && (
+            <>
+              <Button
+                variant="default"
+                size="sm"
+                className="w-full mb-4"
+                onClick={() => setLinkDialogOpen(true)}
+              >
+                <LinkIcon className="w-4 h-4 mr-2" />
+                Vincular a uma vaga
+              </Button>
+
+              <LinkToJobDialog
+                talent={talent}
+                userId={userId}
+                open={linkDialogOpen}
+                onOpenChange={setLinkDialogOpen}
+                onSuccess={() => fetchDetail(talent.email)}
+              />
             </>
           )}
 
