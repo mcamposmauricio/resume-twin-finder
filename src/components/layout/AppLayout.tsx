@@ -1,12 +1,18 @@
 import { useEffect, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { LogOut, Briefcase, Users, FileText, Settings, Activity } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from './AppSidebar';
+import { NavLink } from '@/components/NavLink';
 import { toast } from 'sonner';
 import logoMarq from '@/assets/logo-marq-blue.png';
+
+const navItems = [
+  { title: 'Vagas', url: '/vagas', icon: Briefcase },
+  { title: 'Talentos', url: '/banco-de-talentos', icon: Users },
+  { title: 'Formulários', url: '/formularios', icon: FileText },
+  { title: 'Configurações', url: '/configuracoes', icon: Settings },
+];
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -15,6 +21,8 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { session, userEmail, loading } = useAuth();
+
+  const isAdmin = userEmail === 'mauricio@marqponto.com.br';
 
   useEffect(() => {
     if (!loading && !session) {
@@ -38,64 +46,86 @@ export function AppLayout({ children }: AppLayoutProps) {
   if (!session) return null;
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
+    <div className="min-h-screen flex flex-col w-full">
+      {/* Header with inline nav */}
+      <header className="bg-card border-b border-border sticky top-0 z-50">
+        <div className="px-3 sm:px-4 md:px-6 py-2 flex items-center justify-between gap-2">
+          {/* Left: Logo + Nav */}
+          <div className="flex items-center gap-1 sm:gap-4 min-w-0">
+            <button
+              onClick={() => navigate('/vagas')}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0"
+            >
+              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] bg-clip-text text-transparent">
+                CompareCV
+              </span>
+            </button>
 
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Header */}
-          <header className="bg-card border-b border-border sticky top-0 z-50">
-            <div className="px-3 sm:px-4 md:px-6 py-3 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <SidebarTrigger className="shrink-0" />
-                <button
-                  onClick={() => navigate('/vagas')}
-                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                >
-                  <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] bg-clip-text text-transparent">
-                    CompareCV
-                  </span>
-                  <div className="hidden sm:flex items-center gap-1.5">
-                    <span className="text-xs text-muted-foreground font-medium">powered by</span>
-                    <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                      <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
-                    </a>
-                  </div>
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 sm:gap-3">
-                <span className="text-sm text-muted-foreground hidden lg:block truncate max-w-[200px]">
-                  {userEmail}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                  title="Sair"
-                >
-                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-              </div>
-            </div>
-          </header>
-
-          {/* Content */}
-          <main className="flex-1">
-            {children}
-          </main>
-
-          {/* Footer */}
-          <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border bg-card">
-            <div className="flex items-center justify-center gap-2">
-              <span>CompareCV powered by</span>
+            <div className="hidden sm:flex items-center gap-1 shrink-0">
+              <span className="text-xs text-muted-foreground font-medium">by</span>
               <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
-                <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
+                <img src={logoMarq} alt="MarQ HR" className="h-4 hover:scale-105 transition-transform" />
               </a>
-              <span>© {new Date().getFullYear()}</span>
             </div>
-          </footer>
+
+            <nav className="flex items-center gap-0.5 sm:gap-1 ml-2 sm:ml-4">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.url}
+                  to={item.url}
+                  end={item.url === '/vagas'}
+                  className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                  activeClassName="bg-primary/10 text-primary font-medium"
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span className="hidden md:inline">{item.title}</span>
+                </NavLink>
+              ))}
+
+              {isAdmin && (
+                <NavLink
+                  to="/atividades"
+                  className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                  activeClassName="bg-primary/10 text-primary font-medium"
+                >
+                  <Activity className="h-4 w-4 shrink-0" />
+                  <span className="hidden md:inline">Atividades</span>
+                </NavLink>
+              )}
+            </nav>
+          </div>
+
+          {/* Right: User + Logout */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <span className="text-sm text-muted-foreground hidden lg:block truncate max-w-[200px]">
+              {userEmail}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </header>
+
+      {/* Content */}
+      <main className="flex-1">
+        {children}
+      </main>
+
+      {/* Footer */}
+      <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border bg-card">
+        <div className="flex items-center justify-center gap-2">
+          <span>CompareCV powered by</span>
+          <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
+            <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
+          </a>
+          <span>© {new Date().getFullYear()}</span>
+        </div>
+      </footer>
+    </div>
   );
 }
