@@ -173,9 +173,6 @@ export default function JobPostingDetails() {
               <Badge className={STATUS_COLORS[job.status]}>
                 {STATUS_LABELS[job.status]}
               </Badge>
-              {job.analyzed_at && (
-                <Badge variant="outline" className="text-primary border-primary">
-                  Analisado
                 </Badge>
               )}
             </div>
