@@ -1,61 +1,41 @@
 
 
-## Plano: Evolução do Banco de Talentos — Sem IA, Foco em Performance
+## Plano: Vincular candidato do Banco de Talentos a uma vaga ativa
 
-### Escopo removido (IA)
-- ~~Enriquecimento automático (skills, cargo, senioridade via AI)~~
-- ~~Matching candidato ↔ vaga com score de compatibilidade~~
-- ~~Busca por conteúdo do CV (indexação full-text de PDFs)~~
+### Conceito
 
-### O que será implementado
+Adicionar um botão "Vincular a uma vaga" no painel de detalhes do candidato (`TalentDetailPanel`). Ao clicar, abre um dialog com a lista de vagas ativas do tenant. Ao selecionar uma vaga, o sistema cria uma nova `job_application` com os dados do candidato (nome, email, telefone, currículo mais recente, form_data), vinculando-o àquela vaga.
 
-**1. Agregação no Postgres (performance)**
-- Criar database function `get_talent_pool` que faz GROUP BY no banco, não no frontend
-- Parâmetros: `p_user_id`, `p_search`, `p_job_ids[]`, `p_triage_status`, `p_has_resume`, `p_min_applications`, `p_date_from`, `p_page`, `p_page_size`
-- Retorna dados já agrupados com paginação (OFFSET/LIMIT), eliminando limite de 1000 rows
-- Índices em `applicant_email`, `created_at`, `job_posting_id` na `job_applications`
+### Fluxo
 
-**2. Score simples (sem IA — cálculo SQL puro)**
-- Recência: 40 pts (candidatura < 7d = 40, < 30d = 25, < 90d = 10, senão 0)
-- Frequência: 30 pts (3+ apps = 30, 2 = 20, 1 = 10)
-- Melhor triagem: 30 pts (deserves_analysis = 30, new = 15, low_fit = 0)
-- Labels: Quente (>70), Morno (40-70), Frio (<40)
-
-**3. Filtros avançados**
-- Componente `TalentFilters.tsx` colapsável com: triagem, possui CV, data mínima, multi-seleção de vagas, qtd mínima de aplicações
-- Busca expandida para telefone (via `form_data`)
-
-**4. Exportação CSV**
-- Botão exportar na página, respeita filtros
-- Gera CSV no frontend com campos: nome, email, telefone, total aplicações, última vaga, data, score
-
-**5. UI melhorada no TalentCard**
-- Telefone (se disponível)
-- Badge de score (quente/morno/frio com cor)
-- Indicador de recência ("Novo" < 7d, "Ativo" < 30d)
-
-**6. UI melhorada no TalentDetailPanel**
-- Timeline visual vertical (ícone + linha) no lugar da tabela
-- Abas: Perfil | Histórico | Dados do Formulário
-- Destacar melhor candidatura (melhor triagem, não só a última)
+1. Recrutador abre o painel lateral de um candidato
+2. Clica em "Vincular a uma vaga"
+3. Dialog exibe vagas ativas (filtráveis por título)
+4. Seleciona a vaga desejada
+5. Sistema verifica se já existe candidatura do mesmo email nessa vaga (via `check_duplicate_application` que já existe)
+6. Se não duplicado, insere nova `job_application` com `triage_status: 'new'` e os dados do candidato
+7. Toast de sucesso com link para a vaga
 
 ### Arquivos
 
-| Arquivo | Ação |
-|---|---|
-| Migração SQL | Criar function `get_talent_pool` + índices |
-| `src/hooks/useTalentPool.ts` | Reescrever para usar RPC paginado |
-| `src/pages/TalentPool.tsx` | Editar: filtros, exportação, paginação |
-| `src/components/talent/TalentCard.tsx` | Editar: score, telefone, recência |
-| `src/components/talent/TalentDetailPanel.tsx` | Reescrever: abas + timeline |
-| `src/components/talent/TalentFilters.tsx` | Criar |
-| `src/components/talent/TalentTimeline.tsx` | Criar |
-| `src/lib/exportTalents.ts` | Criar |
+| Arquivo | Ação | Descrição |
+|---|---|---|
+| `src/components/talent/LinkToJobDialog.tsx` | Criar | Dialog com lista de vagas ativas, busca, seleção e confirmação |
+| `src/components/talent/TalentDetailPanel.tsx` | Editar | Adicionar botão "Vincular a uma vaga" e integrar o dialog |
+| `src/hooks/useTalentPool.ts` | Editar | Adicionar função `linkTalentToJob` que faz o insert na `job_applications` |
 
-### Performance
+### Detalhes do `LinkToJobDialog`
 
-- Toda agregação e filtragem no Postgres (zero processamento pesado no frontend)
-- Paginação de 50 por página — nunca carrega tudo
-- Índices dedicados para as queries mais usadas
-- O hook só busca os detalhes de um candidato (suas aplicações) quando o painel lateral abre, não pré-carrega todos
+- Recebe: `talent` (email, name, phone, latest_resume_url, latest_resume_filename), `userId`, callback `onSuccess`
+- Busca vagas ativas do usuário (`job_postings` where `user_id = userId` and `status = 'active'`)
+- Input de busca para filtrar vagas por título
+- Ao confirmar:
+  1. Chama RPC `check_duplicate_application(job_posting_id, email)` — se true, mostra erro "Candidato já aplicou nesta vaga"
+  2. Insere em `job_applications`: `job_posting_id`, `applicant_email`, `applicant_name`, `resume_url`, `resume_filename`, `triage_status: 'new'`, `status: 'pending'`, `form_data: {}` (vazio, pois é vinculação manual)
+  3. Toast de sucesso
+
+### Sem migração necessária
+
+- Usa tabelas e RLS existentes (`job_applications` INSERT permitido para vagas ativas — porém a vaga precisa estar ativa, o que é o caso)
+- Usa `check_duplicate_application` RPC existente para evitar duplicatas
 
