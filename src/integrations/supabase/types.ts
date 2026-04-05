@@ -606,6 +606,50 @@ export type Database = {
       }
       generate_careers_slug: { Args: { company: string }; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
+      get_talent_applications: {
+        Args: { p_email: string; p_user_id: string }
+        Returns: {
+          created_at: string
+          form_data: Json
+          id: string
+          job_posting_id: string
+          job_status: string
+          job_title: string
+          resume_filename: string
+          resume_url: string
+          status: string
+          triage_status: string
+        }[]
+      }
+      get_talent_pool: {
+        Args: {
+          p_date_from?: string
+          p_has_resume?: boolean
+          p_job_ids?: string[]
+          p_min_applications?: number
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_triage_status?: string
+          p_user_id: string
+        }
+        Returns: {
+          email: string
+          has_resume: boolean
+          latest_date: string
+          latest_job_posting_id: string
+          latest_job_title: string
+          latest_resume_filename: string
+          latest_resume_url: string
+          latest_status: string
+          latest_triage: string
+          name: string
+          phone: string
+          score: number
+          total_applications: number
+          total_count: number
+        }[]
+      }
       get_user_password_hash: { Args: { p_user_id: string }; Returns: string }
       has_role: {
         Args: {

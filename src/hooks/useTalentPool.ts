@@ -1,5 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+
+export interface TalentPoolRow {
+  email: string;
+  name: string;
+  phone: string | null;
+  total_applications: number;
+  latest_date: string;
+  latest_job_title: string;
+  latest_job_posting_id: string;
+  latest_triage: string;
+  latest_status: string;
+  has_resume: boolean;
+  latest_resume_url: string | null;
+  latest_resume_filename: string | null;
+  score: number;
+  total_count: number;
+}
 
 export interface TalentApplication {
   id: string;
@@ -14,159 +31,125 @@ export interface TalentApplication {
   form_data: Record<string, any>;
 }
 
-export interface TalentProfile {
-  email: string;
-  name: string;
-  phone: string | null;
-  applications: TalentApplication[];
-  latestApplication: TalentApplication;
-  totalApplications: number;
-  latestResumeUrl: string | null;
-  latestResumeFilename: string | null;
+export interface TalentFilters {
+  search: string;
+  jobIds: string[];
+  triageStatus: string;
+  hasResume: boolean | null;
+  minApplications: number | null;
+  dateFrom: string | null;
 }
 
-export function useTalentPool(userId?: string) {
-  const [talents, setTalents] = useState<TalentProfile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [jobFilter, setJobFilter] = useState<string>('all');
-  const [jobOptions, setJobOptions] = useState<{ id: string; title: string }[]>([]);
+const DEFAULT_FILTERS: TalentFilters = {
+  search: '',
+  jobIds: [],
+  triageStatus: '',
+  hasResume: null,
+  minApplications: null,
+  dateFrom: null,
+};
 
+export function useTalentPool(userId?: string) {
+  const [talents, setTalents] = useState<TalentPoolRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<TalentFilters>(DEFAULT_FILTERS);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [jobOptions, setJobOptions] = useState<{ id: string; title: string }[]>([]);
+  const pageSize = 50;
+
+  // Fetch job options once
   useEffect(() => {
     if (!userId) return;
-    fetchTalents();
+    supabase
+      .from('job_postings')
+      .select('id, title')
+      .eq('user_id', userId)
+      .then(({ data }) => {
+        if (data) setJobOptions(data.map(j => ({ id: j.id, title: j.title })));
+      });
   }, [userId]);
 
-  const fetchTalents = async () => {
+  const fetchTalents = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
 
     try {
-      // Fetch all job postings for this user
-      const { data: jobs, error: jobsError } = await supabase
-        .from('job_postings')
-        .select('id, title, status')
-        .eq('user_id', userId);
+      const { data, error } = await supabase.rpc('get_talent_pool', {
+        p_user_id: userId,
+        p_page: page,
+        p_page_size: pageSize,
+        p_search: filters.search || undefined,
+        p_job_ids: filters.jobIds.length > 0 ? filters.jobIds : undefined,
+        p_triage_status: filters.triageStatus || undefined,
+        p_has_resume: filters.hasResume ?? undefined,
+        p_min_applications: filters.minApplications ?? undefined,
+        p_date_from: filters.dateFrom ?? undefined,
+      });
 
-      if (jobsError) throw jobsError;
-      if (!jobs || jobs.length === 0) {
-        setTalents([]);
-        setLoading(false);
-        return;
-      }
+      if (error) throw error;
 
-      setJobOptions(jobs.map(j => ({ id: j.id, title: j.title })));
-
-      const jobIds = jobs.map(j => j.id);
-      const jobMap = new Map(jobs.map(j => [j.id, { title: j.title, status: j.status }]));
-
-      // Fetch all applications for these jobs
-      const { data: applications, error: appsError } = await supabase
-        .from('job_applications')
-        .select('*')
-        .in('job_posting_id', jobIds)
-        .order('created_at', { ascending: false });
-
-      if (appsError) throw appsError;
-
-      // Group by email
-      const talentMap = new Map<string, TalentApplication[]>();
-      
-      for (const app of applications || []) {
-        const email = (app.applicant_email || '').toLowerCase().trim();
-        if (!email) continue;
-
-        const jobInfo = jobMap.get(app.job_posting_id);
-        const talentApp: TalentApplication = {
-          id: app.id,
-          job_posting_id: app.job_posting_id,
-          job_title: jobInfo?.title || 'Vaga removida',
-          job_status: jobInfo?.status || 'unknown',
-          triage_status: app.triage_status,
-          status: app.status,
-          created_at: app.created_at,
-          resume_url: app.resume_url,
-          resume_filename: app.resume_filename,
-          form_data: (app.form_data as Record<string, any>) || {},
-        };
-
-        if (!talentMap.has(email)) {
-          talentMap.set(email, []);
-        }
-        talentMap.get(email)!.push(talentApp);
-      }
-
-      // Build talent profiles
-      const talentProfiles: TalentProfile[] = [];
-      
-      for (const [email, apps] of talentMap.entries()) {
-        // Already sorted desc by created_at
-        const latest = apps[0];
-        const name = apps.find(a => {
-          const fd = a.form_data;
-          return fd?.['Nome completo'] || fd?.['nome_completo'] || fd?.['name'];
-        })?.form_data;
-        
-        const displayName = latest.form_data?.['Nome completo'] 
-          || latest.form_data?.['nome_completo']
-          || latest.form_data?.['name']
-          || (applications?.find(a => (a.applicant_email || '').toLowerCase().trim() === email)?.applicant_name)
-          || email.split('@')[0];
-
-        const phone = latest.form_data?.['Telefone'] 
-          || latest.form_data?.['telefone']
-          || latest.form_data?.['phone']
-          || null;
-
-        // Find latest resume
-        const withResume = apps.find(a => a.resume_url);
-
-        talentProfiles.push({
-          email,
-          name: displayName,
-          phone,
-          applications: apps,
-          latestApplication: latest,
-          totalApplications: apps.length,
-          latestResumeUrl: withResume?.resume_url || null,
-          latestResumeFilename: withResume?.resume_filename || null,
-        });
-      }
-
-      // Sort by latest application date
-      talentProfiles.sort((a, b) => 
-        new Date(b.latestApplication.created_at).getTime() - new Date(a.latestApplication.created_at).getTime()
-      );
-
-      setTalents(talentProfiles);
+      const rows = (data || []) as unknown as TalentPoolRow[];
+      setTalents(rows);
+      setTotalCount(rows.length > 0 ? rows[0].total_count : 0);
     } catch (error) {
       console.error('Error fetching talent pool:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, filters, page]);
 
-  // Filter talents
-  const filteredTalents = talents.filter(t => {
-    const matchesSearch = !searchQuery || 
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesJob = jobFilter === 'all' || 
-      t.applications.some(a => a.job_posting_id === jobFilter);
+  useEffect(() => {
+    fetchTalents();
+  }, [fetchTalents]);
 
-    return matchesSearch && matchesJob;
-  });
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
+
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  const updateFilter = useCallback(<K extends keyof TalentFilters>(key: K, value: TalentFilters[K]) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  }, []);
 
   return {
-    talents: filteredTalents,
-    totalTalents: talents.length,
+    talents,
+    totalCount,
     loading,
-    searchQuery,
-    setSearchQuery,
-    jobFilter,
-    setJobFilter,
+    filters,
+    updateFilter,
+    setFilters,
+    page,
+    setPage,
+    totalPages,
+    pageSize,
     jobOptions,
     refresh: fetchTalents,
   };
+}
+
+export function useTalentDetail(userId?: string) {
+  const [applications, setApplications] = useState<TalentApplication[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchDetail = useCallback(async (email: string) => {
+    if (!userId) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('get_talent_applications', {
+        p_user_id: userId,
+        p_email: email,
+      });
+      if (error) throw error;
+      setApplications((data || []) as unknown as TalentApplication[]);
+    } catch (error) {
+      console.error('Error fetching talent detail:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  return { applications, loading, fetchDetail };
 }

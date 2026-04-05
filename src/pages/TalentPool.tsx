@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Users, LogOut, Settings, FileText, Activity, ArrowLeft } from 'lucide-react';
+import { Search, Users, LogOut, Settings, FileText, Activity, ArrowLeft, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTalentPool, TalentProfile } from '@/hooks/useTalentPool';
+import { useTalentPool, TalentPoolRow, TalentFilters } from '@/hooks/useTalentPool';
 import { useUserRole } from '@/hooks/useUserRole';
+import { exportTalentsCSV } from '@/lib/exportTalents';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TalentCard } from '@/components/talent/TalentCard';
 import { TalentDetailPanel } from '@/components/talent/TalentDetailPanel';
+import { TalentFiltersPanel } from '@/components/talent/TalentFilters';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -25,18 +26,21 @@ export default function TalentPool() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string>();
   const [userEmail, setUserEmail] = useState('');
-  const [selectedTalent, setSelectedTalent] = useState<TalentProfile | null>(null);
+  const [selectedTalent, setSelectedTalent] = useState<TalentPoolRow | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
   const { isFullAccess, loading: roleLoading } = useUserRole(userId);
   const {
     talents,
-    totalTalents,
+    totalCount,
     loading,
-    searchQuery,
-    setSearchQuery,
-    jobFilter,
-    setJobFilter,
+    filters,
+    updateFilter,
+    setFilters,
+    page,
+    setPage,
+    totalPages,
+    pageSize,
     jobOptions,
   } = useTalentPool(userId);
 
@@ -63,7 +67,27 @@ export default function TalentPool() {
     toast.success('Logout realizado com sucesso!');
   };
 
-  if (loading || roleLoading) {
+  const handleClearFilters = () => {
+    setFilters({
+      search: '',
+      jobIds: [],
+      triageStatus: '',
+      hasResume: null,
+      minApplications: null,
+      dateFrom: null,
+    });
+  };
+
+  const handleExport = () => {
+    if (talents.length === 0) {
+      toast.error('Nenhum candidato para exportar.');
+      return;
+    }
+    exportTalentsCSV(talents);
+    toast.success('CSV exportado com sucesso!');
+  };
+
+  if (loading && page === 1 && !talents.length || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -150,67 +174,99 @@ export default function TalentPool() {
               Banco de Talentos
             </h1>
             <p className="text-muted-foreground">
-              {totalTalents} {totalTalents === 1 ? 'candidato único' : 'candidatos únicos'} no seu banco
+              {totalCount} {totalCount === 1 ? 'candidato único' : 'candidatos únicos'} no seu banco
             </p>
           </div>
+          <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Exportar CSV</span>
+          </Button>
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome, email ou telefone..."
+            value={filters.search}
+            onChange={(e) => updateFilter('search', e.target.value)}
+            className="pl-9"
+          />
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Select value={jobFilter} onValueChange={setJobFilter}>
-            <SelectTrigger className="w-full sm:w-[250px]">
-              <SelectValue placeholder="Filtrar por vaga" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as vagas</SelectItem>
-              {jobOptions.map((job) => (
-                <SelectItem key={job.id} value={job.id}>
-                  {job.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="mb-6">
+          <TalentFiltersPanel
+            filters={filters}
+            updateFilter={updateFilter}
+            jobOptions={jobOptions}
+            onClear={handleClearFilters}
+          />
         </div>
 
         {/* Talent List */}
-        {talents.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          </div>
+        ) : talents.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Users className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="font-semibold mb-2">
-                {searchQuery || jobFilter !== 'all'
+                {filters.search || filters.jobIds.length > 0 || filters.triageStatus || filters.hasResume !== null || filters.minApplications || filters.dateFrom
                   ? 'Nenhum candidato encontrado'
                   : 'Nenhum candidato no banco'}
               </h3>
               <p className="text-muted-foreground text-center text-sm">
-                {searchQuery || jobFilter !== 'all'
+                {filters.search || filters.jobIds.length > 0 || filters.triageStatus
                   ? 'Tente ajustar os filtros de busca.'
                   : 'Os candidatos aparecerão aqui quando se candidatarem às suas vagas.'}
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-3">
-            {talents.map((talent) => (
-              <TalentCard
-                key={talent.email}
-                talent={talent}
-                onClick={() => {
-                  setSelectedTalent(talent);
-                  setDetailOpen(true);
-                }}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-3">
+              {talents.map((talent) => (
+                <TalentCard
+                  key={talent.email}
+                  talent={talent}
+                  onClick={() => {
+                    setSelectedTalent(talent);
+                    setDetailOpen(true);
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <p className="text-sm text-muted-foreground">
+                  Página {page} de {totalPages} ({totalCount} candidatos)
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage(page - 1)}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -219,6 +275,7 @@ export default function TalentPool() {
         talent={selectedTalent}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+        userId={userId}
       />
 
       {/* Footer */}
