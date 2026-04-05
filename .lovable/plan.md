@@ -1,70 +1,61 @@
 
 
-## Plano: Banco de Talentos por Tenant + Histórico de Aplicações
+## Plano: Evolução do Banco de Talentos — Sem IA, Foco em Performance
 
-### Conceito
+### Escopo removido (IA)
+- ~~Enriquecimento automático (skills, cargo, senioridade via AI)~~
+- ~~Matching candidato ↔ vaga com score de compatibilidade~~
+- ~~Busca por conteúdo do CV (indexação full-text de PDFs)~~
 
-Criar uma nova seção "Banco de Talentos" acessível no menu principal, que consolida todos os candidatos únicos (por email) que se candidataram via `/apply` nas vagas do tenant. Cada candidato mostra seus dados, currículo mais recente e o histórico completo de aplicações em vagas.
+### O que será implementado
 
-### Arquitetura
+**1. Agregação no Postgres (performance)**
+- Criar database function `get_talent_pool` que faz GROUP BY no banco, não no frontend
+- Parâmetros: `p_user_id`, `p_search`, `p_job_ids[]`, `p_triage_status`, `p_has_resume`, `p_min_applications`, `p_date_from`, `p_page`, `p_page_size`
+- Retorna dados já agrupados com paginação (OFFSET/LIMIT), eliminando limite de 1000 rows
+- Índices em `applicant_email`, `created_at`, `job_posting_id` na `job_applications`
 
-Não é necessário criar novas tabelas. Os dados já existem em `job_applications` + `job_postings`. A feature será uma **view do frontend** que agrupa candidaturas por `applicant_email`.
+**2. Score simples (sem IA — cálculo SQL puro)**
+- Recência: 40 pts (candidatura < 7d = 40, < 30d = 25, < 90d = 10, senão 0)
+- Frequência: 30 pts (3+ apps = 30, 2 = 20, 1 = 10)
+- Melhor triagem: 30 pts (deserves_analysis = 30, new = 15, low_fit = 0)
+- Labels: Quente (>70), Morno (40-70), Frio (<40)
 
-```text
-job_applications (existente)
-  ├── applicant_email  ← chave de agrupamento
-  ├── applicant_name
-  ├── resume_url
-  ├── job_posting_id   → job_postings.title (nome da vaga)
-  ├── triage_status
-  ├── created_at
-  └── form_data
-```
+**3. Filtros avançados**
+- Componente `TalentFilters.tsx` colapsável com: triagem, possui CV, data mínima, multi-seleção de vagas, qtd mínima de aplicações
+- Busca expandida para telefone (via `form_data`)
 
-### Componentes e Arquivos
+**4. Exportação CSV**
+- Botão exportar na página, respeita filtros
+- Gera CSV no frontend com campos: nome, email, telefone, total aplicações, última vaga, data, score
 
-| Arquivo | Ação | Descrição |
-|---|---|---|
-| `src/pages/TalentPool.tsx` | Criar | Página principal do banco de talentos |
-| `src/hooks/useTalentPool.ts` | Criar | Hook que busca todas as candidaturas do tenant, agrupa por email e retorna lista de talentos |
-| `src/components/talent/TalentCard.tsx` | Criar | Card de cada candidato com nome, email, qtd de aplicações, última vaga |
-| `src/components/talent/TalentDetailPanel.tsx` | Criar | Sheet lateral com dados completos + histórico de aplicações (vaga, data, etapa) |
-| `src/App.tsx` | Editar | Adicionar rota `/banco-de-talentos` |
-| `src/pages/JobPostings.tsx` | Editar | Adicionar link "Banco de Talentos" no menu |
-| `src/components/Dashboard.tsx` | Editar | Adicionar card de stat "Total de Talentos" e link rápido |
+**5. UI melhorada no TalentCard**
+- Telefone (se disponível)
+- Badge de score (quente/morno/frio com cor)
+- Indicador de recência ("Novo" < 7d, "Ativo" < 30d)
 
-### Funcionalidades
+**6. UI melhorada no TalentDetailPanel**
+- Timeline visual vertical (ícone + linha) no lugar da tabela
+- Abas: Perfil | Histórico | Dados do Formulário
+- Destacar melhor candidatura (melhor triagem, não só a última)
 
-**Página `/banco-de-talentos`**
-- Lista de candidatos únicos (agrupados por email)
-- Busca por nome/email
-- Filtro por vaga aplicada
-- Contagem total de talentos
-- Ordenação por data da última aplicação
+### Arquivos
 
-**Card do Candidato**
-- Nome e email
-- Número de aplicações
-- Última vaga aplicada + data
-- Badge com etapa atual mais recente
+| Arquivo | Ação |
+|---|---|
+| Migração SQL | Criar function `get_talent_pool` + índices |
+| `src/hooks/useTalentPool.ts` | Reescrever para usar RPC paginado |
+| `src/pages/TalentPool.tsx` | Editar: filtros, exportação, paginação |
+| `src/components/talent/TalentCard.tsx` | Editar: score, telefone, recência |
+| `src/components/talent/TalentDetailPanel.tsx` | Reescrever: abas + timeline |
+| `src/components/talent/TalentFilters.tsx` | Criar |
+| `src/components/talent/TalentTimeline.tsx` | Criar |
+| `src/lib/exportTalents.ts` | Criar |
 
-**Painel de Detalhes (Sheet lateral)**
-- Dados do candidato (nome, email, telefone se disponível no form_data)
-- Currículo mais recente (preview + download)
-- **Histórico de aplicações**: tabela com colunas (Vaga, Data, Etapa) — cada linha mostra o título da vaga, data da candidatura e o stage atual
-- Dados do formulário da última aplicação
+### Performance
 
-### Lógica do Hook `useTalentPool`
-
-1. Buscar todas as `job_applications` das vagas do usuário logado (via join com `job_postings.user_id`)
-2. Buscar os títulos das vagas associadas
-3. Agrupar por `applicant_email` (lowercase)
-4. Para cada grupo, montar objeto com: nome (mais recente), email, lista de aplicações com título da vaga, data e status
-
-### Detalhes Técnicos
-
-- A query usa o RLS existente (candidaturas de vagas do tenant)
-- Sem nova tabela nem migração
-- Acesso restrito a `full_access` (mesmo padrão das vagas)
-- Rota protegida como `/vagas`
+- Toda agregação e filtragem no Postgres (zero processamento pesado no frontend)
+- Paginação de 50 por página — nunca carrega tudo
+- Índices dedicados para as queries mais usadas
+- O hook só busca os detalhes de um candidato (suas aplicações) quando o painel lateral abre, não pré-carrega todos
 
