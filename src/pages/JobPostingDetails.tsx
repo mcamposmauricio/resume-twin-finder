@@ -173,8 +173,6 @@ export default function JobPostingDetails() {
               <Badge className={STATUS_COLORS[job.status]}>
                 {STATUS_LABELS[job.status]}
               </Badge>
-                </Badge>
-              )}
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
               {job.location && <span>{job.location}</span>}
