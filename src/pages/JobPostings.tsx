@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Briefcase, Globe, ExternalLink, Copy, Settings, LogOut, FileText, Activity } from 'lucide-react';
+import { Plus, Briefcase, Globe, ExternalLink, Copy, Settings, LogOut, FileText, Activity, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -186,6 +186,10 @@ export default function JobPostings() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => navigate('/banco-de-talentos')} className="cursor-pointer py-2.5">
+                  <Users className="w-4 h-4 mr-2.5 text-muted-foreground" />
+                  <span>Banco de Talentos</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/formularios')} className="cursor-pointer py-2.5">
                   <FileText className="w-4 h-4 mr-2.5 text-muted-foreground" />
                   <span>Modelos de Formulário</span>
