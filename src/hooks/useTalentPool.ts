@@ -29,6 +29,7 @@ export interface TalentApplication {
   resume_url: string | null;
   resume_filename: string | null;
   form_data: Record<string, any>;
+  form_fields: Array<{ id: string; label: string; [key: string]: any }> | null;
 }
 
 export interface TalentFilters {

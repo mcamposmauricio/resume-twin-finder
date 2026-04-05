@@ -611,6 +611,7 @@ export type Database = {
         Returns: {
           created_at: string
           form_data: Json
+          form_fields: Json
           id: string
           job_posting_id: string
           job_status: string

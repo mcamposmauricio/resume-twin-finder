@@ -52,11 +52,25 @@ export function TalentDetailPanel({ talent, open, onOpenChange, userId }: Talent
     return appPriority > bestPriority ? app : best;
   }, null);
 
-  // Get form data from latest application
-  const latestFormData = applications[0]?.form_data || {};
-  const formFields = Object.entries(latestFormData).filter(
-    ([key]) => !['Nome completo', 'nome_completo', 'name', 'Email', 'email', 'Telefone', 'telefone', 'phone'].includes(key)
-  );
+  // Get form data from latest application, resolving UUID keys via form_fields
+  const latestApp = applications[0];
+  const latestFormData = latestApp?.form_data || {};
+  const templateFields = latestApp?.form_fields as Array<{ id: string; label: string }> | null;
+
+  const resolveKey = (key: string): string => {
+    // If key looks like a UUID, try to find the label from form_fields
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}/.test(key) && templateFields) {
+      const field = templateFields.find(f => f.id === key);
+      return field?.label || key;
+    }
+    return key;
+  };
+
+  const PERSONAL_KEYS = ['Nome completo', 'nome_completo', 'name', 'Email', 'email', 'Telefone', 'telefone', 'phone'];
+
+  const formFields = Object.entries(latestFormData)
+    .map(([key, value]) => [resolveKey(key), value] as [string, any])
+    .filter(([key]) => !PERSONAL_KEYS.includes(key));
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

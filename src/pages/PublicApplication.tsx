@@ -196,11 +196,19 @@ export default function PublicApplication() {
         resumeUrl = fileName;
       }
 
+      // Convert field IDs to labels before saving
+      const labeledFormData: Record<string, any> = {};
+      for (const [fieldId, value] of Object.entries(formValues)) {
+        const field = fields.find(f => f.id === fieldId);
+        const key = field?.label || fieldId;
+        labeledFormData[key] = value;
+      }
+
       // Create application
       const { error: appError } = await supabase.from('job_applications').insert([
         {
           job_posting_id: job.id,
-          form_data: formValues,
+          form_data: labeledFormData,
           resume_url: resumeUrl,
           resume_filename: resumeFile?.name,
           applicant_name: applicantName,
