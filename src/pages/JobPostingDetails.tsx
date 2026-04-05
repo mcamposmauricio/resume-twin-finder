@@ -17,8 +17,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { useJobApplications } from '@/hooks/useJobApplications';
-import { useResumeBalance } from '@/hooks/useResumeBalance';
-import { useUserRole } from '@/hooks/useUserRole';
+// [AI-FLOW] import { useResumeBalance } from '@/hooks/useResumeBalance';
+// [AI-FLOW] import { useUserRole } from '@/hooks/useUserRole';
 import { usePipelineStages } from '@/hooks/usePipelineStages';
 import { JobPosting, JobApplication, STATUS_LABELS, WORK_TYPE_LABELS } from '@/types/jobs';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,7 @@ import { Separator } from '@/components/ui/separator';
 import { ApplicationKanban } from '@/components/jobs/ApplicationKanban';
 import { ApplicationDetailPanel } from '@/components/jobs/ApplicationDetailPanel';
 import { CloseJobDialog } from '@/components/jobs/CloseJobDialog';
-import { SendToAnalysisDialog } from '@/components/jobs/SendToAnalysisDialog';
+// [AI-FLOW] import { SendToAnalysisDialog } from '@/components/jobs/SendToAnalysisDialog';
 
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
@@ -50,14 +50,14 @@ export default function JobPostingDetails() {
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
-  const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
+  // [AI-FLOW] const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
   const [viewingApplication, setViewingApplication] = useState<JobApplication | null>(null);
 
   const { changeStatus, getJobById } = useJobPostings(userId);
   const { applications, getResumeUrl, updateTriageStatus, deleteApplication, refetch: refetchApplications } = useJobApplications(id);
-  const resumeBalance = useResumeBalance(userId);
-  const balance = resumeBalance.availableResumes;
-  const { isFullAccess, loading: roleLoading } = useUserRole(userId);
+  // [AI-FLOW] const resumeBalance = useResumeBalance(userId);
+  // [AI-FLOW] const balance = resumeBalance.availableResumes;
+  // [AI-FLOW] const { isFullAccess, loading: roleLoading } = useUserRole(userId);
   const { stages, loading: stagesLoading } = usePipelineStages(userId);
 
   // Sync viewingApplication when applications array changes (e.g. Kanban stage move)
@@ -78,13 +78,7 @@ export default function JobPostingDetails() {
     });
   }, [navigate]);
 
-  // Redirect non-full-access users
-  useEffect(() => {
-    if (!roleLoading && userId && !isFullAccess) {
-      sonnerToast.error('Você não tem acesso a esta funcionalidade.');
-      navigate('/');
-    }
-  }, [roleLoading, isFullAccess, userId, navigate]);
+  // [AI-FLOW] Role guard removed — all users have access
 
   useEffect(() => {
     if (id && userId) {
@@ -95,14 +89,7 @@ export default function JobPostingDetails() {
     }
   }, [id, userId]);
 
-  // Open analysis dialog if URL has openAnalysis=true
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.get('openAnalysis') === 'true' && job?.status === 'closed') {
-      setShowAnalysisDialog(true);
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, [job]);
+  // [AI-FLOW] Analysis dialog auto-open removed
 
   const handleViewResume = async (app: JobApplication) => {
     if (!app.resume_url) return;
@@ -252,16 +239,12 @@ export default function JobPostingDetails() {
     }
   };
 
-  if (loading || roleLoading || stagesLoading) {
+  if (loading || stagesLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
-  }
-
-  if (!isFullAccess) {
-    return null;
   }
 
   if (!job) {
@@ -347,19 +330,7 @@ export default function JobPostingDetails() {
                   </>
                 )}
 
-                {job.status === 'closed' && applications.length > 0 && !job.analyzed_at && (
-                  <Button onClick={() => setShowAnalysisDialog(true)}>
-                    <Send className="h-4 w-4 mr-2" />
-                    Enviar para Análise
-                  </Button>
-                )}
-
-                {job.status === 'closed' && job.analyzed_at && (
-                  <Button variant="outline" disabled>
-                    <Send className="h-4 w-4 mr-2" />
-                    Já Analisado
-                  </Button>
-                )}
+                {/* [AI-FLOW] Analysis buttons removed */}
               </div>
             </div>
           </CardContent>
@@ -482,13 +453,7 @@ export default function JobPostingDetails() {
           jobTitle={job.title}
         />
 
-        <SendToAnalysisDialog
-          open={showAnalysisDialog}
-          onOpenChange={setShowAnalysisDialog}
-          applications={applications}
-          balance={balance}
-          onConfirm={handleSendToAnalysis}
-        />
+        {/* [AI-FLOW] SendToAnalysisDialog removed */}
 
         <ApplicationDetailPanel
           open={!!viewingApplication}
