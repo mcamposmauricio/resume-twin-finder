@@ -153,6 +153,15 @@ export default function JobPostingDetails() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
+          <button onClick={() => navigate('/vagas')} className="hover:text-foreground transition-colors">
+            Vagas
+          </button>
+          <span>/</span>
+          <span className="text-foreground font-medium truncate max-w-[300px]">{job.title}</span>
+        </nav>
+
         {/* Header */}
         <div className="flex items-start gap-4 mb-8">
           <Button variant="ghost" size="icon" onClick={() => navigate('/vagas')}>
