@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { User, Mail, Phone, Briefcase, Calendar, FileText, Flame, Thermometer, Snowflake, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +36,7 @@ interface TalentCardProps {
   onClick: () => void;
 }
 
-export function TalentCard({ talent, onClick }: TalentCardProps) {
+export const TalentCard = memo(function TalentCard({ talent, onClick }: TalentCardProps) {
   const latestDate = format(new Date(talent.latest_date), "dd MMM yyyy", { locale: ptBR });
   const scoreBadge = getScoreBadge(talent.score);
   const ScoreIcon = scoreBadge.icon;
@@ -111,4 +112,4 @@ export function TalentCard({ talent, onClick }: TalentCardProps) {
       </CardContent>
     </Card>
   );
-}
+});

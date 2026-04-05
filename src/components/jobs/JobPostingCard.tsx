@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -7,13 +8,11 @@ import {
   MoreVertical,
   Eye,
   Pencil,
-  Send,
   Trash2,
   FileEdit,
   CheckCircle,
   PauseCircle,
   XCircle,
-  BarChart3,
   Link as LinkIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -30,16 +29,12 @@ import {
 import { JobPosting, JobStatus, STATUS_LABELS, WORK_TYPE_LABELS } from '@/types/jobs';
 import { stripHtmlToText } from '@/lib/formatText';
 
-
 interface JobPostingCardProps {
   job: JobPosting;
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onChangeStatus: (status: JobStatus) => void;
-  onSendToAnalysis?: () => void;
-  isAnalyzedView?: boolean;
-  onViewAnalysis?: () => void;
 }
 
 const STATUS_COLORS: Record<JobStatus, string> = {
@@ -56,15 +51,12 @@ const STATUS_ICONS: Record<JobStatus, React.ReactNode> = {
   closed: <XCircle className="h-3 w-3" />,
 };
 
-export function JobPostingCard({
+export const JobPostingCard = memo(function JobPostingCard({
   job,
   onView,
   onEdit,
   onDelete,
   onChangeStatus,
-  onSendToAnalysis,
-  isAnalyzedView,
-  onViewAnalysis,
 }: JobPostingCardProps) {
   const canEdit = job.status === 'draft' || job.status === 'paused';
 
@@ -112,11 +104,6 @@ export function JobPostingCard({
                   {WORK_TYPE_LABELS[job.work_type]}
                 </Badge>
               )}
-              {job.analyzed_at && (
-                <Badge variant="outline" className="text-primary border-primary">
-                  Analisado
-                </Badge>
-              )}
             </div>
           </div>
 
@@ -136,20 +123,6 @@ export function JobPostingCard({
                 <DropdownMenuItem onClick={onEdit}>
                   <Pencil className="h-4 w-4 mr-2" />
                   Editar
-                </DropdownMenuItem>
-              )}
-
-              {job.status === 'closed' && (job.applications_count || 0) > 0 && !job.analyzed_at && onSendToAnalysis && (
-                <DropdownMenuItem onClick={onSendToAnalysis}>
-                  <Send className="h-4 w-4 mr-2" />
-                  Enviar para Análise
-                </DropdownMenuItem>
-              )}
-
-              {job.status === 'closed' && job.analyzed_at && (
-                <DropdownMenuItem disabled className="text-muted-foreground">
-                  <Send className="h-4 w-4 mr-2" />
-                  Já analisado
                 </DropdownMenuItem>
               )}
 
@@ -204,7 +177,6 @@ export function JobPostingCard({
           </div>
         </div>
 
-
         {job.status === 'active' && job.public_slug && (
           <div className="flex items-center gap-2 pt-2 border-t">
             <button
@@ -220,33 +192,7 @@ export function JobPostingCard({
             </button>
           </div>
         )}
-
-        {job.status === 'closed' && (job.applications_count || 0) > 0 && !job.analyzed_at && (
-          <div className="flex items-center gap-2 pt-2 border-t">
-            <Badge variant="outline" className="text-primary border-primary">
-              <Send className="h-3 w-3 mr-1" />
-              Pronto para análise
-            </Badge>
-          </div>
-        )}
-
-        {isAnalyzedView && job.analyzed_at && onViewAnalysis && (
-          <div className="flex items-center gap-2 pt-2 border-t">
-            <Button 
-              variant="default" 
-              size="sm" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewAnalysis();
-              }}
-              className="gap-2"
-            >
-              <BarChart3 className="h-4 w-4" />
-              Ver Análise
-            </Button>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
-}
+});

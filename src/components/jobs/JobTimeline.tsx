@@ -1,9 +1,9 @@
-import { FileEdit, Globe, PauseCircle, XCircle, BarChart3, ChevronRight } from 'lucide-react';
+import { FileEdit, Globe, PauseCircle, XCircle, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 
-export type TimelineStatus = 'draft' | 'active' | 'paused' | 'closed' | 'analyzed';
+export type TimelineStatus = 'draft' | 'active' | 'paused' | 'closed';
 
 interface TimelineStep {
   id: TimelineStatus;
@@ -61,29 +61,19 @@ export function JobTimeline({ counts, activeStatus, onStatusChange }: JobTimelin
       bgColor: 'bg-rose-100 dark:bg-rose-900/40',
       glowColor: 'shadow-rose-200/50 dark:shadow-rose-700/50'
     },
-    { 
-      id: 'analyzed', 
-      label: 'Analisadas', 
-      icon: <BarChart3 className="h-5 w-5" />, 
-      count: counts.analyzed,
-      color: 'text-violet-600 dark:text-violet-400',
-      bgColor: 'bg-violet-100 dark:bg-violet-900/40',
-      glowColor: 'shadow-violet-200/50 dark:shadow-violet-700/50'
-    },
   ];
 
   const activeIndex = steps.findIndex(s => s.id === activeStatus);
 
   return (
     <div className="w-full overflow-x-auto pb-2">
-      <div className="flex items-center justify-between min-w-[700px] gap-2">
+      <div className="flex items-center justify-between min-w-[560px] gap-2">
         {steps.map((step, index) => {
           const isActive = activeStatus === step.id;
           const isPast = index < activeIndex;
           
           return (
             <div key={step.id} className="flex items-center flex-1">
-              {/* Step button */}
               <MotionDiv
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -96,21 +86,15 @@ export function JobTimeline({ counts, activeStatus, onStatusChange }: JobTimelin
                     "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2",
                     "border-2",
                     isActive
-                      ? cn(
-                          "border-primary bg-primary/5 shadow-lg",
-                          step.glowColor
-                        )
+                      ? cn("border-primary bg-primary/5 shadow-lg", step.glowColor)
                       : "border-transparent hover:border-muted-foreground/20 hover:bg-muted/50"
                   )}
                 >
-                  {/* Icon container with glow effect */}
                   <div className={cn(
                     "relative p-3 rounded-xl transition-all duration-300",
                     isActive
                       ? cn(step.bgColor, "shadow-md", step.glowColor)
-                      : isPast
-                        ? "bg-primary/10"
-                        : "bg-muted"
+                      : isPast ? "bg-primary/10" : "bg-muted"
                   )}>
                     <div className={cn(
                       "transition-colors duration-300",
@@ -118,8 +102,6 @@ export function JobTimeline({ counts, activeStatus, onStatusChange }: JobTimelin
                     )}>
                       {step.icon}
                     </div>
-                    
-                    {/* Active indicator dot */}
                     {isActive && (
                       <MotionDiv
                         initial={{ scale: 0 }}
@@ -129,7 +111,6 @@ export function JobTimeline({ counts, activeStatus, onStatusChange }: JobTimelin
                     )}
                   </div>
                   
-                  {/* Label */}
                   <span className={cn(
                     "text-sm font-medium whitespace-nowrap transition-colors duration-300",
                     isActive ? "text-foreground" : "text-muted-foreground"
@@ -137,7 +118,6 @@ export function JobTimeline({ counts, activeStatus, onStatusChange }: JobTimelin
                     {step.label}
                   </span>
                   
-                  {/* Count badge with animation */}
                   <MotionDiv
                     key={step.count}
                     initial={{ scale: 0.8, opacity: 0 }}
@@ -159,7 +139,6 @@ export function JobTimeline({ counts, activeStatus, onStatusChange }: JobTimelin
                 </button>
               </MotionDiv>
 
-              {/* Connector arrow */}
               {index < steps.length - 1 && (
                 <div className="flex items-center px-1">
                   <div className={cn(
@@ -177,7 +156,6 @@ export function JobTimeline({ counts, activeStatus, onStatusChange }: JobTimelin
         })}
       </div>
       
-      {/* Progress bar underneath */}
       <div className="mt-4 h-1.5 bg-muted rounded-full overflow-hidden">
         <MotionDiv
           className="h-full bg-gradient-to-r from-primary via-primary to-primary/70 rounded-full"

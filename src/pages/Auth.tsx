@@ -399,10 +399,10 @@ export default function Auth() {
         {/* Top Hero Section - Centered */}
         <div className="text-center mb-12 animate-fade-in pt-8">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-blue-600 leading-tight mb-2">
-            Triagem de currículos em segundos
+            Seu portal de vagas completo
           </h1>
           <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900">
-            com inteligência artificial
+            para recrutar melhor
           </p>
         </div>
 
@@ -411,8 +411,7 @@ export default function Auth() {
           {/* Left side - Content */}
           <div className="flex-1 max-w-xl animate-fade-in">
             <p className="text-lg text-slate-600 mb-10 leading-relaxed">
-              Compare múltiplos candidatos de forma rápida e objetiva. Nossa IA identifica o melhor match para sua vaga em
-              segundos.
+              Publique vagas, receba candidaturas, organize seu pipeline de recrutamento e gerencie seu banco de talentos — tudo em um só lugar.
             </p>
 
             {/* How it works - 3 steps */}
@@ -422,18 +421,8 @@ export default function Auth() {
                   <Upload className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 mb-1">1. Enviar Dados</h3>
-                  <p className="text-sm text-slate-500">Upload dos currículos (PDF) e descrição detalhada da vaga.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                <div className="p-3 bg-blue-100 rounded-xl shrink-0">
-                  <Brain className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-900 mb-1">2. Análise com IA</h3>
-                  <p className="text-sm text-slate-500">Avaliação automática de Hard Skills e Soft Skills.</p>
+                  <h3 className="font-semibold text-slate-900 mb-1">1. Publique Vagas</h3>
+                  <p className="text-sm text-slate-500">Crie e publique vagas com formulários personalizados e página de carreiras.</p>
                 </div>
               </div>
 
@@ -442,9 +431,19 @@ export default function Auth() {
                   <CheckCircle className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 mb-1">3. Ranking e Decisão</h3>
+                  <h3 className="font-semibold text-slate-900 mb-1">2. Receba Candidaturas</h3>
+                  <p className="text-sm text-slate-500">Candidatos se inscrevem online com currículo e dados estruturados.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                <div className="p-3 bg-blue-100 rounded-xl shrink-0">
+                  <User className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-1">3. Gerencie Talentos</h3>
                   <p className="text-sm text-slate-500">
-                    Matriz visual, tabela comparativa e recomendação do candidato ideal.
+                    Pipeline visual (Kanban), banco de talentos e exportação de dados.
                   </p>
                 </div>
               </div>
@@ -459,7 +458,7 @@ export default function Auth() {
                 {isLogin ? "Entrar na sua conta" : "Criar sua conta"}
               </h2>
               <p className="text-slate-500">
-                {isLogin ? "Comece a analisar seus currículos hoje" : "Comece a usar o CompareCV gratuitamente"}
+                {isLogin ? "Acesse seu portal de vagas" : "Comece a usar o CompareCV gratuitamente"}
               </p>
             </div>
 

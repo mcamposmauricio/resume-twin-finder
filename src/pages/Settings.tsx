@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ import { PipelineStagesEditor } from '@/components/settings/PipelineStagesEditor
 import { logActivity } from '@/hooks/useActivityLog';
 import { CompanyInfoTab } from '@/components/settings/CompanyInfoTab';
 import { CareersPageTab } from '@/components/settings/CareersPageTab';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 interface ProfileSettings {
   company_name: string;
@@ -71,30 +72,10 @@ const defaultSettings: ProfileSettings = {
 };
 
 export default function Settings() {
-  const navigate = useNavigate();
-  const [userId, setUserId] = useState<string>();
+  const { userId } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<ProfileSettings>(defaultSettings);
-
-  const { isFullAccess, loading: roleLoading } = useUserRole(userId);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate('/auth');
-      } else {
-        setUserId(session.user.id);
-      }
-    });
-  }, [navigate]);
-
-  useEffect(() => {
-    if (!roleLoading && userId && !isFullAccess) {
-      toast.error('Você não tem acesso a esta funcionalidade.');
-      navigate('/');
-    }
-  }, [roleLoading, isFullAccess, userId, navigate]);
 
   useEffect(() => {
     if (!userId) return;
@@ -223,31 +204,24 @@ export default function Settings() {
     setSettings((prev) => ({ ...prev, ...updates }));
   };
 
-  if (loading || roleLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <AppLayout>
+        <div className="flex-1 flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
     );
   }
 
-  if (!isFullAccess) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-background">
+    <AppLayout>
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">Configurações</h1>
-            <p className="text-muted-foreground">
-              Personalize sua marca e página de carreiras
-            </p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold">Configurações</h1>
+          <p className="text-muted-foreground">
+            Personalize sua marca e página de carreiras
+          </p>
         </div>
 
         <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'brand'} className="space-y-6">
@@ -379,6 +353,6 @@ export default function Settings() {
           </Button>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
