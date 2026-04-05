@@ -34,12 +34,12 @@ const SUGGESTED_BENEFITS = [
 export function BenefitsEditor({ benefits, onChange }: BenefitsEditorProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBenefit, setNewBenefit] = useState('');
+  const [pendingSelections, setPendingSelections] = useState<string[]>([]);
 
   const handleAdd = () => {
     if (newBenefit.trim() && !benefits.includes(newBenefit.trim())) {
       onChange([...benefits, newBenefit.trim()]);
       setNewBenefit('');
-      setIsDialogOpen(false);
     }
   };
 
@@ -47,10 +47,27 @@ export function BenefitsEditor({ benefits, onChange }: BenefitsEditorProps) {
     onChange(benefits.filter((b) => b !== benefit));
   };
 
-  const handleAddSuggested = (benefit: string) => {
-    if (!benefits.includes(benefit)) {
-      onChange([...benefits, benefit]);
+  const handleToggleSuggestion = (suggestion: string) => {
+    setPendingSelections((prev) =>
+      prev.includes(suggestion)
+        ? prev.filter((s) => s !== suggestion)
+        : [...prev, suggestion]
+    );
+  };
+
+  const handleConfirmSelections = () => {
+    if (pendingSelections.length > 0) {
+      const newBenefits = pendingSelections.filter((s) => !benefits.includes(s));
+      onChange([...benefits, ...newBenefits]);
     }
+    setPendingSelections([]);
+    setIsDialogOpen(false);
+  };
+
+  const handleOpenDialog = () => {
+    setPendingSelections([]);
+    setNewBenefit('');
+    setIsDialogOpen(true);
   };
 
   const unusedSuggestions = SUGGESTED_BENEFITS.filter(
@@ -65,7 +82,7 @@ export function BenefitsEditor({ benefits, onChange }: BenefitsEditorProps) {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => setIsDialogOpen(true)}
+          onClick={handleOpenDialog}
         >
           <Plus className="h-4 w-4 mr-1" />
           Adicionar
@@ -101,7 +118,7 @@ export function BenefitsEditor({ benefits, onChange }: BenefitsEditorProps) {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Adicionar Benefício</DialogTitle>
+            <DialogTitle>Adicionar Benefícios</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -125,23 +142,27 @@ export function BenefitsEditor({ benefits, onChange }: BenefitsEditorProps) {
             {unusedSuggestions.length > 0 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
-                  Ou escolha uma sugestão
+                  Ou selecione sugestões (pode escolher várias)
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {unusedSuggestions.map((suggestion) => (
-                    <Badge
-                      key={suggestion}
-                      variant="outline"
-                      className="cursor-pointer hover:bg-accent py-1.5 px-3"
-                      onClick={() => {
-                        handleAddSuggested(suggestion);
-                        setIsDialogOpen(false);
-                      }}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      {suggestion}
-                    </Badge>
-                  ))}
+                  {unusedSuggestions.map((suggestion) => {
+                    const isSelected = pendingSelections.includes(suggestion);
+                    return (
+                      <Badge
+                        key={suggestion}
+                        variant={isSelected ? 'default' : 'outline'}
+                        className="cursor-pointer hover:bg-accent py-1.5 px-3 transition-colors"
+                        onClick={() => handleToggleSuggestion(suggestion)}
+                      >
+                        {isSelected ? (
+                          <Check className="h-3 w-3 mr-1" />
+                        ) : (
+                          <Plus className="h-3 w-3 mr-1" />
+                        )}
+                        {suggestion}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -151,6 +172,11 @@ export function BenefitsEditor({ benefits, onChange }: BenefitsEditorProps) {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Fechar
             </Button>
+            {pendingSelections.length > 0 && (
+              <Button onClick={handleConfirmSelections}>
+                Adicionar {pendingSelections.length} selecionado{pendingSelections.length > 1 ? 's' : ''}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
