@@ -75,20 +75,17 @@ export function useTalentPool(userId?: string) {
     setLoading(true);
 
     try {
-      const params: Record<string, any> = {
+      const { data, error } = await supabase.rpc('get_talent_pool', {
         p_user_id: userId,
         p_page: page,
         p_page_size: pageSize,
-      };
-
-      if (filters.search) params.p_search = filters.search;
-      if (filters.jobIds.length > 0) params.p_job_ids = filters.jobIds;
-      if (filters.triageStatus) params.p_triage_status = filters.triageStatus;
-      if (filters.hasResume !== null) params.p_has_resume = filters.hasResume;
-      if (filters.minApplications) params.p_min_applications = filters.minApplications;
-      if (filters.dateFrom) params.p_date_from = filters.dateFrom;
-
-      const { data, error } = await supabase.rpc('get_talent_pool', params);
+        p_search: filters.search || undefined,
+        p_job_ids: filters.jobIds.length > 0 ? filters.jobIds : undefined,
+        p_triage_status: filters.triageStatus || undefined,
+        p_has_resume: filters.hasResume ?? undefined,
+        p_min_applications: filters.minApplications ?? undefined,
+        p_date_from: filters.dateFrom ?? undefined,
+      });
 
       if (error) throw error;
 
