@@ -16,6 +16,7 @@ import PublicApplication from "./pages/PublicApplication";
 import PublicCareers from "./pages/PublicCareers";
 import Settings from "./pages/Settings";
 import ActivityLog from "./pages/ActivityLog";
+import TalentPool from "./pages/TalentPool";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,9 @@ const App = () => (
           {/* Public Pages */}
           <Route path="/apply/:slug" element={<PublicApplication />} />
           <Route path="/carreiras/:slug" element={<PublicCareers />} />
+          
+          {/* Talent Pool */}
+          <Route path="/banco-de-talentos" element={<TalentPool />} />
           
           {/* Settings */}
           <Route path="/configuracoes" element={<Settings />} />
