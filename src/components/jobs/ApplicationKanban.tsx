@@ -130,38 +130,44 @@ export function ApplicationKanban({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div
-        className="grid gap-4 overflow-x-auto pb-2"
-        style={{
-          gridTemplateColumns: `repeat(${displayStages.length}, minmax(220px, 1fr))`,
-        }}
-      >
-        {displayStages.map((stage) => {
-          const apps = groupedApplications[stage.slug] || [];
+      <div className="relative">
+        {/* Scroll fade indicators */}
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-card to-transparent z-10 opacity-0 transition-opacity" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-card to-transparent z-10" />
+        
+        <div
+          className="grid gap-4 overflow-x-auto pb-2 scroll-smooth"
+          style={{
+            gridTemplateColumns: `repeat(${displayStages.length}, minmax(220px, 1fr))`,
+          }}
+        >
+          {displayStages.map((stage) => {
+            const apps = groupedApplications[stage.slug] || [];
 
-          return (
-            <KanbanColumn key={stage.id} stage={stage} count={apps.length}>
-              {apps.map((app) => (
-                <DraggableApplicationCard
-                  key={app.id}
-                  application={app}
-                  stage={stage}
-                  stages={displayStages}
-                  onViewDetails={() => onViewDetails(app)}
-                  onViewResume={() => onViewResume(app)}
-                  onMoveToStage={(slug) => handleMoveToStage(app.id, slug)}
-                  onDelete={onDeleteApplication ? () => onDeleteApplication(app.id) : undefined}
-                />
-              ))}
+            return (
+              <KanbanColumn key={stage.id} stage={stage} count={apps.length}>
+                {apps.map((app) => (
+                  <DraggableApplicationCard
+                    key={app.id}
+                    application={app}
+                    stage={stage}
+                    stages={displayStages}
+                    onViewDetails={() => onViewDetails(app)}
+                    onViewResume={() => onViewResume(app)}
+                    onMoveToStage={(slug) => handleMoveToStage(app.id, slug)}
+                    onDelete={onDeleteApplication ? () => onDeleteApplication(app.id) : undefined}
+                  />
+                ))}
 
-              {apps.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  Nenhum candidato
-                </div>
-              )}
-            </KanbanColumn>
-          );
-        })}
+                {apps.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    Nenhum candidato
+                  </div>
+                )}
+              </KanbanColumn>
+            );
+          })}
+        </div>
       </div>
 
       <DragOverlay>
