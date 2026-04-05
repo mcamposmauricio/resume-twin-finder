@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, Users, LogOut, Settings, FileText, Activity, ArrowLeft, Download, ChevronLeft, ChevronRight } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useTalentPool, TalentPoolRow, TalentFilters } from '@/hooks/useTalentPool';
-// [AI-FLOW] import { useUserRole } from '@/hooks/useUserRole';
+import { useState } from 'react';
+import { Search, Users, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTalentPool, TalentPoolRow } from '@/hooks/useTalentPool';
 import { exportTalentsCSV } from '@/lib/exportTalents';
 
 import { Button } from '@/components/ui/button';
@@ -12,24 +10,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { TalentCard } from '@/components/talent/TalentCard';
 import { TalentDetailPanel } from '@/components/talent/TalentDetailPanel';
 import { TalentFiltersPanel } from '@/components/talent/TalentFilters';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { toast } from 'sonner';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import logoMarq from '@/assets/logo-marq-blue.png';
 
 export default function TalentPool() {
-  const navigate = useNavigate();
-  const [userId, setUserId] = useState<string>();
-  const [userEmail, setUserEmail] = useState('');
+  const { userId } = useAuth();
   const [selectedTalent, setSelectedTalent] = useState<TalentPoolRow | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  // [AI-FLOW] Role check removed — all users have access
   const {
     talents,
     totalCount,
@@ -40,27 +28,8 @@ export default function TalentPool() {
     page,
     setPage,
     totalPages,
-    pageSize,
     jobOptions,
   } = useTalentPool(userId);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate('/auth');
-      } else {
-        setUserId(session.user.id);
-        setUserEmail(session.user.email || '');
-      }
-    });
-  }, [navigate]);
-
-  // [AI-FLOW] Role guard removed — all users have access
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success('Logout realizado com sucesso!');
-  };
 
   const handleClearFilters = () => {
     setFilters({
@@ -82,83 +51,9 @@ export default function TalentPool() {
     toast.success('CSV exportado com sucesso!');
   };
 
-  if (loading && page === 1 && !talents.length) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-8 py-3 sm:py-4 flex items-center justify-between gap-2">
-          <button
-            onClick={() => navigate('/vagas')}
-            className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity min-w-0 group"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] bg-clip-text text-transparent">
-                CompareCV
-              </span>
-              <div className="hidden sm:flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground font-medium">powered by</span>
-                <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                  <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
-                </a>
-              </div>
-            </div>
-          </button>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9">
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onClick={() => navigate('/vagas')} className="cursor-pointer py-2.5">
-                  <ArrowLeft className="w-4 h-4 mr-2.5 text-muted-foreground" />
-                  <span>Voltar às Vagas</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/formularios')} className="cursor-pointer py-2.5">
-                  <FileText className="w-4 h-4 mr-2.5 text-muted-foreground" />
-                  <span>Modelos de Formulário</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/configuracoes')} className="cursor-pointer py-2.5">
-                  <Settings className="w-4 h-4 mr-2.5 text-muted-foreground" />
-                  <span>Configurações</span>
-                </DropdownMenuItem>
-                {userEmail === 'mauricio@marqponto.com.br' && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/atividades')} className="cursor-pointer py-2.5">
-                      <Activity className="w-4 h-4 mr-2.5 text-muted-foreground" />
-                      <span>Log de Atividades</span>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <span className="text-sm text-muted-foreground hidden lg:block truncate max-w-[150px]">
-              {userEmail}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-              title="Sair"
-            >
-              <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8 max-w-5xl flex-1">
+    <AppLayout>
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Page Title */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -270,17 +165,6 @@ export default function TalentPool() {
         onOpenChange={setDetailOpen}
         userId={userId}
       />
-
-      {/* Footer */}
-      <footer className="py-6 text-center text-sm text-muted-foreground border-t border-border bg-card">
-        <div className="flex items-center justify-center gap-2">
-          <span>CompareCV powered by</span>
-          <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
-            <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
-          </a>
-          <span>© {new Date().getFullYear()}</span>
-        </div>
-      </footer>
-    </div>
+    </AppLayout>
   );
 }
