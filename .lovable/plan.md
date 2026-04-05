@@ -1,41 +1,77 @@
 
 
-## Plano: Vincular candidato do Banco de Talentos a uma vaga ativa
+## Plano: Desabilitar fluxo de análise IA + Unificar acesso + Garantir fluxo funcional
 
-### Conceito
+### Objetivo
+1. Comentar todo o fluxo de análise de currículos com IA (mantendo código para reutilização futura)
+2. Todos os usuários acessam como `full_access` — visão de portal de vagas
+3. Garantir que todas as funcionalidades existentes continuam funcionais (banco de talentos, vincular candidato a vaga, filtros, exportação, etc.)
 
-Adicionar um botão "Vincular a uma vaga" no painel de detalhes do candidato (`TalentDetailPanel`). Ao clicar, abre um dialog com a lista de vagas ativas do tenant. Ao selecionar uma vaga, o sistema cria uma nova `job_application` com os dados do candidato (nome, email, telefone, currículo mais recente, form_data), vinculando-o àquela vaga.
+### Mudanças
 
-### Fluxo
+**1. `src/hooks/useUserRole.ts` — Forçar todos como full_access**
+- Comentar a lógica de RPC `is_full_access`
+- Retornar `isFullAccess: true`, `isLead: false`, `loading: false` imediatamente
+- Código original fica comentado com `// [AI-FLOW] ...`
 
-1. Recrutador abre o painel lateral de um candidato
-2. Clica em "Vincular a uma vaga"
-3. Dialog exibe vagas ativas (filtráveis por título)
-4. Seleciona a vaga desejada
-5. Sistema verifica se já existe candidatura do mesmo email nessa vaga (via `check_duplicate_application` que já existe)
-6. Se não duplicado, insere nova `job_application` com `triage_status: 'new'` e os dados do candidato
-7. Toast de sucesso com link para a vaga
+**2. `src/pages/Auth.tsx` — Redirect universal para /vagas**
+- Após login bem-sucedido, redirecionar sempre para `/vagas` (sem verificar role)
+- Comentar qualquer lógica que diferencia lead vs full_access no redirect
 
-### Arquivos
+**3. `src/pages/Index.tsx` — Redirect direto para /vagas**
+- Quando autenticado, redirecionar imediatamente para `/vagas`
+- Comentar todo o fluxo de análise: steps, polling, handleAnalyze, processAnalysisResult, useResumeBalance, ReferralDialog, MarqBanner
+- Manter apenas: auth check + redirect + loading spinner
+- Código comentado marcado com `// [AI-FLOW]`
 
-| Arquivo | Ação | Descrição |
-|---|---|---|
-| `src/components/talent/LinkToJobDialog.tsx` | Criar | Dialog com lista de vagas ativas, busca, seleção e confirmação |
-| `src/components/talent/TalentDetailPanel.tsx` | Editar | Adicionar botão "Vincular a uma vaga" e integrar o dialog |
-| `src/hooks/useTalentPool.ts` | Editar | Adicionar função `linkTalentToJob` que faz o insert na `job_applications` |
+**4. `src/pages/JobPostings.tsx` — Remover guard de role**
+- Remover o `useEffect` que redireciona `!isFullAccess`
+- Remover a importação e uso de `useUserRole` (já que todos têm acesso)
+- Remover o `if (!isFullAccess) return null`
+- Manter o `roleLoading` check ou removê-lo do loading state
 
-### Detalhes do `LinkToJobDialog`
+**5. `src/pages/TalentPool.tsx` — Remover guard de role**
+- Mesmo tratamento: remover redirect de `!isFullAccess` e `useUserRole`
+- O banco de talentos fica acessível a todos os autenticados
 
-- Recebe: `talent` (email, name, phone, latest_resume_url, latest_resume_filename), `userId`, callback `onSuccess`
-- Busca vagas ativas do usuário (`job_postings` where `user_id = userId` and `status = 'active'`)
-- Input de busca para filtrar vagas por título
-- Ao confirmar:
-  1. Chama RPC `check_duplicate_application(job_posting_id, email)` — se true, mostra erro "Candidato já aplicou nesta vaga"
-  2. Insere em `job_applications`: `job_posting_id`, `applicant_email`, `applicant_name`, `resume_url`, `resume_filename`, `triage_status: 'new'`, `status: 'pending'`, `form_data: {}` (vazio, pois é vinculação manual)
-  3. Toast de sucesso
+**6. `src/pages/JobPostingDetails.tsx` — Comentar análise**
+- Comentar import e uso do `SendToAnalysisDialog`
+- Comentar `useResumeBalance`
+- Comentar botão "Enviar para Análise" e lógica associada
+- Manter todo o resto funcional (Kanban, detalhes, status changes)
 
-### Sem migração necessária
+**7. `src/components/Dashboard.tsx` — Comentar seções de análise**
+- Comentar stats de "CVs analisados", "Análises Recentes"
+- Comentar botão "Nova Análise"
+- Manter apenas o que for relevante para vagas (se o Dashboard ainda for usado em algum lugar)
 
-- Usa tabelas e RLS existentes (`job_applications` INSERT permitido para vagas ativas — porém a vaga precisa estar ativa, o que é o caso)
-- Usa `check_duplicate_application` RPC existente para evitar duplicatas
+### O que NÃO muda (garantindo fluxo funcional)
+- **Banco de Talentos**: `useTalentPool`, `TalentCard`, `TalentDetailPanel`, `TalentFilters`, `TalentTimeline`, `exportTalents` — tudo intacto
+- **Vincular a vaga**: `LinkToJobDialog` — funciona sem alteração
+- **Vagas**: CRUD, timeline, Kanban, candidaturas — sem mudança
+- **Formulários**: modelos de formulário — sem mudança
+- **Páginas públicas**: `/apply/:slug`, `/carreiras/:slug` — sem mudança
+- **Configurações**: todas as tabs — sem mudança
+- **Edge Functions**: ficam no servidor sem alteração (analyze-resumes, etc.)
+- **Tabelas e dados**: intactos
+
+### Arquivos alterados
+
+| Arquivo | Mudança |
+|---|---|
+| `src/hooks/useUserRole.ts` | Forçar `isFullAccess: true` sempre (comentar RPC) |
+| `src/pages/Auth.tsx` | Redirect direto para `/vagas` |
+| `src/pages/Index.tsx` | Redirect para `/vagas`, comentar fluxo de análise |
+| `src/pages/JobPostings.tsx` | Remover guard de role |
+| `src/pages/TalentPool.tsx` | Remover guard de role |
+| `src/pages/JobPostingDetails.tsx` | Comentar análise e saldo |
+| `src/components/Dashboard.tsx` | Comentar seções de análise |
+
+### Verificação pós-implementação
+- Login redireciona para `/vagas`
+- Todas as páginas acessíveis sem restrição de role
+- Banco de talentos com filtros, score, paginação e exportação funcionando
+- "Vincular a uma vaga" funcionando no painel do candidato
+- Candidaturas via `/apply` continuam funcionando
+- Nenhum erro no console relacionado a roles ou análise
 
