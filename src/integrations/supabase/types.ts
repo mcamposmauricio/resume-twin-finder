@@ -432,15 +432,19 @@ export type Database = {
           company_about: string | null
           company_benefits: Json | null
           company_culture: string | null
+          company_glassdoor: string | null
           company_instagram: string | null
           company_linkedin: string | null
           company_logo_url: string | null
           company_mission: string | null
           company_name: string | null
           company_tagline: string | null
+          company_tiktok: string | null
           company_values: string | null
           company_vision: string | null
           company_website: string | null
+          company_whatsapp: string | null
+          company_youtube: string | null
           created_at: string
           email: string | null
           employee_count: string | null
@@ -476,15 +480,19 @@ export type Database = {
           company_about?: string | null
           company_benefits?: Json | null
           company_culture?: string | null
+          company_glassdoor?: string | null
           company_instagram?: string | null
           company_linkedin?: string | null
           company_logo_url?: string | null
           company_mission?: string | null
           company_name?: string | null
           company_tagline?: string | null
+          company_tiktok?: string | null
           company_values?: string | null
           company_vision?: string | null
           company_website?: string | null
+          company_whatsapp?: string | null
+          company_youtube?: string | null
           created_at?: string
           email?: string | null
           employee_count?: string | null
@@ -520,15 +528,19 @@ export type Database = {
           company_about?: string | null
           company_benefits?: Json | null
           company_culture?: string | null
+          company_glassdoor?: string | null
           company_instagram?: string | null
           company_linkedin?: string | null
           company_logo_url?: string | null
           company_mission?: string | null
           company_name?: string | null
           company_tagline?: string | null
+          company_tiktok?: string | null
           company_values?: string | null
           company_vision?: string | null
           company_website?: string | null
+          company_whatsapp?: string | null
+          company_youtube?: string | null
           created_at?: string
           email?: string | null
           employee_count?: string | null
