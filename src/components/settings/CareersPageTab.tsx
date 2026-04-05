@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ImageUploader } from './ImageUploader';
 import { toast } from 'sonner';
 
 interface CareersPageTabProps {
@@ -129,31 +130,14 @@ export function CareersPageTab({ settings, onSettingsChange }: CareersPageTabPro
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="heroImage">Imagem de capa (Hero)</Label>
-                <Input
-                  id="heroImage"
-                  type="url"
+                <Label>Imagem de capa (Hero)</Label>
+                <ImageUploader
                   value={settings.careers_hero_image_url}
-                  onChange={(e) =>
-                    onSettingsChange({ careers_hero_image_url: e.target.value })
-                  }
-                  placeholder="https://exemplo.com/imagem-capa.jpg"
+                  onChange={(url) => onSettingsChange({ careers_hero_image_url: url })}
+                  hint="Recomendado: imagem widescreen (1920x600 ou similar)"
+                  aspectRatio="16/5"
+                  maxSizeMB={5}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Recomendado: imagem widescreen (1920x600 ou similar)
-                </p>
-                {settings.careers_hero_image_url && (
-                  <div className="mt-2 rounded-lg overflow-hidden border">
-                    <img
-                      src={settings.careers_hero_image_url}
-                      alt="Preview da imagem de capa"
-                      className="w-full h-32 object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
               </div>
 
               <div className="space-y-2">
