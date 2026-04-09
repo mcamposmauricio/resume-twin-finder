@@ -1,43 +1,38 @@
 
 
-## Plano: Corrigir 3 problemas do tenant demo MarQ HR
+## Plano: Corrigir links de vagas, PDFs em branco e testar fluxos via UI
 
-### Problemas identificados
+### Problema 1: Link público da vaga quebrado (`/vaga/` vs `/apply/`)
 
-**1. Página de carreiras não abre (`/carreiras/marq-hr`)**
-- A rota existe no App.tsx e o perfil está configurado corretamente (slug `marq-hr`, `careers_page_enabled = true`).
-- Preciso testar no browser para identificar o erro exato — pode ser um problema de importação ou de runtime. A query e RLS parecem corretas (profiles tem policy pública para `careers_page_enabled = true`, job_postings tem policy pública para `status = 'active'`).
+**Causa raiz**: Inconsistência de rotas. A rota no React Router é `/apply/:slug`, mas dois arquivos usam `/vaga/`:
+- `src/pages/JobPostingDetails.tsx` (linhas 265, 272, 282) — exibe e copia link com `/vaga/`
+- `src/components/jobs/JobPostingCard.tsx` (linha 185) — copia link com `/vaga/`
 
-**2. PDF de currículo em branco (2.846 bytes)**
-- O PDF gerado tem apenas ~2.8KB — é praticamente vazio.
-- **Solução**: Gerar um PDF realista com reportlab (nome, experiência, formação fictícios) e substituir todos os ~30 arquivos no bucket `resumes` com o novo PDF preenchido.
+Outros pontos já usam `/apply/` corretamente:
+- `ShareJobLink.tsx` → `/apply/${slug}`
+- `PublicCareers.tsx` → `navigate('/apply/${job.public_slug}')`
 
-**3. Link da vaga quebrado (download de currículo)**
-- Os currículos estão armazenados em `demo/{uuid}_{nome}.pdf` mas a RLS policy de SELECT no bucket `resumes` para o owner verifica `(storage.foldername(objects.name))[1] = (jp.id)::text` — ou seja, espera que a pasta seja o ID da vaga, não `demo/`.
-- **Solução**: Atualizar os `resume_url` nas candidaturas para usar o path `{job_posting_id}/{uuid}_{nome}.pdf` e mover/reuploadar os arquivos com o path correto, OU adicionar uma RLS policy que permita acesso aos arquivos `demo/` para usuários autenticados que sejam donos das vagas.
-- Abordagem mais simples: adicionar uma policy de SELECT mais ampla para autenticados que possuem as vagas, ou re-upload com paths corretos.
+**Solução**: Substituir `/vaga/` por `/apply/` nos dois arquivos afetados. Alternativamente, adicionar uma rota `/vaga/:slug` apontando para `PublicApplication` — mas isso criaria duplicação. Melhor padronizar em `/apply/`.
 
-### Etapas de implementação
+**Arquivos a modificar**:
+| Arquivo | Mudança |
+|---------|---------|
+| `src/pages/JobPostingDetails.tsx` | Trocar 3 ocorrências de `/vaga/` por `/apply/` (linhas 265, 272, 282) |
+| `src/components/jobs/JobPostingCard.tsx` | Trocar 1 ocorrência de `/vaga/` por `/apply/` (linha 185) |
 
-**Etapa 1: Diagnosticar página de carreiras**
-- Navegar até `/carreiras/marq-hr` no browser para ver o erro exato
-- Corrigir o que for encontrado (provavelmente problema de importação de asset ou erro de runtime)
+### Problema 2: PDFs de currículo em branco
 
-**Etapa 2: Gerar PDF realista**
-- Script Python com reportlab gerando currículo fictício completo (~1 página)
-- Nome, email, telefone, experiência profissional, formação acadêmica
-- Upload para substituir os ~30 PDFs existentes no bucket
+Os PDFs no bucket `resumes` continuam com ~2.8KB (vazios). Necessário gerar um PDF realista com `reportlab` e re-upload via Edge Function temporária.
 
-**Etapa 3: Corrigir paths dos currículos no storage**
-- Opção A (preferida): Adicionar RLS policy mais abrangente no bucket resumes para donos de vagas
-- Opção B: Re-upload dos PDFs com paths `{job_posting_id}/{uuid}.pdf` e atualizar `resume_url` nas candidaturas
+**Etapas**:
+1. Script Python com reportlab gerando currículo fictício de 1 página com nome, experiência, formação e tagline "EXEMPLO"
+2. Buscar todos os `resume_url` das candidaturas do marco@ no banco
+3. Fazer upload do PDF gerado para cada path existente (sobrescrever) via Edge Function temporária com `service_role`
 
-A RLS atual já tem uma policy `Users can view resumes for their jobs` com `auth.uid() IS NOT NULL` que deveria funcionar. Vou verificar se o problema é realmente RLS ou se é algo no código de download (`getResumeUrl`/`downloadResume`).
+### Problema 3: Testar fluxos via UI
 
-### Arquivos a modificar
-| Arquivo | Motivo |
-|---------|--------|
-| Script Python (temporário) | Gerar PDF realista |
-| Edge function temporária ou script | Re-upload PDFs e atualizar paths |
-| Possível migration SQL | Adicionar/ajustar RLS no bucket resumes se necessário |
+Após as correções, testar no browser:
+1. Abrir `/apply/{slug}` de uma vaga ativa do marco@ — preencher formulário e enviar candidatura
+2. Logar como marco@ e criar uma nova vaga via UI (`/vagas/nova`)
+3. Verificar que o link público da vaga recém-criada funciona
 
