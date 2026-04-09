@@ -11,7 +11,8 @@ export function CareersBenefits({
   showBenefits,
   brandColor,
 }: CareersBenefitsProps) {
-  if (!showBenefits || benefits.length === 0) {
+  const safeBenefits = Array.isArray(benefits) ? benefits : [];
+  if (!showBenefits || safeBenefits.length === 0) {
     return null;
   }
 
