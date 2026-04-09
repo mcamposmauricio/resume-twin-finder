@@ -22,7 +22,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { session, userEmail, loading } = useAuth();
 
-  const isAdmin = userEmail === 'mauricio@marqponto.com.br';
+  const isAdmin = userEmail === 'mauricio@marqponto.com.br' || userEmail === 'marco@marqponto.com.br';
 
   useEffect(() => {
     if (!loading && !session) {
