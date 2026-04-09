@@ -20,7 +20,7 @@ export function CareersBenefits({
     <section className="py-4 md:py-6" style={{ backgroundColor: `${brandColor}05` }}>
       <div className="container mx-auto px-4 max-w-5xl">
         <div className="flex flex-wrap justify-center gap-2">
-          {benefits.map((benefit, index) => (
+          {safeBenefits.map((benefit, index) => (
             <div
               key={index}
               className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-full border text-sm"
