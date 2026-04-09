@@ -1,38 +1,31 @@
 
 
-## Plano: Corrigir links de vagas, PDFs em branco e testar fluxos via UI
+## Plano: Reorganizar layout da página de detalhes da vaga
 
-### Problema 1: Link público da vaga quebrado (`/vaga/` vs `/apply/`)
+### Mudança
+No arquivo `src/pages/JobPostingDetails.tsx`, trocar a ordem dos blocos:
 
-**Causa raiz**: Inconsistência de rotas. A rota no React Router é `/apply/:slug`, mas dois arquivos usam `/vaga/`:
-- `src/pages/JobPostingDetails.tsx` (linhas 265, 272, 282) — exibe e copia link com `/vaga/`
-- `src/components/jobs/JobPostingCard.tsx` (linha 185) — copia link com `/vaga/`
+**Layout atual** (linhas 235-342):
+1. Descrição + Informações (grid 2/3 + 1/3) — linhas 235-309
+2. Candidaturas / Kanban — linhas 311-342
 
-Outros pontos já usam `/apply/` corretamente:
-- `ShareJobLink.tsx` → `/apply/${slug}`
-- `PublicCareers.tsx` → `navigate('/apply/${job.public_slug}')`
+**Layout novo**:
+1. Informações resumidas (link público, faixa salarial, etc.) — card compacto horizontal
+2. **Candidaturas / Kanban** — movido para cima
+3. Descrição da vaga + Requisitos — movido para baixo
 
-**Solução**: Substituir `/vaga/` por `/apply/` nos dois arquivos afetados. Alternativamente, adicionar uma rota `/vaga/:slug` apontando para `PublicApplication` — mas isso criaria duplicação. Melhor padronizar em `/apply/`.
-
-**Arquivos a modificar**:
+### Arquivo a modificar
 | Arquivo | Mudança |
 |---------|---------|
-| `src/pages/JobPostingDetails.tsx` | Trocar 3 ocorrências de `/vaga/` por `/apply/` (linhas 265, 272, 282) |
-| `src/components/jobs/JobPostingCard.tsx` | Trocar 1 ocorrência de `/vaga/` por `/apply/` (linha 185) |
+| `src/pages/JobPostingDetails.tsx` | Mover o bloco do Kanban (linhas 311-342) para antes do bloco de Descrição/Informações (linhas 235-309). O card "Informações" com link público, faixa salarial e contagem de candidaturas fica inline no header ou como card compacto antes do Kanban. A descrição e requisitos descem para o final da página. |
 
-### Problema 2: PDFs de currículo em branco
-
-Os PDFs no bucket `resumes` continuam com ~2.8KB (vazios). Necessário gerar um PDF realista com `reportlab` e re-upload via Edge Function temporária.
-
-**Etapas**:
-1. Script Python com reportlab gerando currículo fictício de 1 página com nome, experiência, formação e tagline "EXEMPLO"
-2. Buscar todos os `resume_url` das candidaturas do marco@ no banco
-3. Fazer upload do PDF gerado para cada path existente (sobrescrever) via Edge Function temporária com `service_role`
-
-### Problema 3: Testar fluxos via UI
-
-Após as correções, testar no browser:
-1. Abrir `/apply/{slug}` de uma vaga ativa do marco@ — preencher formulário e enviar candidatura
-2. Logar como marco@ e criar uma nova vaga via UI (`/vagas/nova`)
-3. Verificar que o link público da vaga recém-criada funciona
+### Estrutura resultante
+```text
+Breadcrumb
+Header (título, badge status, localização, data)
+Actions (Editar, Pausar, Encerrar)
+Card Informações (link público, salário, nº candidaturas) — compacto
+Card Candidaturas + Kanban
+Card Descrição + Requisitos (abaixo de tudo)
+```
 
