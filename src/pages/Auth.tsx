@@ -404,7 +404,7 @@ export default function Auth() {
         <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24">
           {/* Left side - Content */}
           <div className="flex-1 max-w-xl animate-fade-in">
-            <p className="text-lg text-slate-600 mb-10 leading-relaxed">
+            <p className="text-lg text-muted-foreground mb-10 leading-relaxed">
               Publique vagas, receba candidaturas, organize seu pipeline de recrutamento e gerencie seu banco de talentos — tudo em um só lugar.
             </p>
 
@@ -458,17 +458,17 @@ export default function Auth() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder={isLogin ? "seu@email.com" : "seu@empresa.com.br"}
                     required
-                    className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                      emailError ? "border-red-400 bg-red-50/50" : "border-slate-200"
+                    className={`w-full pl-12 pr-4 py-3.5 bg-muted border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${
+                      emailError ? "border-destructive bg-destructive/5" : "border-border"
                     }`}
                   />
                 </div>
@@ -476,9 +476,9 @@ export default function Auth() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Senha</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Senha</label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
@@ -486,12 +486,12 @@ export default function Auth() {
                     placeholder="••••••••"
                     required
                     minLength={6}
-                    className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full pl-12 pr-12 py-3.5 bg-muted border border-border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -501,9 +501,9 @@ export default function Auth() {
               {/* Confirm Password - Only for signup */}
               {!isLogin && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Confirmar Senha</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Confirmar Senha</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       value={confirmPassword}
@@ -511,14 +511,14 @@ export default function Auth() {
                       placeholder="••••••••"
                       required
                       minLength={6}
-                      className={`w-full pl-12 pr-12 py-3.5 bg-slate-50 border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                        passwordError ? "border-red-400 bg-red-50/50" : "border-slate-200"
+                      className={`w-full pl-12 pr-12 py-3.5 bg-muted border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${
+                        passwordError ? "border-destructive bg-destructive/5" : "border-border"
                       }`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -531,9 +531,9 @@ export default function Auth() {
               {!isLogin && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Seu nome</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Seu nome</label>
                     <div className="relative">
-                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <input
                         type="text"
                         value={name}
@@ -541,15 +541,15 @@ export default function Auth() {
                         placeholder="Nome completo"
                         required
                         minLength={2}
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-muted border border-border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Nome da empresa</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Nome da empresa</label>
                     <div className="relative">
-                      <Building2 className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Building2 className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <input
                         type="text"
                         value={companyName}
@@ -557,20 +557,20 @@ export default function Auth() {
                         placeholder="Sua empresa"
                         required
                         minLength={2}
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-muted border border-border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Quantidade de funcionários</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Quantidade de funcionários</label>
                     <div className="relative">
-                      <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <select
                         value={employeeCount}
                         onChange={(e) => setEmployeeCount(e.target.value)}
                         required
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                        className="w-full pl-12 pr-4 py-3.5 bg-muted border border-border rounded-[10px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all appearance-none cursor-pointer"
                       >
                         <option value="">Selecione</option>
                         <option value="1-10">1-10 funcionários</option>
@@ -583,15 +583,15 @@ export default function Auth() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Telefone <span className="text-slate-400 font-normal">(opcional)</span></label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Telefone <span className="text-muted-foreground font-normal">(opcional)</span></label>
                     <div className="relative">
-                      <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <input
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="(11) 99999-9999"
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-muted border border-border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                       />
                     </div>
                   </div>
@@ -605,13 +605,13 @@ export default function Auth() {
                     <button
                       type="button"
                       onClick={() => setShowInviteField(true)}
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                      className="text-sm text-primary hover:text-primary-dark font-medium transition-colors"
                     >
                       Tenho um código de convite
                     </button>
                   ) : (
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Código de Convite (opcional)
                       </label>
                       <input
@@ -620,7 +620,7 @@ export default function Auth() {
                         onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                         placeholder="Ex: ABC123"
                         maxLength={6}
-                        className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all uppercase tracking-wider text-center font-mono"
+                        className="w-full px-4 py-3.5 bg-muted border border-border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider text-center font-mono"
                       />
                     </div>
                   )}
