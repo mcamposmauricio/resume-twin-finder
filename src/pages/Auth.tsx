@@ -4,7 +4,7 @@ import { Mail, Lock, ArrowRight, Upload, Brain, CheckCircle, User, Building2, Us
 import { supabase } from "@/integrations/supabase/client";
 import { centralHubClient, TOOL_SOURCE, employeeRangeToNumber } from "@/lib/centralHubClient";
 import { toast } from "sonner";
-import logoMarq from "@/assets/logo-marq-blue.png";
+import logoAzul from "@/assets/Logo_Azul.svg";
 import { useUTMTracking } from "@/hooks/useUTMTracking";
 import { pushGTMEvent } from "@/hooks/useGTMEvent";
 import { logActivity } from "@/hooks/useActivityLog";
@@ -379,29 +379,23 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-10 px-6 lg:px-12 py-6">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] bg-clip-text text-transparent">
-            CompareCV
-          </span>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-500 font-medium">powered by</span>
-            <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
-              <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
-            </a>
-          </div>
+          <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
+            <img src={logoAzul} alt="CompareCV by MarQ HR" className="h-8 hover:scale-105 transition-transform cursor-pointer" />
+          </a>
         </div>
       </header>
 
       <div className="min-h-screen flex flex-col px-6 lg:px-12 py-24">
         {/* Top Hero Section - Centered */}
         <div className="text-center mb-12 animate-fade-in pt-8">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-blue-600 leading-tight mb-2">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-primary leading-tight mb-2 font-heading">
             Seu portal de vagas completo
           </h1>
-          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900">
+          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground font-heading">
             para recrutar melhor
           </p>
         </div>
@@ -416,33 +410,33 @@ export default function Auth() {
 
             {/* How it works - 3 steps */}
             <div className="space-y-4">
-              <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                <div className="p-3 bg-blue-100 rounded-xl shrink-0">
-                  <Upload className="w-5 h-5 text-blue-600" />
+              <div className="flex items-start gap-4 p-4 bg-card rounded-ds shadow-ds-sm border border-border hover:shadow-ds-md transition-shadow">
+                <div className="p-3 bg-primary/10 rounded-[10px] shrink-0">
+                  <Upload className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 mb-1">1. Publique Vagas</h3>
-                  <p className="text-sm text-slate-500">Crie e publique vagas com formulários personalizados e página de carreiras.</p>
+                  <h3 className="font-semibold text-foreground mb-1 font-heading">1. Publique Vagas</h3>
+                  <p className="text-sm text-muted-foreground">Crie e publique vagas com formulários personalizados e página de carreiras.</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                <div className="p-3 bg-blue-100 rounded-xl shrink-0">
-                  <CheckCircle className="w-5 h-5 text-blue-600" />
+              <div className="flex items-start gap-4 p-4 bg-card rounded-ds shadow-ds-sm border border-border hover:shadow-ds-md transition-shadow">
+                <div className="p-3 bg-primary/10 rounded-[10px] shrink-0">
+                  <CheckCircle className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 mb-1">2. Receba Candidaturas</h3>
-                  <p className="text-sm text-slate-500">Candidatos se inscrevem online com currículo e dados estruturados.</p>
+                  <h3 className="font-semibold text-foreground mb-1 font-heading">2. Receba Candidaturas</h3>
+                  <p className="text-sm text-muted-foreground">Candidatos se inscrevem online com currículo e dados estruturados.</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                <div className="p-3 bg-blue-100 rounded-xl shrink-0">
-                  <User className="w-5 h-5 text-blue-600" />
+              <div className="flex items-start gap-4 p-4 bg-card rounded-ds shadow-ds-sm border border-border hover:shadow-ds-md transition-shadow">
+                <div className="p-3 bg-primary/10 rounded-[10px] shrink-0">
+                  <User className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 mb-1">3. Gerencie Talentos</h3>
-                  <p className="text-sm text-slate-500">
+                  <h3 className="font-semibold text-foreground mb-1 font-heading">3. Gerencie Talentos</h3>
+                  <p className="text-sm text-muted-foreground">
                     Pipeline visual (Kanban), banco de talentos e exportação de dados.
                   </p>
                 </div>
@@ -452,12 +446,12 @@ export default function Auth() {
 
         {/* Right side - Form */}
         <div className="w-full max-w-md">
-          <div className="bg-white p-8 lg:p-10 rounded-3xl shadow-xl border border-slate-100 animate-fade-in">
+          <div className="bg-card p-8 lg:p-10 rounded-[20px] shadow-ds-md border border-border animate-fade-in">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">
+              <h2 className="text-2xl font-bold text-foreground mb-2 font-heading">
                 {isLogin ? "Entrar na sua conta" : "Criar sua conta"}
               </h2>
-              <p className="text-slate-500">
+              <p className="text-muted-foreground">
                 {isLogin ? "Acesse seu portal de vagas" : "Comece a usar o CompareCV gratuitamente"}
               </p>
             </div>
@@ -636,7 +630,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading || (!isLogin && !!passwordError)}
-                className="w-full py-4 text-base bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 text-base bg-primary hover:bg-primary-dark text-primary-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 shadow-btn-primary hover:shadow-ds-md disabled:opacity-50 disabled:cursor-not-allowed font-heading"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -670,17 +664,17 @@ export default function Auth() {
             <div className="mt-6 text-center">
               <button
                 onClick={handleModeSwitch}
-                className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                className="text-primary hover:text-primary-dark font-medium transition-colors"
               >
                 {isLogin ? "Não tem conta? Criar agora" : "Já tem conta? Faça login"}
               </button>
             </div>
           </div>
 
-          <div className="text-center text-slate-400 text-sm mt-6 flex items-center justify-center gap-2">
+          <div className="text-center text-muted-foreground text-sm mt-6 flex items-center justify-center gap-2">
             <span>© {new Date().getFullYear()} CompareCV powered by</span>
             <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
-              <img src={logoMarq} alt="MarQ HR" className="h-4 hover:scale-105 transition-transform cursor-pointer" />
+              <img src={logoAzul} alt="MarQ HR" className="h-4 hover:scale-105 transition-transform cursor-pointer" />
             </a>
           </div>
         </div>
