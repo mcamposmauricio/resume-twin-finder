@@ -232,84 +232,61 @@ export default function JobPostingDetails() {
           </CardContent>
         </Card>
 
-        {/* Job Details */}
-        <div className="grid lg:grid-cols-3 gap-6 mb-8">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Descrição</CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-hidden">
-              <div className="break-words">{renderFormattedText(job.description)}</div>
-              {job.requirements && !job.description?.toLowerCase().includes('requisitos') && (
-                <>
-                  <Separator className="my-4" />
-                  <h4 className="font-medium mb-2">Requisitos</h4>
-                  <div className="break-words text-muted-foreground">
-                    {renderFormattedText(job.requirements)}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* Info compacto */}
+        <Card className="mb-6">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-6 flex-wrap text-sm">
               {job.status === 'active' && job.public_slug && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Link público</p>
-                  <div className="flex items-center gap-2">
-                    <code className="text-xs bg-muted px-2 py-1 rounded flex-1 truncate">
-                      {window.location.origin}/apply/{job.public_slug}
-                    </code>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/apply/${job.public_slug}`);
-                        sonnerToast.success('Link copiado!');
-                      }}
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => window.open(`/apply/${job.public_slug}`, '_blank')}
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Link público:</span>
+                  <code className="text-xs bg-muted px-2 py-1 rounded truncate max-w-[250px]">
+                    {window.location.origin}/apply/{job.public_slug}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/apply/${job.public_slug}`);
+                      sonnerToast.success('Link copiado!');
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => window.open(`/apply/${job.public_slug}`, '_blank')}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               )}
               {job.salary_range && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Faixa salarial</p>
-                  <p className="font-medium">{job.salary_range}</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">Salário:</span>
+                  <span className="font-medium">{job.salary_range}</span>
                 </div>
               )}
-              <div>
-                <p className="text-sm text-muted-foreground">Candidaturas</p>
-                <p className="font-medium">{applications.length}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Candidaturas:</span>
+                <span className="font-medium">{applications.length}</span>
               </div>
               {job.closed_at && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Encerrada em</p>
-                  <p className="font-medium">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">Encerrada em:</span>
+                  <span className="font-medium">
                     {format(new Date(job.closed_at), 'dd/MM/yyyy', { locale: ptBR })}
-                  </p>
+                  </span>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Applications Kanban */}
-        <Card>
+        <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Candidaturas ({applications.length})</CardTitle>
@@ -338,6 +315,25 @@ export default function JobPostingDetails() {
                 return success;
               }}
             />
+          </CardContent>
+        </Card>
+
+        {/* Job Description */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Descrição da Vaga</CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-hidden">
+            <div className="break-words">{renderFormattedText(job.description)}</div>
+            {job.requirements && !job.description?.toLowerCase().includes('requisitos') && (
+              <>
+                <Separator className="my-4" />
+                <h4 className="font-medium mb-2">Requisitos</h4>
+                <div className="break-words text-muted-foreground">
+                  {renderFormattedText(job.requirements)}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
