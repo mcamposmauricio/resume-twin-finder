@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink } from '@/components/NavLink';
 import { toast } from 'sonner';
-import logoMarq from '@/assets/logo-marq-blue.png';
+import logoAzul from '@/assets/Logo_Azul.svg';
 
 const navItems = [
   { title: 'Vagas', url: '/vagas', icon: Briefcase },
@@ -46,9 +46,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen flex flex-col w-full">
-      {/* Header with inline nav */}
-      <header className="bg-card border-b border-border sticky top-0 z-50">
+    <div className="min-h-screen flex flex-col w-full bg-background">
+      {/* Header */}
+      <header className="bg-card border-b border-border sticky top-0 z-50 shadow-xs">
         <div className="px-3 sm:px-4 md:px-6 py-2 flex items-center justify-between gap-2">
           {/* Left: Logo + Nav */}
           <div className="flex items-center gap-1 sm:gap-4 min-w-0">
@@ -56,17 +56,8 @@ export function AppLayout({ children }: AppLayoutProps) {
               onClick={() => navigate('/vagas')}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0"
             >
-              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] bg-clip-text text-transparent">
-                CompareCV
-              </span>
+              <img src={logoAzul} alt="CompareCV" className="h-7 sm:h-8" />
             </button>
-
-            <div className="hidden sm:flex items-center gap-1 shrink-0">
-              <span className="text-xs text-muted-foreground font-medium">by</span>
-              <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
-                <img src={logoMarq} alt="MarQ HR" className="h-4 hover:scale-105 transition-transform" />
-              </a>
-            </div>
 
             <nav className="flex items-center gap-0.5 sm:gap-1 ml-2 sm:ml-4">
               {navItems.map((item) => (
@@ -74,7 +65,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   key={item.url}
                   to={item.url}
                   end={item.url === '/vagas'}
-                  className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                  className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-ds text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors font-body"
                   activeClassName="bg-primary/10 text-primary font-medium"
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
@@ -85,7 +76,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               {isAdmin && (
                 <NavLink
                   to="/atividades"
-                  className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                  className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-ds text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors font-body"
                   activeClassName="bg-primary/10 text-primary font-medium"
                 >
                   <Activity className="h-4 w-4 shrink-0" />
@@ -97,12 +88,12 @@ export function AppLayout({ children }: AppLayoutProps) {
 
           {/* Right: User + Logout */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <span className="text-sm text-muted-foreground hidden lg:block truncate max-w-[200px]">
+            <span className="text-sm text-muted-foreground hidden lg:block truncate max-w-[200px] font-body">
               {userEmail}
             </span>
             <button
               onClick={handleLogout}
-              className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-ds transition-colors"
               title="Sair"
             >
               <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -117,11 +108,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
 
       {/* Footer */}
-      <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border bg-card">
+      <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border bg-card font-body">
         <div className="flex items-center justify-center gap-2">
           <span>CompareCV powered by</span>
           <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
-            <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
+            <img src={logoAzul} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
           </a>
           <span>© {new Date().getFullYear()}</span>
         </div>

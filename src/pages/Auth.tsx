@@ -4,7 +4,7 @@ import { Mail, Lock, ArrowRight, Upload, Brain, CheckCircle, User, Building2, Us
 import { supabase } from "@/integrations/supabase/client";
 import { centralHubClient, TOOL_SOURCE, employeeRangeToNumber } from "@/lib/centralHubClient";
 import { toast } from "sonner";
-import logoMarq from "@/assets/logo-marq-blue.png";
+import logoAzul from "@/assets/Logo_Azul.svg";
 import { useUTMTracking } from "@/hooks/useUTMTracking";
 import { pushGTMEvent } from "@/hooks/useGTMEvent";
 import { logActivity } from "@/hooks/useActivityLog";
@@ -379,29 +379,23 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-10 px-6 lg:px-12 py-6">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] bg-clip-text text-transparent">
-            CompareCV
-          </span>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-500 font-medium">powered by</span>
-            <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
-              <img src={logoMarq} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
-            </a>
-          </div>
+          <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
+            <img src={logoAzul} alt="CompareCV by MarQ HR" className="h-8 hover:scale-105 transition-transform cursor-pointer" />
+          </a>
         </div>
       </header>
 
       <div className="min-h-screen flex flex-col px-6 lg:px-12 py-24">
         {/* Top Hero Section - Centered */}
         <div className="text-center mb-12 animate-fade-in pt-8">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-blue-600 leading-tight mb-2">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-primary leading-tight mb-2 font-heading">
             Seu portal de vagas completo
           </h1>
-          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900">
+          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground font-heading">
             para recrutar melhor
           </p>
         </div>
@@ -410,39 +404,39 @@ export default function Auth() {
         <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24">
           {/* Left side - Content */}
           <div className="flex-1 max-w-xl animate-fade-in">
-            <p className="text-lg text-slate-600 mb-10 leading-relaxed">
+            <p className="text-lg text-muted-foreground mb-10 leading-relaxed">
               Publique vagas, receba candidaturas, organize seu pipeline de recrutamento e gerencie seu banco de talentos — tudo em um só lugar.
             </p>
 
             {/* How it works - 3 steps */}
             <div className="space-y-4">
-              <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                <div className="p-3 bg-blue-100 rounded-xl shrink-0">
-                  <Upload className="w-5 h-5 text-blue-600" />
+              <div className="flex items-start gap-4 p-4 bg-card rounded-ds shadow-ds-sm border border-border hover:shadow-ds-md transition-shadow">
+                <div className="p-3 bg-primary/10 rounded-[10px] shrink-0">
+                  <Upload className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 mb-1">1. Publique Vagas</h3>
-                  <p className="text-sm text-slate-500">Crie e publique vagas com formulários personalizados e página de carreiras.</p>
+                  <h3 className="font-semibold text-foreground mb-1 font-heading">1. Publique Vagas</h3>
+                  <p className="text-sm text-muted-foreground">Crie e publique vagas com formulários personalizados e página de carreiras.</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                <div className="p-3 bg-blue-100 rounded-xl shrink-0">
-                  <CheckCircle className="w-5 h-5 text-blue-600" />
+              <div className="flex items-start gap-4 p-4 bg-card rounded-ds shadow-ds-sm border border-border hover:shadow-ds-md transition-shadow">
+                <div className="p-3 bg-primary/10 rounded-[10px] shrink-0">
+                  <CheckCircle className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 mb-1">2. Receba Candidaturas</h3>
-                  <p className="text-sm text-slate-500">Candidatos se inscrevem online com currículo e dados estruturados.</p>
+                  <h3 className="font-semibold text-foreground mb-1 font-heading">2. Receba Candidaturas</h3>
+                  <p className="text-sm text-muted-foreground">Candidatos se inscrevem online com currículo e dados estruturados.</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                <div className="p-3 bg-blue-100 rounded-xl shrink-0">
-                  <User className="w-5 h-5 text-blue-600" />
+              <div className="flex items-start gap-4 p-4 bg-card rounded-ds shadow-ds-sm border border-border hover:shadow-ds-md transition-shadow">
+                <div className="p-3 bg-primary/10 rounded-[10px] shrink-0">
+                  <User className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 mb-1">3. Gerencie Talentos</h3>
-                  <p className="text-sm text-slate-500">
+                  <h3 className="font-semibold text-foreground mb-1 font-heading">3. Gerencie Talentos</h3>
+                  <p className="text-sm text-muted-foreground">
                     Pipeline visual (Kanban), banco de talentos e exportação de dados.
                   </p>
                 </div>
@@ -452,29 +446,29 @@ export default function Auth() {
 
         {/* Right side - Form */}
         <div className="w-full max-w-md">
-          <div className="bg-white p-8 lg:p-10 rounded-3xl shadow-xl border border-slate-100 animate-fade-in">
+          <div className="bg-card p-8 lg:p-10 rounded-[20px] shadow-ds-md border border-border animate-fade-in">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">
+              <h2 className="text-2xl font-bold text-foreground mb-2 font-heading">
                 {isLogin ? "Entrar na sua conta" : "Criar sua conta"}
               </h2>
-              <p className="text-slate-500">
+              <p className="text-muted-foreground">
                 {isLogin ? "Acesse seu portal de vagas" : "Comece a usar o CompareCV gratuitamente"}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder={isLogin ? "seu@email.com" : "seu@empresa.com.br"}
                     required
-                    className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                      emailError ? "border-red-400 bg-red-50/50" : "border-slate-200"
+                    className={`w-full pl-12 pr-4 py-3.5 bg-muted border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${
+                      emailError ? "border-destructive bg-destructive/5" : "border-border"
                     }`}
                   />
                 </div>
@@ -482,9 +476,9 @@ export default function Auth() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Senha</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Senha</label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
@@ -492,12 +486,12 @@ export default function Auth() {
                     placeholder="••••••••"
                     required
                     minLength={6}
-                    className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full pl-12 pr-12 py-3.5 bg-muted border border-border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -507,9 +501,9 @@ export default function Auth() {
               {/* Confirm Password - Only for signup */}
               {!isLogin && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Confirmar Senha</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Confirmar Senha</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       value={confirmPassword}
@@ -517,14 +511,14 @@ export default function Auth() {
                       placeholder="••••••••"
                       required
                       minLength={6}
-                      className={`w-full pl-12 pr-12 py-3.5 bg-slate-50 border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                        passwordError ? "border-red-400 bg-red-50/50" : "border-slate-200"
+                      className={`w-full pl-12 pr-12 py-3.5 bg-muted border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${
+                        passwordError ? "border-destructive bg-destructive/5" : "border-border"
                       }`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -537,9 +531,9 @@ export default function Auth() {
               {!isLogin && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Seu nome</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Seu nome</label>
                     <div className="relative">
-                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <input
                         type="text"
                         value={name}
@@ -547,15 +541,15 @@ export default function Auth() {
                         placeholder="Nome completo"
                         required
                         minLength={2}
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-muted border border-border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Nome da empresa</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Nome da empresa</label>
                     <div className="relative">
-                      <Building2 className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Building2 className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <input
                         type="text"
                         value={companyName}
@@ -563,20 +557,20 @@ export default function Auth() {
                         placeholder="Sua empresa"
                         required
                         minLength={2}
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-muted border border-border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Quantidade de funcionários</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Quantidade de funcionários</label>
                     <div className="relative">
-                      <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <select
                         value={employeeCount}
                         onChange={(e) => setEmployeeCount(e.target.value)}
                         required
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                        className="w-full pl-12 pr-4 py-3.5 bg-muted border border-border rounded-[10px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all appearance-none cursor-pointer"
                       >
                         <option value="">Selecione</option>
                         <option value="1-10">1-10 funcionários</option>
@@ -589,15 +583,15 @@ export default function Auth() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Telefone <span className="text-slate-400 font-normal">(opcional)</span></label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Telefone <span className="text-muted-foreground font-normal">(opcional)</span></label>
                     <div className="relative">
-                      <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <input
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="(11) 99999-9999"
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-muted border border-border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                       />
                     </div>
                   </div>
@@ -611,13 +605,13 @@ export default function Auth() {
                     <button
                       type="button"
                       onClick={() => setShowInviteField(true)}
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                      className="text-sm text-primary hover:text-primary-dark font-medium transition-colors"
                     >
                       Tenho um código de convite
                     </button>
                   ) : (
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Código de Convite (opcional)
                       </label>
                       <input
@@ -626,7 +620,7 @@ export default function Auth() {
                         onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                         placeholder="Ex: ABC123"
                         maxLength={6}
-                        className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all uppercase tracking-wider text-center font-mono"
+                        className="w-full px-4 py-3.5 bg-muted border border-border rounded-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider text-center font-mono"
                       />
                     </div>
                   )}
@@ -636,7 +630,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading || (!isLogin && !!passwordError)}
-                className="w-full py-4 text-base bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 text-base bg-primary hover:bg-primary-dark text-primary-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 shadow-btn-primary hover:shadow-ds-md disabled:opacity-50 disabled:cursor-not-allowed font-heading"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -670,17 +664,17 @@ export default function Auth() {
             <div className="mt-6 text-center">
               <button
                 onClick={handleModeSwitch}
-                className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                className="text-primary hover:text-primary-dark font-medium transition-colors"
               >
                 {isLogin ? "Não tem conta? Criar agora" : "Já tem conta? Faça login"}
               </button>
             </div>
           </div>
 
-          <div className="text-center text-slate-400 text-sm mt-6 flex items-center justify-center gap-2">
+          <div className="text-center text-muted-foreground text-sm mt-6 flex items-center justify-center gap-2">
             <span>© {new Date().getFullYear()} CompareCV powered by</span>
             <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
-              <img src={logoMarq} alt="MarQ HR" className="h-4 hover:scale-105 transition-transform cursor-pointer" />
+              <img src={logoAzul} alt="MarQ HR" className="h-4 hover:scale-105 transition-transform cursor-pointer" />
             </a>
           </div>
         </div>
