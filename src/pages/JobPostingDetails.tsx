@@ -262,14 +262,14 @@ export default function JobPostingDetails() {
                   <p className="text-sm text-muted-foreground mb-1">Link público</p>
                   <div className="flex items-center gap-2">
                     <code className="text-xs bg-muted px-2 py-1 rounded flex-1 truncate">
-                      {window.location.origin}/vaga/{job.public_slug}
+                      {window.location.origin}/apply/{job.public_slug}
                     </code>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
                       onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/vaga/${job.public_slug}`);
+                        navigator.clipboard.writeText(`${window.location.origin}/apply/${job.public_slug}`);
                         sonnerToast.success('Link copiado!');
                       }}
                     >
@@ -279,7 +279,7 @@ export default function JobPostingDetails() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
-                      onClick={() => window.open(`/vaga/${job.public_slug}`, '_blank')}
+                      onClick={() => window.open(`/apply/${job.public_slug}`, '_blank')}
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </Button>

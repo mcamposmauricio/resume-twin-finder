@@ -182,7 +182,7 @@ export const JobPostingCard = memo(function JobPostingCard({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                navigator.clipboard.writeText(`${window.location.origin}/vaga/${job.public_slug}`);
+                navigator.clipboard.writeText(`${window.location.origin}/apply/${job.public_slug}`);
                 toast.success('Link copiado!');
               }}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
