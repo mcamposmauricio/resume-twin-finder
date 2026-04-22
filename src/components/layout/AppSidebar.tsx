@@ -29,9 +29,6 @@ const mainItems = [
 ];
 
 export function AppSidebar() {
-  const { userEmail } = useAuth();
-  const isAdmin = userEmail === 'mauricio@marqponto.com.br' || userEmail === 'marco@marqponto.com.br';
-
   return (
     <Sidebar collapsible="offcanvas" className="border-r border-border">
       <SidebarHeader className="border-b border-border">
