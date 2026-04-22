@@ -1,4 +1,4 @@
-import { Briefcase, Users, FileText, Settings, Activity, HelpCircle, Search, ExternalLink } from 'lucide-react';
+import { Briefcase, Users, FileText, Activity, Search, ExternalLink } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
