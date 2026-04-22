@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/sidebar';
 
 const menuItemClass =
-  "flex items-center gap-2 !text-[14px] !font-semibold !text-[#3a424e] !px-3 !py-[9px] h-auto hover:text-foreground";
+  "flex items-center gap-2 !text-[14px] !font-semibold !text-[#3a424e] !px-3 !py-[9px] h-auto hover:text-foreground [font-family:Montserrat,sans-serif!important]";
 const menuItemActiveClass = "bg-primary/10 !text-primary";
 
 const mainItems = [
