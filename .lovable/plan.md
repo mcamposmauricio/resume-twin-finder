@@ -1,44 +1,58 @@
 
 
-## Plano: Reestruturar Design System — MarQ HR
+## Plano: Substituir navbar superior por menu lateral (sidebar)
 
-### Resumo
-Aplicar o Design System MarQ HR (extraído do Figma) em todo o sistema, atualizando cores, tipografia, border radius, sombras, botões, cards, badges e layout. Também substituir os logos por SVGs fornecidos.
+### Referência visual
+Baseado no print enviado: sidebar à esquerda com logo CompareCV no topo, campo de busca, item "Plataforma MarQHR" com badge "Completo!", menu principal (Vagas, Talentos, Formulários, Atividades, Configurações, Central de ajuda) e card de perfil do usuário no rodapé com avatar, nome e função.
 
-### Arquivos a modificar
+### Mudanças
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/index.css` | Atualizar CSS variables para cores do DS (primary `#1B59F8`, grays slate, semânticas). Trocar font import para incluir `Montserrat`. Adicionar custom properties para sombras e radius. Atualizar classes utilitárias (`.btn-primary`, `.card-clean`, badges). |
-| `tailwind.config.ts` | Adicionar tokens do DS: `colors.primary` (light/main/dark), semânticas (success/warning/error), `fontFamily` (heading: Montserrat, body: Inter), `fontSize` customizado, `borderRadius` (sm/md/lg/xl), `boxShadow` (xs/sm/md/btn-primary). |
-| `src/components/ui/button.tsx` | Atualizar `buttonVariants`: default variant com `bg-[#1B59F8]`, `rounded-[20px]`, sombra btn-primary (inner glow + depth), font Montserrat semibold. Hover/active states conforme DS. |
-| `src/components/ui/card.tsx` | Atualizar Card base: `rounded-[14px]`, `border-[#E9EEF5]`, `shadow-sm` do DS. CardHeader com `border-b border-[#F1F5F9]`. |
-| `src/components/ui/badge.tsx` | Adicionar variants semânticas (success/warning/error/info/neutral) com cores e bordas do DS. |
-| `src/components/layout/AppLayout.tsx` | Trocar logo PNG por SVG azul. Atualizar header para usar `bg-white`, `border-[#E2E8F0]`. Aplicar font-heading nos títulos. Background `#F1F5F9` no main. |
-| `src/pages/Auth.tsx` | Atualizar para usar cores/tokens do DS. Background `#F1F5F9`. Botão primário com estilo DS. Logo SVG. |
-| `src/assets/` | Copiar `Logo_Azul.svg` e `Logo_branca.svg` para assets. |
-| Demais páginas (JobPostings, TalentPool, Settings, etc.) | Atualizações propagam automaticamente via CSS variables e componentes UI base. Ajustes pontuais em hardcoded colors se houver. |
+| `src/components/layout/AppSidebar.tsx` | Reescrever do zero seguindo o design do print: header com logo CompareCV, campo de busca, item "Plataforma MarQHR" com badge "Completo!" (link externo para marqhr.com), grupo de navegação principal (Vagas, Talentos, Formulários, Atividades [admin], Configurações), item "Central de ajuda" no fim do grupo. Footer com card do usuário (avatar circular, nome/email, role) + dropdown com Ver perfil / Configurações de conta / Alterar senha / Sair. Usa `Sidebar collapsible="icon"` para colapsar para modo mini (apenas ícones). |
+| `src/components/layout/AppLayout.tsx` | Substituir o header com nav inline por estrutura `SidebarProvider` + `AppSidebar` + área de conteúdo. Header superior fica fino (h-12), contendo apenas o `SidebarTrigger` à esquerda (sempre visível para abrir/fechar) e à direita o seletor "Company User Name" (dropdown de empresa, conforme print). Remover navItems daqui. Footer permanece igual mas dentro da área de conteúdo. |
+| `src/components/layout/UserProfileCard.tsx` (novo) | Card de usuário no rodapé da sidebar: avatar (gerado por iniciais ou placeholder), nome, função/email, e botão de menu (três traços) que abre um popover com as ações de conta. |
+| `src/components/layout/CompanySelector.tsx` (novo) | Botão pill no header com avatar da empresa + nome truncado + chevron, abre dropdown (placeholder por enquanto, já que sistema é single-tenant). |
+
+### Estrutura de navegação
+
+```text
+Sidebar (esquerda, 256px expandida / 48px colapsada)
+├── Header
+│   ├── Logo CompareCV (azul)
+│   └── Botão fechar (visível quando aberta)
+├── Search input "Buscar"
+├── Plataforma MarQHR  [badge "Completo!"] → link externo marqhr.com
+├── Separador
+├── Menu principal
+│   ├── Vagas
+│   ├── Talentos
+│   ├── Formulários
+│   ├── Atividades (admin only)
+│   └── Configurações
+├── Central de ajuda (link suporte)
+└── Footer
+    └── UserProfileCard
+        ├── Avatar + Nome + Role/email
+        └── Menu (⋮) → Ver perfil / Config. conta / Alterar senha / Sair
+
+Header superior (fino, h-12)
+├── SidebarTrigger (☰ Menu) — sempre visível
+└── CompanySelector (direita)
+```
 
 ### Detalhes técnicos
 
-**Cores CSS Variables (`:root`)**
-- `--primary`: mapeado para `#1B59F8` (HSL ~224 95% 54%)
-- `--background`: `#F1F5F9` (gray-100 do DS)
-- `--card`: `#FFFFFF`
-- `--foreground`: `#0F172A` (gray-900)
-- `--muted-foreground`: `#64748B` (gray-500)
-- `--border`: `#E2E8F0` (gray-200)
+- **Sidebar component**: usa o shadcn `Sidebar` com `collapsible="icon"` para garantir trigger sempre visível mesmo colapsada.
+- **Active state**: `NavLink` com `activeClassName="bg-primary/10 text-primary font-medium"` (já no padrão do projeto).
+- **"Início"** do print: mapear para `/vagas` (página principal atual) ou criar rota `/inicio` no futuro — por enquanto, **omitir** "Início" e usar Vagas como home, mantendo paridade com a estrutura atual.
+- **Busca**: input visual sem lógica nesta primeira versão (placeholder para feature futura).
+- **Plataforma MarQHR**: link externo `https://marqhr.com/` com badge azul "Completo!" usando `Badge` variant info.
+- **Central de ajuda**: link para `mailto:suporte@marqhr.com` ou URL de help center (placeholder por enquanto).
+- **Avatar**: gerar fallback com iniciais do `userEmail` via componente `Avatar` do shadcn.
+- **Mobile**: sidebar vira off-canvas automático via `Sheet` (já no shadcn Sidebar).
+- **Mantém**: todas as rotas existentes, lógica de admin (`mauricio@`/`marco@`), AuthProvider, footer "powered by MarQ HR".
 
-**Tipografia**
-- Headings (h1-h3, títulos de card, botões): `Montserrat` semibold/bold
-- Body (texto corrido, labels, dados): `Inter`
-
-**Botão Primário**
-- `bg-[#1B59F8]`, `rounded-[20px]`, `px-4 py-2`
-- `box-shadow: inset 0px 0px 0px 2px #4D7FFF, inset 0px -2px 2px 0px #0632A3, 1px 1px 1px 0px rgba(0,0,0,0.25)`
-- Hover: `bg-[#1448E0]`
-- Active: `bg-[#0632A3]`, shadow none
-
-**Cards**
-- `rounded-[14px]`, `border: 1px solid #E9EEF5`, shadow-sm do DS
+### Arquivos não alterados
+Páginas internas (JobPostings, TalentPool, etc.) continuam usando `<AppLayout>` sem nenhuma mudança — a substituição é transparente.
 
