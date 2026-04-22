@@ -18,6 +18,10 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 
+const menuItemClass =
+  "flex items-center gap-2 !text-[14px] !font-semibold !text-[#3a424e] !px-3 !py-[9px] h-auto hover:text-foreground";
+const menuItemActiveClass = "bg-primary/10 !text-primary";
+
 const mainItems = [
   { title: 'Vagas', url: '/vagas', icon: Briefcase, end: true },
   { title: 'Talentos', url: '/banco-de-talentos', icon: Users, end: false },
@@ -57,10 +61,10 @@ export function AppSidebar() {
                     href="https://marqhr.com/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+                    className={menuItemClass}
                   >
                     <ExternalLink className="h-4 w-4 shrink-0" />
-                    <span className="font-body text-sm">Plataforma MarQHR</span>
+                    <span className="font-body">Plataforma MarQHR</span>
                     <Badge variant="info" className="ml-auto text-[10px] py-0 px-1.5">
                       Completo!
                     </Badge>
@@ -83,11 +87,11 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.end}
-                      className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-                      activeClassName="bg-primary/10 text-primary font-medium"
+                      className={menuItemClass}
+                      activeClassName={menuItemActiveClass}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
-                      <span className="font-body text-sm">{item.title}</span>
+                      <span className="font-body">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -98,11 +102,11 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild tooltip="Atividades">
                     <NavLink
                       to="/atividades"
-                      className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-                      activeClassName="bg-primary/10 text-primary font-medium"
+                      className={menuItemClass}
+                      activeClassName={menuItemActiveClass}
                     >
                       <Activity className="h-4 w-4 shrink-0" />
-                      <span className="font-body text-sm">Atividades</span>
+                      <span className="font-body">Atividades</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -119,10 +123,10 @@ export function AppSidebar() {
                 <SidebarMenuButton asChild tooltip="Central de ajuda">
                   <a
                     href="mailto:suporte@marqhr.com"
-                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+                    className={menuItemClass}
                   >
                     <HelpCircle className="h-4 w-4 shrink-0" />
-                    <span className="font-body text-sm">Central de ajuda</span>
+                    <span className="font-body">Central de ajuda</span>
                   </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
