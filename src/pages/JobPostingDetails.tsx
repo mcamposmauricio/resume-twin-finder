@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ApplicationKanban } from '@/components/jobs/ApplicationKanban';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { ApplicationDetailPanel } from '@/components/jobs/ApplicationDetailPanel';
 import { CloseJobDialog } from '@/components/jobs/CloseJobDialog';
 // [AI-FLOW] import { SendToAnalysisDialog } from '@/components/jobs/SendToAnalysisDialog';
@@ -133,25 +134,29 @@ export default function JobPostingDetails() {
 
   if (loading || stagesLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
+      <AppLayout>
+        <div className="flex-1 flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </AppLayout>
     );
   }
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Vaga não encontrada</h2>
-          <Button onClick={() => navigate('/vagas')}>Voltar para Vagas</Button>
+      <AppLayout>
+        <div className="flex-1 flex items-center justify-center py-20">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Vaga não encontrada</h2>
+            <Button onClick={() => navigate('/vagas')}>Voltar para Vagas</Button>
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <AppLayout>
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
@@ -371,6 +376,6 @@ export default function JobPostingDetails() {
           }}
         />
       </div>
-    </div>
+    </AppLayout>
   );
 }
