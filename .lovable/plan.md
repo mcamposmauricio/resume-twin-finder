@@ -1,58 +1,68 @@
 
+## Plano: corrigir tela branca causada por erro de hook do React
 
-## Plano: Substituir navbar superior por menu lateral (sidebar)
+### Diagnóstico
+O problema não está na lógica do `AuthContext` em si. O `AuthProvider` está usando hooks de forma válida, mas o erro `Cannot read properties of null (reading 'useState')` indica um cenário de **invalid hook call** durante o boot da aplicação.
 
-### Referência visual
-Baseado no print enviado: sidebar à esquerda com logo CompareCV no topo, campo de busca, item "Plataforma MarQHR" com badge "Completo!", menu principal (Vagas, Talentos, Formulários, Atividades, Configurações, Central de ajuda) e card de perfil do usuário no rodapé com avatar, nome e função.
+Pelo código atual, a causa mais provável é:
+1. **React sendo carregado/bundlado em mais de uma instância** no ambiente do Vite, ou
+2. **cache pré-bundlado do Vite inconsistente** após as mudanças recentes de layout/sidebar e novas dependências de UI.
 
-### Mudanças
+### O que será feito
 
-| Arquivo | Mudança |
-|---------|---------|
-| `src/components/layout/AppSidebar.tsx` | Reescrever do zero seguindo o design do print: header com logo CompareCV, campo de busca, item "Plataforma MarQHR" com badge "Completo!" (link externo para marqhr.com), grupo de navegação principal (Vagas, Talentos, Formulários, Atividades [admin], Configurações), item "Central de ajuda" no fim do grupo. Footer com card do usuário (avatar circular, nome/email, role) + dropdown com Ver perfil / Configurações de conta / Alterar senha / Sair. Usa `Sidebar collapsible="icon"` para colapsar para modo mini (apenas ícones). |
-| `src/components/layout/AppLayout.tsx` | Substituir o header com nav inline por estrutura `SidebarProvider` + `AppSidebar` + área de conteúdo. Header superior fica fino (h-12), contendo apenas o `SidebarTrigger` à esquerda (sempre visível para abrir/fechar) e à direita o seletor "Company User Name" (dropdown de empresa, conforme print). Remover navItems daqui. Footer permanece igual mas dentro da área de conteúdo. |
-| `src/components/layout/UserProfileCard.tsx` (novo) | Card de usuário no rodapé da sidebar: avatar (gerado por iniciais ou placeholder), nome, função/email, e botão de menu (três traços) que abre um popover com as ações de conta. |
-| `src/components/layout/CompanySelector.tsx` (novo) | Botão pill no header com avatar da empresa + nome truncado + chevron, abre dropdown (placeholder por enquanto, já que sistema é single-tenant). |
+#### 1) Forçar resolução única de React no Vite
+Atualizar `vite.config.ts` para garantir que `react` e `react-dom` sejam sempre deduplicados no bundle.
 
-### Estrutura de navegação
+**Arquivo**
+- `vite.config.ts`
 
-```text
-Sidebar (esquerda, 256px expandida / 48px colapsada)
-├── Header
-│   ├── Logo CompareCV (azul)
-│   └── Botão fechar (visível quando aberta)
-├── Search input "Buscar"
-├── Plataforma MarQHR  [badge "Completo!"] → link externo marqhr.com
-├── Separador
-├── Menu principal
-│   ├── Vagas
-│   ├── Talentos
-│   ├── Formulários
-│   ├── Atividades (admin only)
-│   └── Configurações
-├── Central de ajuda (link suporte)
-└── Footer
-    └── UserProfileCard
-        ├── Avatar + Nome + Role/email
-        └── Menu (⋮) → Ver perfil / Config. conta / Alterar senha / Sair
+**Mudança**
+- Adicionar `resolve.dedupe: ['react', 'react-dom']`
+- Se necessário, complementar com alias explícito para a mesma origem de `react` e `react-dom`
 
-Header superior (fino, h-12)
-├── SidebarTrigger (☰ Menu) — sempre visível
-└── CompanySelector (direita)
-```
+Isso evita que componentes diferentes acabem consumindo instâncias diferentes do React em tempo de execução.
 
-### Detalhes técnicos
+#### 2) Normalizar a estratégia de dependências
+O projeto hoje mantém **mais de um lockfile** (`package-lock.json`, `bun.lock`, `bun.lockb`), o que aumenta o risco de resolução inconsistente entre ambientes.
 
-- **Sidebar component**: usa o shadcn `Sidebar` com `collapsible="icon"` para garantir trigger sempre visível mesmo colapsada.
-- **Active state**: `NavLink` com `activeClassName="bg-primary/10 text-primary font-medium"` (já no padrão do projeto).
-- **"Início"** do print: mapear para `/vagas` (página principal atual) ou criar rota `/inicio` no futuro — por enquanto, **omitir** "Início" e usar Vagas como home, mantendo paridade com a estrutura atual.
-- **Busca**: input visual sem lógica nesta primeira versão (placeholder para feature futura).
-- **Plataforma MarQHR**: link externo `https://marqhr.com/` com badge azul "Completo!" usando `Badge` variant info.
-- **Central de ajuda**: link para `mailto:suporte@marqhr.com` ou URL de help center (placeholder por enquanto).
-- **Avatar**: gerar fallback com iniciais do `userEmail` via componente `Avatar` do shadcn.
-- **Mobile**: sidebar vira off-canvas automático via `Sheet` (já no shadcn Sidebar).
-- **Mantém**: todas as rotas existentes, lógica de admin (`mauricio@`/`marco@`), AuthProvider, footer "powered by MarQ HR".
+**Arquivos impactados**
+- `package-lock.json`
+- `bun.lock`
+- `bun.lockb`
 
-### Arquivos não alterados
-Páginas internas (JobPostings, TalentPool, etc.) continuam usando `<AppLayout>` sem nenhuma mudança — a substituição é transparente.
+**Mudança**
+- Padronizar para **um único gerenciador de pacotes**
+- Remover os lockfiles extras para evitar instalações divergentes no ambiente de build/preview
 
+#### 3) Limpar o cache pré-bundlado do Vite
+Depois da correção de resolução, será necessário reconstruir o cache do bundler.
+
+**Ação necessária**
+- Limpar o cache de dependências geradas pelo Vite
+- Reinstalar dependências de forma consistente
+- Reiniciar o preview
+
+Isso é importante porque o erro atual pode persistir mesmo com código correto, se o preview continuar usando bundle antigo corrompido.
+
+#### 4) Validar o boot mínimo da aplicação
+Após a correção, validar esta sequência:
+- `src/main.tsx` monta a aplicação normalmente
+- `src/App.tsx` renderiza `AuthProvider` sem crash
+- rotas `/auth` e `/vagas` deixam de exibir tela branca
+- componentes novos de layout (`AppLayout`, `AppSidebar`, `UserProfileCard`, `CompanySelector`) carregam sem provocar novo erro de runtime
+
+### Arquivos a revisar/ajustar
+| Arquivo | Ajuste |
+|---|---|
+| `vite.config.ts` | Deduplicar `react` e `react-dom` |
+| `package-lock.json` / `bun.lock` / `bun.lockb` | Manter apenas um lockfile oficial |
+| ambiente de build/cache | Limpar cache do Vite e reconstruir dependências |
+
+### Resultado esperado
+- A tela branca some
+- O `AuthProvider` volta a renderizar normalmente
+- O sistema carrega novamente em `/auth` e `/vagas`
+- O novo layout com menu lateral passa a aparecer sem quebrar o boot do app
+
+### Observação técnica
+O código lido em `AuthContext.tsx`, `App.tsx`, `AppLayout.tsx` e `AppSidebar.tsx` não mostra uso inválido de hooks. Por isso, a correção deve focar primeiro em **resolver o bundling do React**, não em reescrever o contexto de autenticação.
