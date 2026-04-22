@@ -47,7 +47,7 @@ export default function FormTemplates() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-[100rem]">
         <div className="flex items-center gap-4 mb-8">
           <div className="flex-1">
             <h1 className="text-2xl font-bold">Modelos de Formulário</h1>

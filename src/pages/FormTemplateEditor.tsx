@@ -177,7 +177,7 @@ export default function FormTemplateEditor() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 py-8 max-w-[100rem]">
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" onClick={() => navigate('/formularios')}>
             <ArrowLeft className="h-5 w-5" />
