@@ -16,7 +16,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from '@/components/ui/sidebar';
 
 const mainItems = [
@@ -27,35 +26,24 @@ const mainItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === 'collapsed';
   const { userEmail } = useAuth();
-
   const isAdmin = userEmail === 'mauricio@marqponto.com.br' || userEmail === 'marco@marqponto.com.br';
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border">
+    <Sidebar collapsible="offcanvas" className="border-r border-border">
       <SidebarHeader className="border-b border-border">
-        <div className={`flex items-center ${collapsed ? 'justify-center px-1 py-2' : 'px-2 py-2'}`}>
-          {collapsed ? (
-            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
-              <span className="text-primary font-heading font-bold text-sm">C</span>
-            </div>
-          ) : (
-            <img src={logoAzul} alt="CompareCV" className="h-7" />
-          )}
+        <div className="flex items-center px-2 py-2">
+          <img src={logoAzul} alt="CompareCV" className="h-7" />
         </div>
-        {!collapsed && (
-          <div className="px-2 pb-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar"
-                className="pl-8 h-8 text-sm bg-muted/40 border-border font-body"
-              />
-            </div>
+        <div className="px-2 pb-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar"
+              className="pl-8 h-8 text-sm bg-muted/40 border-border font-body"
+            />
           </div>
-        )}
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
@@ -72,14 +60,10 @@ export function AppSidebar() {
                     className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
                   >
                     <ExternalLink className="h-4 w-4 shrink-0" />
-                    {!collapsed && (
-                      <>
-                        <span className="font-body text-sm">Plataforma MarQHR</span>
-                        <Badge variant="info" className="ml-auto text-[10px] py-0 px-1.5">
-                          Completo!
-                        </Badge>
-                      </>
-                    )}
+                    <span className="font-body text-sm">Plataforma MarQHR</span>
+                    <Badge variant="info" className="ml-auto text-[10px] py-0 px-1.5">
+                      Completo!
+                    </Badge>
                   </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -87,7 +71,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {!collapsed && <Separator className="mx-2 w-auto" />}
+        <Separator className="mx-2 w-auto" />
 
         {/* Menu principal */}
         <SidebarGroup>
@@ -103,7 +87,7 @@ export function AppSidebar() {
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span className="font-body text-sm">{item.title}</span>}
+                      <span className="font-body text-sm">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -118,7 +102,7 @@ export function AppSidebar() {
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <Activity className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span className="font-body text-sm">Atividades</span>}
+                      <span className="font-body text-sm">Atividades</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -138,7 +122,7 @@ export function AppSidebar() {
                     className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
                   >
                     <HelpCircle className="h-4 w-4 shrink-0" />
-                    {!collapsed && <span className="font-body text-sm">Central de ajuda</span>}
+                    <span className="font-body text-sm">Central de ajuda</span>
                   </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -148,7 +132,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border p-2">
-        <UserProfileCard collapsed={collapsed} />
+        <UserProfileCard collapsed={false} />
       </SidebarFooter>
     </Sidebar>
   );
