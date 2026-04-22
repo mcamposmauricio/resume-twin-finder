@@ -53,7 +53,7 @@ export default function TalentPool() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div className="container mx-auto px-4 py-8 max-w-[100rem]">
         {/* Page Title */}
         <div className="flex items-center justify-between mb-6">
           <div>

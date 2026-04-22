@@ -244,7 +244,7 @@ export default function Settings() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8 max-w-3xl pb-24">
+      <div className="container mx-auto px-4 py-8 max-w-[100rem] pb-24">
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Configurações</h1>
           <p className="text-muted-foreground">
@@ -363,7 +363,7 @@ export default function Settings() {
       {/* Sticky save bar */}
       {isDirty && (
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-4 py-3">
-          <div className="container mx-auto max-w-3xl flex items-center justify-between">
+          <div className="container mx-auto max-w-[100rem] flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               Você tem alterações não salvas
             </p>

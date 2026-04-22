@@ -157,7 +157,7 @@ export default function JobPostingDetails() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div className="container mx-auto px-4 py-8 max-w-[100rem]">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
           <button onClick={() => navigate('/vagas')} className="hover:text-foreground transition-colors">
