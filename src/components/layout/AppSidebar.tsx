@@ -1,6 +1,6 @@
-import { Briefcase, Users, FileText, Activity, Search, ExternalLink } from 'lucide-react';
+import { Briefcase, Users, FileText, Search, ExternalLink } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-import { useAuth } from '@/contexts/AuthContext';
+// auth context not needed after removing admin item
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -29,9 +29,6 @@ const mainItems = [
 ];
 
 export function AppSidebar() {
-  const { userEmail } = useAuth();
-  const isAdmin = userEmail === 'mauricio@marqponto.com.br' || userEmail === 'marco@marqponto.com.br';
-
   return (
     <Sidebar collapsible="offcanvas" className="border-r border-border">
       <SidebarHeader className="border-b border-border">
@@ -95,21 +92,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-
-              {isAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Atividades">
-                    <NavLink
-                      to="/atividades"
-                      className={menuItemClass}
-                      activeClassName={menuItemActiveClass}
-                    >
-                      <Activity className="h-4 w-4 shrink-0" />
-                      <span className="font-body">Atividades</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
