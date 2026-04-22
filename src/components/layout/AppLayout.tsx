@@ -1,10 +1,22 @@
 import { useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { TopHeader } from './TopHeader';
 import logoAzul from '@/assets/Logo_Azul.svg';
+
+function SidebarOverlay() {
+  const { open, setOpen, isMobile } = useSidebar();
+  if (isMobile || !open) return null;
+  return (
+    <div
+      onClick={() => setOpen(false)}
+      className="fixed inset-0 z-[5] bg-black/30 animate-in fade-in-0"
+      aria-hidden="true"
+    />
+  );
+}
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -31,8 +43,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   if (!session) return null;
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <div className="min-h-screen flex w-full bg-background">
+        <SidebarOverlay />
         <AppSidebar />
 
         <div className="flex-1 flex flex-col min-w-0">

@@ -16,6 +16,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@/components/ui/sidebar';
 
 const menuItemClass =
@@ -29,6 +30,9 @@ const mainItems = [
 ];
 
 export function AppSidebar() {
+  const { setOpen, setOpenMobile, isMobile } = useSidebar();
+  const closeSidebar = () => (isMobile ? setOpenMobile(false) : setOpen(false));
+
   return (
     <Sidebar collapsible="offcanvas" className="border-r border-border">
       <SidebarHeader className="border-b border-border">
@@ -57,6 +61,7 @@ export function AppSidebar() {
                     href="https://marqhr.com/"
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={closeSidebar}
                     className={menuItemClass}
                   >
                     <ExternalLink className="h-4 w-4 shrink-0" />
@@ -83,6 +88,7 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.end}
+                      onClick={closeSidebar}
                       className={menuItemClass}
                       activeClassName={menuItemActiveClass}
                     >
