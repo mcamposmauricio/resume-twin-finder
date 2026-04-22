@@ -1,68 +1,43 @@
 
-## Plano: corrigir tela branca causada por erro de hook do React
 
-### Diagnóstico
-O problema não está na lógica do `AuthContext` em si. O `AuthProvider` está usando hooks de forma válida, mas o erro `Cannot read properties of null (reading 'useState')` indica um cenário de **invalid hook call** durante o boot da aplicação.
+## Plano: Trigger "☰ Menu" no header e sidebar offcanvas
 
-Pelo código atual, a causa mais provável é:
-1. **React sendo carregado/bundlado em mais de uma instância** no ambiente do Vite, ou
-2. **cache pré-bundlado do Vite inconsistente** após as mudanças recentes de layout/sidebar e novas dependências de UI.
+### Referência visual
+Print mostra um botão "**≡ Menu**" (ícone + label) no canto superior esquerdo do header, indicando que a sidebar está totalmente fechada. Ao clicar, ela abre por cima/empurra o conteúdo. Quando aberta, o mesmo botão fecha a sidebar.
 
-### O que será feito
+### Mudanças
 
-#### 1) Forçar resolução única de React no Vite
-Atualizar `vite.config.ts` para garantir que `react` e `react-dom` sejam sempre deduplicados no bundle.
-
-**Arquivo**
-- `vite.config.ts`
-
-**Mudança**
-- Adicionar `resolve.dedupe: ['react', 'react-dom']`
-- Se necessário, complementar com alias explícito para a mesma origem de `react` e `react-dom`
-
-Isso evita que componentes diferentes acabem consumindo instâncias diferentes do React em tempo de execução.
-
-#### 2) Normalizar a estratégia de dependências
-O projeto hoje mantém **mais de um lockfile** (`package-lock.json`, `bun.lock`, `bun.lockb`), o que aumenta o risco de resolução inconsistente entre ambientes.
-
-**Arquivos impactados**
-- `package-lock.json`
-- `bun.lock`
-- `bun.lockb`
-
-**Mudança**
-- Padronizar para **um único gerenciador de pacotes**
-- Remover os lockfiles extras para evitar instalações divergentes no ambiente de build/preview
-
-#### 3) Limpar o cache pré-bundlado do Vite
-Depois da correção de resolução, será necessário reconstruir o cache do bundler.
-
-**Ação necessária**
-- Limpar o cache de dependências geradas pelo Vite
-- Reinstalar dependências de forma consistente
-- Reiniciar o preview
-
-Isso é importante porque o erro atual pode persistir mesmo com código correto, se o preview continuar usando bundle antigo corrompido.
-
-#### 4) Validar o boot mínimo da aplicação
-Após a correção, validar esta sequência:
-- `src/main.tsx` monta a aplicação normalmente
-- `src/App.tsx` renderiza `AuthProvider` sem crash
-- rotas `/auth` e `/vagas` deixam de exibir tela branca
-- componentes novos de layout (`AppLayout`, `AppSidebar`, `UserProfileCard`, `CompanySelector`) carregam sem provocar novo erro de runtime
-
-### Arquivos a revisar/ajustar
-| Arquivo | Ajuste |
+| Arquivo | Mudança |
 |---|---|
-| `vite.config.ts` | Deduplicar `react` e `react-dom` |
-| `package-lock.json` / `bun.lock` / `bun.lockb` | Manter apenas um lockfile oficial |
-| ambiente de build/cache | Limpar cache do Vite e reconstruir dependências |
+| `src/components/layout/AppSidebar.tsx` | Trocar `collapsible="icon"` por `collapsible="offcanvas"` para que a sidebar **suma totalmente** quando fechada (em vez de virar uma faixa de ícones). Remover toda a lógica condicional `collapsed ? ... : ...` (logo "C" mini, ocultar labels, etc.) — quando offcanvas a sidebar só é renderizada no estado expandido, então sempre mostramos logo + busca + labels completos. Manter o resto da estrutura igual. |
+| `src/components/layout/AppLayout.tsx` | Substituir o `<SidebarTrigger />` (que só mostra o ícone) por um botão customizado com **ícone `Menu` + label "Menu"** lado a lado, usando `useSidebar()` para chamar `toggleSidebar()`. Estilo: `ghost` button, `gap-2`, `text-sm`, `font-body`, `text-muted-foreground hover:text-foreground`. O botão fica sempre visível no header (h-12), independentemente do estado da sidebar. |
 
-### Resultado esperado
-- A tela branca some
-- O `AuthProvider` volta a renderizar normalmente
-- O sistema carrega novamente em `/auth` e `/vagas`
-- O novo layout com menu lateral passa a aparecer sem quebrar o boot do app
+### Detalhes técnicos
 
-### Observação técnica
-O código lido em `AuthContext.tsx`, `App.tsx`, `AppLayout.tsx` e `AppSidebar.tsx` não mostra uso inválido de hooks. Por isso, a correção deve focar primeiro em **resolver o bundling do React**, não em reescrever o contexto de autenticação.
+- **Comportamento offcanvas**: o componente `Sidebar` do shadcn já suporta `collapsible="offcanvas"` nativamente — quando fechada, ela desliza para fora da tela (`left: -var(--sidebar-width)`) e o conteúdo principal ocupa 100% da largura.
+- **Trigger sempre visível**: como o botão fica no `<header>` do `AppLayout` (fora da sidebar), ele permanece visível em ambos os estados. Usar o hook `useSidebar()` em vez do componente `SidebarTrigger` para customizar a aparência (ícone + texto).
+- **Estado inicial**: manter `defaultOpen` padrão (`true`) do `SidebarProvider`, mas em mobile a sidebar já abre como sheet automaticamente.
+- **Código do novo trigger** (no header):
+  ```tsx
+  const { toggleSidebar } = useSidebar();
+  <Button variant="ghost" size="sm" onClick={toggleSidebar} className="gap-2 font-body">
+    <Menu className="h-4 w-4" />
+    <span className="text-sm">Menu</span>
+  </Button>
+  ```
+  Como `useSidebar()` precisa estar dentro do `SidebarProvider`, extrair o header para um pequeno componente interno `<TopHeader />` declarado dentro do mesmo arquivo, ou mover apenas o botão para um componente `MenuToggle`.
+
+### Estrutura resultante
+```text
+Header (h-12, sempre visível)
+├── [☰ Menu]  ← clica para abrir/fechar a sidebar
+└── CompanySelector
+
+Sidebar (offcanvas)
+├── Estado fechado: completamente fora da tela, conteúdo ocupa 100%
+└── Estado aberto: 256px, empurra/sobrepõe o conteúdo
+```
+
+### Arquivos não alterados
+`UserProfileCard.tsx`, `CompanySelector.tsx`, páginas internas e demais componentes — a mudança é isolada ao layout de navegação.
+
