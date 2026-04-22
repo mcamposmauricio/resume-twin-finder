@@ -1,4 +1,4 @@
-import { MoreVertical, User, Settings, KeyRound, LogOut } from 'lucide-react';
+import { MoreVertical, Settings, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -58,13 +58,7 @@ export function UserProfileCard({ collapsed }: UserProfileCardProps) {
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
-              <User className="h-4 w-4 mr-2" /> Ver perfil
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
               <Settings className="h-4 w-4 mr-2" /> Configurações de conta
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
-              <KeyRound className="h-4 w-4 mr-2" /> Alterar senha
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
@@ -98,13 +92,7 @@ export function UserProfileCard({ collapsed }: UserProfileCardProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="end" className="w-56">
           <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
-            <User className="h-4 w-4 mr-2" /> Ver perfil
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
             <Settings className="h-4 w-4 mr-2" /> Configurações de conta
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
-            <KeyRound className="h-4 w-4 mr-2" /> Alterar senha
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">

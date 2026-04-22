@@ -26,7 +26,6 @@ const mainItems = [
   { title: 'Vagas', url: '/vagas', icon: Briefcase, end: true },
   { title: 'Talentos', url: '/banco-de-talentos', icon: Users, end: false },
   { title: 'Formulários', url: '/formularios', icon: FileText, end: false },
-  { title: 'Configurações', url: '/configuracoes', icon: Settings, end: false },
 ];
 
 export function AppSidebar() {
@@ -115,24 +114,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Central de ajuda */}
-        <SidebarGroup className="mt-auto">
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Central de ajuda">
-                  <a
-                    href="mailto:suporte@marqhr.com"
-                    className={menuItemClass}
-                  >
-                    <HelpCircle className="h-4 w-4 shrink-0" />
-                    <span className="font-body">Central de ajuda</span>
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border p-2">
