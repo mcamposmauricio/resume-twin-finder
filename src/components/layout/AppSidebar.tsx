@@ -1,6 +1,6 @@
-import { Briefcase, Users, FileText, Activity, Search, ExternalLink } from 'lucide-react';
+import { Briefcase, Users, FileText, Search, ExternalLink } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-import { useAuth } from '@/contexts/AuthContext';
+// auth context not needed after removing admin item
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -95,21 +95,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-
-              {isAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Atividades">
-                    <NavLink
-                      to="/atividades"
-                      className={menuItemClass}
-                      activeClassName={menuItemActiveClass}
-                    >
-                      <Activity className="h-4 w-4 shrink-0" />
-                      <span className="font-body">Atividades</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
