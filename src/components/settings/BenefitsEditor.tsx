@@ -38,14 +38,14 @@ export function BenefitsEditor({ benefits, onChange }: BenefitsEditorProps) {
   const [pendingSelections, setPendingSelections] = useState<string[]>([]);
 
   const handleAdd = () => {
-    if (newBenefit.trim() && !benefits.includes(newBenefit.trim())) {
-      onChange([...benefits, newBenefit.trim()]);
+    if (newBenefit.trim() && !safeBenefits.includes(newBenefit.trim())) {
+      onChange([...safeBenefits, newBenefit.trim()]);
       setNewBenefit('');
     }
   };
 
   const handleRemove = (benefit: string) => {
-    onChange(benefits.filter((b) => b !== benefit));
+    onChange(safeBenefits.filter((b) => b !== benefit));
   };
 
   const handleToggleSuggestion = (suggestion: string) => {
@@ -58,8 +58,8 @@ export function BenefitsEditor({ benefits, onChange }: BenefitsEditorProps) {
 
   const handleConfirmSelections = () => {
     if (pendingSelections.length > 0) {
-      const newBenefits = pendingSelections.filter((s) => !benefits.includes(s));
-      onChange([...benefits, ...newBenefits]);
+      const newBenefits = pendingSelections.filter((s) => !safeBenefits.includes(s));
+      onChange([...safeBenefits, ...newBenefits]);
     }
     setPendingSelections([]);
     setIsDialogOpen(false);
@@ -72,7 +72,7 @@ export function BenefitsEditor({ benefits, onChange }: BenefitsEditorProps) {
   };
 
   const unusedSuggestions = SUGGESTED_BENEFITS.filter(
-    (s) => !benefits.includes(s)
+    (s) => !safeBenefits.includes(s)
   );
 
   return (
