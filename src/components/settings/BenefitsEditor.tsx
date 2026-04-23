@@ -32,6 +32,7 @@ const SUGGESTED_BENEFITS = [
 ];
 
 export function BenefitsEditor({ benefits, onChange }: BenefitsEditorProps) {
+  const safeBenefits = Array.isArray(benefits) ? benefits : [];
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBenefit, setNewBenefit] = useState('');
   const [pendingSelections, setPendingSelections] = useState<string[]>([]);
