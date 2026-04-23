@@ -90,13 +90,13 @@ export function BenefitsEditor({ benefits, onChange }: BenefitsEditorProps) {
         </Button>
       </div>
 
-      {benefits.length === 0 ? (
+      {safeBenefits.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center border rounded-lg border-dashed">
           Nenhum benefício adicionado ainda
         </p>
       ) : (
         <div className="flex flex-wrap gap-2">
-          {benefits.map((benefit) => (
+          {safeBenefits.map((benefit) => (
             <Badge
               key={benefit}
               variant="secondary"
