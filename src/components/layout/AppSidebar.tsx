@@ -56,7 +56,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Plataforma MarQHR">
+                <SidebarMenuButton asChild tooltip="Plataforma MarQ HR">
                   <a
                     href="https://marqhr.com/"
                     target="_blank"
@@ -65,7 +65,7 @@ export function AppSidebar() {
                     className={menuItemClass}
                   >
                     <ExternalLink className="h-4 w-4 shrink-0" />
-                    <span className="font-body">Plataforma MarQHR</span>
+                    <span className="font-body">Plataforma MarQ HR</span>
                     <Badge variant="info" className="ml-auto text-[10px] py-0 px-1.5">
                       Completo!
                     </Badge>
