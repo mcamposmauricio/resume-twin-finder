@@ -58,7 +58,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Plataforma MarQ HR">
                   <a
-                    href="https://marqhr.com/"
+                    href="https://app.marqhr.com"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={closeSidebar}
