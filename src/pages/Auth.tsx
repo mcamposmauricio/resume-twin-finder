@@ -386,7 +386,7 @@ export default function Auth() {
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
           backgroundImage: 'radial-gradient(circle at 20% 20%, hsl(var(--primary-foreground)) 0%, transparent 40%), radial-gradient(circle at 80% 80%, hsl(var(--primary-foreground)) 0%, transparent 40%)'
         }} />
-        <div className="relative z-10">
+        <div className="relative z-10 flex justify-end">
           <img src={logoBranca} alt="MarQTalent" className="h-10" />
         </div>
 
