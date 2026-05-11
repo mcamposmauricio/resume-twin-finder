@@ -57,7 +57,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           {/* Footer */}
           <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border bg-card font-body">
             <div className="flex items-center justify-center gap-2">
-              <span>CompareCV powered by</span>
+              <span>MarQTalent powered by</span>
               <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
                 <img src={logoAzul} alt="MarQ HR" className="h-5 hover:scale-105 transition-transform cursor-pointer" />
               </a>
