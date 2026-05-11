@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { centralHubClient, TOOL_SOURCE, employeeRangeToNumber } from "@/lib/centralHubClient";
 import { toast } from "sonner";
 import logoAzul from "@/assets/Logo_Azul.svg";
+import logoBranca from "@/assets/Logo_branca.svg";
 import { useUTMTracking } from "@/hooks/useUTMTracking";
 import { pushGTMEvent } from "@/hooks/useGTMEvent";
 import { logActivity } from "@/hooks/useActivityLog";
