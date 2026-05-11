@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { centralHubClient, TOOL_SOURCE, employeeRangeToNumber } from "@/lib/centralHubClient";
 import { toast } from "sonner";
 import logoAzul from "@/assets/Logo_Azul.svg";
-import logoBranca from "@/assets/Logo_branca.svg";
+import logoBranca from "@/assets/logo-marqtalent-white.png";
 import { useUTMTracking } from "@/hooks/useUTMTracking";
 import { pushGTMEvent } from "@/hooks/useGTMEvent";
 import { logActivity } from "@/hooks/useActivityLog";
@@ -387,9 +387,7 @@ export default function Auth() {
           backgroundImage: 'radial-gradient(circle at 20% 20%, hsl(var(--primary-foreground)) 0%, transparent 40%), radial-gradient(circle at 80% 80%, hsl(var(--primary-foreground)) 0%, transparent 40%)'
         }} />
         <div className="relative z-10">
-          <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
-            <img src={logoBranca} alt="MarQTalent" className="h-9 hover:scale-105 transition-transform cursor-pointer" />
-          </a>
+          <img src={logoBranca} alt="MarQTalent" className="h-10" />
         </div>
 
         <div className="relative z-10 max-w-xl">
