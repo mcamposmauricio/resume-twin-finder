@@ -661,6 +661,26 @@ export default function Auth() {
               </button>
             </form>
 
+            {isLogin && (
+              <>
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">ou</span>
+                  </div>
+                </div>
+                <a
+                  href="https://sso.marqhr.com/?urlFrom=https%3A%2F%2Fapp.marqtalent.com.br%2F"
+                  className="w-full py-4 text-base bg-card hover:bg-muted text-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 border border-border shadow-ds-sm font-heading"
+                >
+                  Logar com MarQ HR
+                  <ArrowRight className="w-5 h-5" />
+                </a>
+              </>
+            )}
+
             <div className="mt-6 text-center">
               <button
                 onClick={handleModeSwitch}
