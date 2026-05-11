@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { UserProfileCard } from './UserProfileCard';
-import logoAzul from '@/assets/Logo_Azul.svg';
+import logoAzul from '@/assets/logo-marqtalent.png';
 import {
   Sidebar,
   SidebarContent,
@@ -37,7 +37,7 @@ export function AppSidebar() {
     <Sidebar collapsible="offcanvas" className="border-r border-border">
       <SidebarHeader className="border-b border-border">
         <div className="flex items-center px-2 py-2">
-          <img src={logoAzul} alt="CompareCV" className="h-7" />
+          <img src={logoAzul} alt="MarQTalent" className="h-8" />
         </div>
         <div className="px-2 pb-2">
           <div className="relative">
