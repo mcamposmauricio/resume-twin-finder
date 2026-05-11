@@ -614,7 +614,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading || (!isLogin && !!passwordError)}
-                className="w-full py-4 text-base bg-primary hover:bg-primary-dark text-primary-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 shadow-btn-primary disabled:opacity-50 disabled:cursor-not-allowed font-heading"
+                className="w-full py-4 text-base bg-card hover:bg-muted text-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 border border-border shadow-ds-sm disabled:opacity-50 disabled:cursor-not-allowed font-heading"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -657,7 +657,7 @@ export default function Auth() {
                 </div>
                 <a
                   href="https://sso.marqhr.com/?urlFrom=https%3A%2F%2Fapp.marqtalent.com.br%2F"
-                  className="w-full py-4 text-base bg-card hover:bg-muted text-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 border border-border shadow-ds-sm font-heading"
+                  className="w-full py-4 text-base bg-primary hover:bg-primary-dark text-primary-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 shadow-btn-primary font-heading"
                 >
                   Logar com a MarQ HR
                   <ArrowRight className="w-5 h-5" />
