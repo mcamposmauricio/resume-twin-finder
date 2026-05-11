@@ -386,9 +386,7 @@ export default function Auth() {
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
           backgroundImage: 'radial-gradient(circle at 20% 20%, hsl(var(--primary-foreground)) 0%, transparent 40%), radial-gradient(circle at 80% 80%, hsl(var(--primary-foreground)) 0%, transparent 40%)'
         }} />
-        <div className="relative z-10 flex justify-end">
-          <img src={logoBranca} alt="MarQTalent" className="h-10" />
-        </div>
+        <div className="relative z-10" />
 
         <div className="relative z-10 max-w-xl">
           <h1 className="text-4xl xl:text-5xl font-bold leading-tight mb-6 font-heading">
@@ -423,9 +421,8 @@ export default function Auth() {
       {/* Right side - Form */}
       <div className="flex items-center justify-center p-6 lg:p-12 bg-background">
         <div className="w-full max-w-md">
-          {/* Mobile-only logo */}
-          <div className="lg:hidden mb-8 flex justify-center">
-            <img src={logoAzul} alt="MarQTalent" className="h-8" />
+          <div className="mb-8 flex justify-end">
+            <img src={logoBranca} alt="MarQTalent" className="h-10" />
           </div>
 
           <div className="bg-card p-8 lg:p-10 rounded-[20px] shadow-ds-md border border-border animate-fade-in">
