@@ -1,43 +1,75 @@
+## Objetivo
 
+Refazer o layout da página `src/pages/Auth.tsx` para reproduzir o layout do print: tela dividida em duas colunas, lado esquerdo azul (gradient primary) com logo, headline grande, subtítulo e lista de bullets verdes; lado direito branco com o card de login (Google + Email/Senha + botão "Logar com a MarQ HR" mantido). Usaremos as cores atuais do design system (primary `#1B59F8`) — não as cores do TrackFlow — e textos da MarQTalent.
 
-## Plano: Trigger "☰ Menu" no header e sidebar offcanvas
+## Layout
 
-### Referência visual
-Print mostra um botão "**≡ Menu**" (ícone + label) no canto superior esquerdo do header, indicando que a sidebar está totalmente fechada. Ao clicar, ela abre por cima/empurra o conteúdo. Quando aberta, o mesmo botão fecha a sidebar.
-
-### Mudanças
-
-| Arquivo | Mudança |
-|---|---|
-| `src/components/layout/AppSidebar.tsx` | Trocar `collapsible="icon"` por `collapsible="offcanvas"` para que a sidebar **suma totalmente** quando fechada (em vez de virar uma faixa de ícones). Remover toda a lógica condicional `collapsed ? ... : ...` (logo "C" mini, ocultar labels, etc.) — quando offcanvas a sidebar só é renderizada no estado expandido, então sempre mostramos logo + busca + labels completos. Manter o resto da estrutura igual. |
-| `src/components/layout/AppLayout.tsx` | Substituir o `<SidebarTrigger />` (que só mostra o ícone) por um botão customizado com **ícone `Menu` + label "Menu"** lado a lado, usando `useSidebar()` para chamar `toggleSidebar()`. Estilo: `ghost` button, `gap-2`, `text-sm`, `font-body`, `text-muted-foreground hover:text-foreground`. O botão fica sempre visível no header (h-12), independentemente do estado da sidebar. |
-
-### Detalhes técnicos
-
-- **Comportamento offcanvas**: o componente `Sidebar` do shadcn já suporta `collapsible="offcanvas"` nativamente — quando fechada, ela desliza para fora da tela (`left: -var(--sidebar-width)`) e o conteúdo principal ocupa 100% da largura.
-- **Trigger sempre visível**: como o botão fica no `<header>` do `AppLayout` (fora da sidebar), ele permanece visível em ambos os estados. Usar o hook `useSidebar()` em vez do componente `SidebarTrigger` para customizar a aparência (ícone + texto).
-- **Estado inicial**: manter `defaultOpen` padrão (`true`) do `SidebarProvider`, mas em mobile a sidebar já abre como sheet automaticamente.
-- **Código do novo trigger** (no header):
-  ```tsx
-  const { toggleSidebar } = useSidebar();
-  <Button variant="ghost" size="sm" onClick={toggleSidebar} className="gap-2 font-body">
-    <Menu className="h-4 w-4" />
-    <span className="text-sm">Menu</span>
-  </Button>
-  ```
-  Como `useSidebar()` precisa estar dentro do `SidebarProvider`, extrair o header para um pequeno componente interno `<TopHeader />` declarado dentro do mesmo arquivo, ou mover apenas o botão para um componente `MenuToggle`.
-
-### Estrutura resultante
-```text
-Header (h-12, sempre visível)
-├── [☰ Menu]  ← clica para abrir/fechar a sidebar
-└── CompanySelector
-
-Sidebar (offcanvas)
-├── Estado fechado: completamente fora da tela, conteúdo ocupa 100%
-└── Estado aberto: 256px, empurra/sobrepõe o conteúdo
+```
+┌────────────────────────────┬──────────────────────────────┐
+│ [Logo branca]              │                              │
+│                            │     Entrar na sua conta      │
+│                            │   Acesse seu portal de vagas │
+│ Recrute melhor —           │                              │
+│ do anúncio da vaga         │   [ Continuar com Google ]   │
+│ à contratação.             │   ──────── ou ────────       │
+│                            │   Email   [_____________]    │
+│ Portal de vagas, pipeline  │   Senha   [_____________]    │
+│ e banco de talentos em     │              Esqueceu senha? │
+│ um só lugar.               │   [        Entrar         ]  │
+│                            │   ──────── ou ────────       │
+│ ✓ Publique vagas ...       │   [ Logar com a MarQ HR  ]   │
+│ ✓ Receba candidaturas ...  │                              │
+│ ✓ Pipeline visual ...      │   Não tem conta? Criar agora │
+│ ✓ Banco de talentos ...    │                              │
+│                            │   ✓ Sem cartão  ✓ Comece já  │
+└────────────────────────────┴──────────────────────────────┘
 ```
 
-### Arquivos não alterados
-`UserProfileCard.tsx`, `CompanySelector.tsx`, páginas internas e demais componentes — a mudança é isolada ao layout de navegação.
+- Mobile: empilhar — coluna azul vira um header curto, formulário abaixo.
 
+## Conteúdo (textos)
+
+Lado esquerdo (sobre fundo azul, texto branco):
+- Logo branca (`@/assets/Logo_branca.svg`) no topo.
+- Headline: **"Recrute melhor — do anúncio da vaga à contratação."**
+- Subtítulo: "Portal de vagas, pipeline de recrutamento e banco de talentos em um só lugar. Feito para times de RH e gestores que contratam com agilidade."
+- Bullets (ícone check verde):
+  - Publique vagas com página de carreiras própria
+  - Receba candidaturas com formulários personalizados
+  - Organize seu pipeline em Kanban visual
+  - Centralize todo o seu banco de talentos
+
+Lado direito (card de login, mantém comportamento atual):
+- Título: "Entrar na sua conta" / "Criar sua conta"
+- Subtítulo: "Digite suas credenciais para acessar a MarQTalent" / "Comece a usar a MarQTalent gratuitamente"
+- Botão Google ("Continuar com Google") no topo (já existe? — se não, manter sem; ver Notas)
+- Divisor "ou"
+- Inputs Email / Senha (e demais campos do signup) — mantidos
+- Link "Esqueceu a senha?" (mantém)
+- Botão **Entrar** primário azul
+- Divisor "ou"
+- Botão **Logar com a MarQ HR** (mantém, estilo secundário/outline para não competir com Entrar)
+- Link "Não tem conta? Criar agora"
+- Trust signals abaixo: "✓ Sem cartão de crédito" e "✓ Comece em poucos minutos"
+
+Footer (rodapé inferior direito ou abaixo do card): "© 2026 MarQTalent powered by [logo MarQ]" — mantém.
+
+## Detalhes técnicos
+
+- Editar apenas `src/pages/Auth.tsx`. Sem mudanças em lógica de auth, validação, signup ou tracking — só reorganização de JSX/Tailwind.
+- Container raiz: `min-h-screen grid lg:grid-cols-2`.
+- Coluna esquerda: `bg-gradient-to-br from-primary to-primary-dark text-primary-foreground p-12 hidden lg:flex flex-col justify-between` (em mobile vira `bg-primary` compacto no topo).
+- Coluna direita: `bg-background flex items-center justify-center p-6 lg:p-12`, contendo o card existente (`max-w-md`).
+- Bullets: ícone `CheckCircle` em círculo verde (`bg-success/20 text-success` ou verde sólido) + texto branco.
+- Manter cores do design system (`primary`, `primary-foreground`, `card`, `foreground`, `muted-foreground`, `success`). Não usar cores hardcoded.
+- Inverter o par de botões: **"Entrar"** volta a ser primário azul (estilo padrão `bg-primary`), e **"Logar com a MarQ HR"** vira estilo secundário (`bg-card border border-border`) para hierarquia visual coerente com o print, onde o CTA principal é o login direto.
+- Remover a hero section atual no topo ("Seu portal de vagas completo / para recrutar melhor") e os 3 cards de passos do meio — substituídos pela coluna azul.
+- Botão Google: **não há login Google implementado hoje** — ver pergunta abaixo.
+
+## Pergunta antes de implementar
+
+O print mostra um botão "Continuar com Google" no topo do form. Hoje o projeto **não tem login Google ativo**. Posso:
+1. Adicionar login Google via Lovable Cloud (recomendado), OU
+2. Pular o botão Google e manter apenas Email/Senha + MarQ HR.
+
+Vou assumir **opção 2 (sem Google)** salvo orientação contrária — assim a entrega visual fica idêntica ao print exceto por esse botão, sem mexer em backend.
