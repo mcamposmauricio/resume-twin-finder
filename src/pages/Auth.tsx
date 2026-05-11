@@ -630,7 +630,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading || (!isLogin && !!passwordError)}
-                className="w-full py-4 text-base bg-primary hover:bg-primary-dark text-primary-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 shadow-btn-primary hover:shadow-ds-md disabled:opacity-50 disabled:cursor-not-allowed font-heading"
+                className="w-full py-4 text-base bg-card hover:bg-muted text-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 border border-border shadow-ds-sm hover:shadow-ds-md disabled:opacity-50 disabled:cursor-not-allowed font-heading"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
