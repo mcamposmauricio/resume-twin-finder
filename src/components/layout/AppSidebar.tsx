@@ -25,7 +25,7 @@ const menuItemActiveClass = "bg-primary/10 !text-primary";
 
 const mainItems = [
   { title: 'Vagas', url: '/vagas', icon: Briefcase, end: true },
-  { title: 'Talentos', url: '/banco-de-talentos', icon: Users, end: false },
+  { title: 'Banco de Talentos', url: '/banco-de-talentos', icon: Users, end: false },
   { title: 'Formulários', url: '/formularios', icon: FileText, end: false },
 ];
 
