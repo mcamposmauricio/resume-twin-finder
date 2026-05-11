@@ -675,7 +675,7 @@ export default function Auth() {
                   href="https://sso.marqhr.com/?urlFrom=https%3A%2F%2Fapp.marqtalent.com.br%2F"
                   className="w-full py-4 text-base bg-primary hover:bg-primary-dark text-primary-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 shadow-btn-primary hover:shadow-ds-md font-heading"
                 >
-                  Logar com MarQ HR
+                  Logar com a MarQ HR
                   <ArrowRight className="w-5 h-5" />
                 </a>
               </>
