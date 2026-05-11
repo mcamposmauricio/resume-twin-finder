@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { centralHubClient, TOOL_SOURCE, employeeRangeToNumber } from "@/lib/centralHubClient";
 import { toast } from "sonner";
 import logoAzul from "@/assets/Logo_Azul.svg";
+import logoBranca from "@/assets/Logo_branca.svg";
 import { useUTMTracking } from "@/hooks/useUTMTracking";
 import { pushGTMEvent } from "@/hooks/useGTMEvent";
 import { logActivity } from "@/hooks/useActivityLog";
@@ -379,73 +380,56 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-10 px-6 lg:px-12 py-6">
-        <div className="flex items-center gap-2">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-background">
+      {/* Left side - Brand panel */}
+      <div className="hidden lg:flex flex-col justify-between p-12 xl:p-16 bg-gradient-to-br from-primary to-primary-dark text-primary-foreground relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
+          backgroundImage: 'radial-gradient(circle at 20% 20%, hsl(var(--primary-foreground)) 0%, transparent 40%), radial-gradient(circle at 80% 80%, hsl(var(--primary-foreground)) 0%, transparent 40%)'
+        }} />
+        <div className="relative z-10">
           <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
-            <img src={logoAzul} alt="CompareCV by MarQ HR" className="h-8 hover:scale-105 transition-transform cursor-pointer" />
+            <img src={logoBranca} alt="MarQTalent" className="h-9 hover:scale-105 transition-transform cursor-pointer" />
           </a>
         </div>
-      </header>
 
-      <div className="min-h-screen flex flex-col px-6 lg:px-12 py-24">
-        {/* Top Hero Section - Centered */}
-        <div className="text-center mb-12 animate-fade-in pt-8">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-primary leading-tight mb-2 font-heading">
-            Seu portal de vagas completo
+        <div className="relative z-10 max-w-xl">
+          <h1 className="text-4xl xl:text-5xl font-bold leading-tight mb-6 font-heading">
+            Recrute melhor — do anúncio da vaga à contratação.
           </h1>
-          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground font-heading">
-            para recrutar melhor
+          <p className="text-lg xl:text-xl text-primary-foreground/85 mb-10 leading-relaxed">
+            Portal de vagas, pipeline de recrutamento e banco de talentos em um só lugar. Feito para times de RH e gestores que contratam com agilidade.
           </p>
+
+          <ul className="space-y-4">
+            {[
+              "Publique vagas com página de carreiras própria",
+              "Receba candidaturas com formulários personalizados",
+              "Organize seu pipeline em Kanban visual",
+              "Centralize todo o seu banco de talentos",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-3">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-success shrink-0">
+                  <CheckCircle className="w-4 h-4 text-success-foreground" />
+                </span>
+                <span className="text-base text-primary-foreground/95">{item}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* Content row - Steps + Form */}
-        <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24">
-          {/* Left side - Content */}
-          <div className="flex-1 max-w-xl animate-fade-in">
-            <p className="text-lg text-muted-foreground mb-10 leading-relaxed">
-              Publique vagas, receba candidaturas, organize seu pipeline de recrutamento e gerencie seu banco de talentos — tudo em um só lugar.
-            </p>
+        <div className="relative z-10 text-sm text-primary-foreground/70">
+          © {new Date().getFullYear()} MarQTalent powered by MarQ HR
+        </div>
+      </div>
 
-            {/* How it works - 3 steps */}
-            <div className="space-y-4">
-              <div className="flex items-start gap-4 p-4 bg-card rounded-ds shadow-ds-sm border border-border hover:shadow-ds-md transition-shadow">
-                <div className="p-3 bg-primary/10 rounded-[10px] shrink-0">
-                  <Upload className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1 font-heading">1. Publique Vagas</h3>
-                  <p className="text-sm text-muted-foreground">Crie e publique vagas com formulários personalizados e página de carreiras.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-4 bg-card rounded-ds shadow-ds-sm border border-border hover:shadow-ds-md transition-shadow">
-                <div className="p-3 bg-primary/10 rounded-[10px] shrink-0">
-                  <CheckCircle className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1 font-heading">2. Receba Candidaturas</h3>
-                  <p className="text-sm text-muted-foreground">Candidatos se inscrevem online com currículo e dados estruturados.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-4 bg-card rounded-ds shadow-ds-sm border border-border hover:shadow-ds-md transition-shadow">
-                <div className="p-3 bg-primary/10 rounded-[10px] shrink-0">
-                  <User className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1 font-heading">3. Gerencie Talentos</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Pipeline visual (Kanban), banco de talentos e exportação de dados.
-                  </p>
-                </div>
-              </div>
-            </div>
+      {/* Right side - Form */}
+      <div className="flex items-center justify-center p-6 lg:p-12 bg-background">
+        <div className="w-full max-w-md">
+          {/* Mobile-only logo */}
+          <div className="lg:hidden mb-8 flex justify-center">
+            <img src={logoAzul} alt="MarQTalent" className="h-8" />
           </div>
 
-        {/* Right side - Form */}
-        <div className="w-full max-w-md">
           <div className="bg-card p-8 lg:p-10 rounded-[20px] shadow-ds-md border border-border animate-fade-in">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-foreground mb-2 font-heading">
@@ -630,7 +614,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading || (!isLogin && !!passwordError)}
-                className="w-full py-4 text-base bg-card hover:bg-muted text-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 border border-border shadow-ds-sm hover:shadow-ds-md disabled:opacity-50 disabled:cursor-not-allowed font-heading"
+                className="w-full py-4 text-base bg-primary hover:bg-primary-dark text-primary-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 shadow-btn-primary disabled:opacity-50 disabled:cursor-not-allowed font-heading"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -673,7 +657,7 @@ export default function Auth() {
                 </div>
                 <a
                   href="https://sso.marqhr.com/?urlFrom=https%3A%2F%2Fapp.marqtalent.com.br%2F"
-                  className="w-full py-4 text-base bg-primary hover:bg-primary-dark text-primary-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 shadow-btn-primary hover:shadow-ds-md font-heading"
+                  className="w-full py-4 text-base bg-card hover:bg-muted text-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 border border-border shadow-ds-sm font-heading"
                 >
                   Logar com a MarQ HR
                   <ArrowRight className="w-5 h-5" />
@@ -691,15 +675,12 @@ export default function Auth() {
             </div>
           </div>
 
-          <div className="text-center text-muted-foreground text-sm mt-6 flex items-center justify-center gap-2">
-            <span>© {new Date().getFullYear()} CompareCV powered by</span>
-            <a href="https://marqhr.com/" target="_blank" rel="noopener noreferrer">
-              <img src={logoAzul} alt="MarQ HR" className="h-4 hover:scale-105 transition-transform cursor-pointer" />
-            </a>
+          <div className="lg:hidden text-center text-muted-foreground text-sm mt-6">
+            © {new Date().getFullYear()} MarQTalent powered by MarQ HR
           </div>
-        </div>
         </div>
       </div>
     </div>
   );
 }
+
