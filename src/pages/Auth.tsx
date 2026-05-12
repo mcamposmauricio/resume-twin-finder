@@ -6,6 +6,7 @@ import { centralHubClient, TOOL_SOURCE, employeeRangeToNumber } from "@/lib/cent
 import { toast } from "sonner";
 import logoAzul from "@/assets/logo-marqtalent.png";
 import logoBranca from "@/assets/logo-marqtalent-white.png";
+import logoMarqHrWhite from "@/assets/logo-marqhr-white.svg";
 import { useUTMTracking } from "@/hooks/useUTMTracking";
 import { pushGTMEvent } from "@/hooks/useGTMEvent";
 import { logActivity } from "@/hooks/useActivityLog";
