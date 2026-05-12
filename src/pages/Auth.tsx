@@ -4,7 +4,7 @@ import { Mail, Lock, ArrowRight, Upload, Brain, CheckCircle, User, Building2, Us
 import { supabase } from "@/integrations/supabase/client";
 import { centralHubClient, TOOL_SOURCE, employeeRangeToNumber } from "@/lib/centralHubClient";
 import { toast } from "sonner";
-import logoAzul from "@/assets/Logo_Azul.svg";
+import logoAzul from "@/assets/logo-marqtalent.png";
 import logoBranca from "@/assets/logo-marqtalent-white.png";
 import { useUTMTracking } from "@/hooks/useUTMTracking";
 import { pushGTMEvent } from "@/hooks/useGTMEvent";
