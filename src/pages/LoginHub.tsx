@@ -33,24 +33,20 @@ const LoginHub = () => {
 
   // Auto-login via access_token from HR Hub
   useEffect(() => {
-    const hubToken = searchParams.get("access_token");
-    
-    if (!hubToken) return;
-
-    // If running inside a popup opened by Auth.tsx, forward the token to opener and close
+    // If running inside a popup opened by Auth.tsx, log returned JSON and close
     const isPopup = typeof window !== 'undefined' && window.opener && window.opener !== window;
     if (isPopup) {
-      try {
-        window.opener.postMessage(
-          { type: 'marqhr-sso', access_token: hubToken },
-          window.location.origin
-        );
-      } catch (e) {
-        console.error('Failed to postMessage to opener:', e);
-      }
+      const payload: Record<string, string> = {};
+      searchParams.forEach((value, key) => {
+        payload[key] = value;
+      });
+      console.log('MarQ HR SSO callback JSON:', payload);
       window.close();
       return;
     }
+
+    const hubToken = searchParams.get("access_token");
+    if (!hubToken) return;
 
     const autoLogin = async () => {
       setIsAutoLogin(true);
