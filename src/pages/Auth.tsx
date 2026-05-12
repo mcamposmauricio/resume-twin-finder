@@ -421,11 +421,10 @@ export default function Auth() {
       {/* Right side - Form */}
       <div className="flex items-center justify-center p-6 lg:p-12 bg-background">
         <div className="w-full max-w-md">
-          <div className="mb-8 flex justify-end">
-            <img src={logoBranca} alt="MarQTalent" className="h-10" />
-          </div>
-
           <div className="bg-card p-8 lg:p-10 rounded-[20px] shadow-ds-md border border-border animate-fade-in">
+            <div className="mb-6 flex justify-center">
+              <img src={logoAzul} alt="MarQTalent" className="h-10" />
+            </div>
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-foreground mb-2 font-heading">
                 {isLogin ? "Entrar na sua conta" : "Criar sua conta"}
