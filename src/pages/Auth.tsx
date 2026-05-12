@@ -713,14 +713,15 @@ export default function Auth() {
                     <span className="bg-card px-2 text-muted-foreground">ou</span>
                   </div>
                 </div>
-                <a
-                  href="https://sso.marqhr.com/?urlFrom=https%3A%2F%2Fapp.marqtalent.com.br%2F"
+                <button
+                  type="button"
+                  onClick={handleMarqHrLogin}
                   className="w-full py-4 text-base bg-primary hover:bg-primary-dark text-primary-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 shadow-btn-primary font-heading"
                   aria-label="Logar com a MarQ HR"
                 >
                   <span className="text-sm font-medium opacity-80">Logar com a</span>
                   <img src={logoMarqHrWhite} alt="MarQ HR" className="h-5" />
-                </a>
+                </button>
               </>
             )}
 
