@@ -6,6 +6,7 @@ import { centralHubClient, TOOL_SOURCE, employeeRangeToNumber } from "@/lib/cent
 import { toast } from "sonner";
 import logoAzul from "@/assets/logo-marqtalent.png";
 import logoBranca from "@/assets/logo-marqtalent-white.png";
+import logoMarqHrWhite from "@/assets/logo-marqhr-white.svg";
 import { useUTMTracking } from "@/hooks/useUTMTracking";
 import { pushGTMEvent } from "@/hooks/useGTMEvent";
 import { logActivity } from "@/hooks/useActivityLog";
@@ -652,9 +653,10 @@ export default function Auth() {
                 <a
                   href="https://sso.marqhr.com/?urlFrom=https%3A%2F%2Fapp.marqtalent.com.br%2F"
                   className="w-full py-4 text-base bg-primary hover:bg-primary-dark text-primary-foreground font-semibold rounded-ds-btn transition-all flex items-center justify-center gap-2 shadow-btn-primary font-heading"
+                  aria-label="Logar com a MarQ HR"
                 >
-                  Logar com a MarQ HR
-                  <ArrowRight className="w-5 h-5" />
+                  <span className="text-sm font-medium opacity-80">Logar com a</span>
+                  <img src={logoMarqHrWhite} alt="MarQ HR" className="h-5" />
                 </a>
               </>
             )}
