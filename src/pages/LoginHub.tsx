@@ -37,6 +37,21 @@ const LoginHub = () => {
     
     if (!hubToken) return;
 
+    // If running inside a popup opened by Auth.tsx, forward the token to opener and close
+    const isPopup = typeof window !== 'undefined' && window.opener && window.opener !== window;
+    if (isPopup) {
+      try {
+        window.opener.postMessage(
+          { type: 'marqhr-sso', access_token: hubToken },
+          window.location.origin
+        );
+      } catch (e) {
+        console.error('Failed to postMessage to opener:', e);
+      }
+      window.close();
+      return;
+    }
+
     const autoLogin = async () => {
       setIsAutoLogin(true);
       setAutoLoginError(null);
