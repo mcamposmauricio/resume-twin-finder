@@ -33,15 +33,24 @@ const LoginHub = () => {
 
   // Auto-login via access_token from HR Hub
   useEffect(() => {
-    // If running inside a popup opened by Auth.tsx, log returned JSON and close
-    const isPopup = typeof window !== 'undefined' && window.opener && window.opener !== window;
+    // If running inside the popup opened by Auth.tsx, broadcast token and close.
+    // window.name persists across cross-origin navigations (window.opener doesn't, due to COOP).
+    const isPopup = typeof window !== 'undefined' && window.name === 'marqhr-sso';
     if (isPopup) {
       const payload: Record<string, string> = {};
       searchParams.forEach((value, key) => {
         payload[key] = value;
       });
       console.log('MarQ HR SSO callback JSON:', payload);
-      window.close();
+      try {
+        const channel = new BroadcastChannel('marqhr-sso');
+        channel.postMessage({ type: 'marqhr-sso', ...payload });
+        channel.close();
+      } catch (err) {
+        console.error('BroadcastChannel error:', err);
+      }
+      // Give the channel a tick to flush before closing
+      setTimeout(() => window.close(), 50);
       return;
     }
 
