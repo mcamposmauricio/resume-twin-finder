@@ -154,6 +154,69 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Listen for MarQ HR SSO popup messages
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      // Accept only known origins
+      const allowedOrigins = ['https://sso.marqhr.com', window.location.origin];
+      if (!allowedOrigins.includes(event.origin)) return;
+
+      const data = event.data;
+      if (!data || data.type !== 'marqhr-sso') return;
+
+      if (data.error) {
+        toast.error(data.error || 'Falha na autenticação via MarQ HR');
+        return;
+      }
+
+      const hubToken = data.access_token;
+      if (!hubToken) return;
+
+      try {
+        setLoading(true);
+        const { data: exchanged, error: fnError } = await supabase.functions.invoke(
+          'exchange-hub-token',
+          { body: { hub_token: hubToken } }
+        );
+        if (fnError || !exchanged?.access_token) {
+          throw new Error(fnError?.message || exchanged?.error || 'Falha na autenticação');
+        }
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: exchanged.access_token,
+          refresh_token: exchanged.refresh_token,
+        });
+        if (sessionError) throw sessionError;
+        toast.success('Login realizado com sucesso!');
+      } catch (err: any) {
+        console.error('MarQ HR popup login error:', err);
+        toast.error(err.message || 'Falha na autenticação via MarQ HR');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  const handleMarqHrLogin = () => {
+    const callbackUrl = `${window.location.origin}/login-hub`;
+    const ssoUrl = `https://sso.marqhr.com/?urlFrom=${encodeURIComponent(callbackUrl)}`;
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    const popup = window.open(
+      ssoUrl,
+      'marqhr-sso',
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
+    );
+    if (!popup) {
+      toast.error('Permita popups para este site para continuar com o login MarQ HR.');
+    }
+  };
+
+
   // Validate email on change (only for signup)
   const handleEmailChange = (value: string) => {
     setEmail(value);
