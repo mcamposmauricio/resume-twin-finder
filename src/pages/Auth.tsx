@@ -154,13 +154,17 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Listen for MarQ HR SSO popup messages
+  // Listen for MarQ HR SSO popup messages via BroadcastChannel
+  // (window.opener / postMessage não funciona após redirect cross-origin por COOP)
   useEffect(() => {
-    const handleMessage = async (event: MessageEvent) => {
-      // Accept only known origins
-      const allowedOrigins = ['https://sso.marqhr.com', window.location.origin];
-      if (!allowedOrigins.includes(event.origin)) return;
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel('marqhr-sso');
+    } catch {
+      return;
+    }
 
+    const handleMessage = async (event: MessageEvent) => {
       const data = event.data;
       if (!data || data.type !== 'marqhr-sso') return;
 
@@ -195,8 +199,11 @@ export default function Auth() {
       }
     };
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    channel.addEventListener('message', handleMessage);
+    return () => {
+      channel?.removeEventListener('message', handleMessage);
+      channel?.close();
+    };
   }, []);
 
   const handleMarqHrLogin = () => {
