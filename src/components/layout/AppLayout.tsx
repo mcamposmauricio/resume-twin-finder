@@ -44,11 +44,13 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen w-full bg-background relative">
         <SidebarOverlay />
-        <AppSidebar />
+        <div className="absolute inset-y-0 left-0 z-40 pointer-events-none [&>*]:pointer-events-auto">
+          <AppSidebar />
+        </div>
 
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="min-h-screen flex flex-col min-w-0">
           <TopHeader />
 
           {/* Content */}
