@@ -173,5 +173,18 @@ export function useTalentDetail(userId?: string) {
     }
   }, [userId]);
 
-  return { applications, loading, fetchDetail };
+  const toggleApplicationFavorite = useCallback(async (applicationId: string, value: boolean) => {
+    setApplications(prev => prev.map(a => (a.id === applicationId ? { ...a, is_favorite: value } : a)));
+    const { error } = await supabase
+      .from('job_applications')
+      .update({ is_favorite: value } as any)
+      .eq('id', applicationId);
+    if (error) {
+      setApplications(prev => prev.map(a => (a.id === applicationId ? { ...a, is_favorite: !value } : a)));
+      return false;
+    }
+    return true;
+  }, []);
+
+  return { applications, loading, fetchDetail, setApplications, toggleApplicationFavorite };
 }
