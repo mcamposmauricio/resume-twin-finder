@@ -9,6 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TalentPoolRow, TalentApplication, useTalentDetail } from '@/hooks/useTalentPool';
 import { TalentTimeline } from './TalentTimeline';
 import { LinkToJobDialog } from './LinkToJobDialog';
+import { FavoriteStarButton } from '@/components/FavoriteStarButton';
+import { supabase } from '@/integrations/supabase/client';
 
 function getScoreBadge(score: number) {
   if (score > 70) return { label: 'Quente', icon: Flame, className: 'bg-orange-100 text-orange-700 border-orange-200' };
