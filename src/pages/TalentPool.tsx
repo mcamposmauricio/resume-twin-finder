@@ -126,6 +126,9 @@ export default function TalentPool() {
                     setSelectedTalent(talent);
                     setDetailOpen(true);
                   }}
+                  onToggleFavorite={(next) =>
+                    toggleFavorite(talent.email, talent.latest_application_id, next)
+                  }
                 />
               ))}
             </div>
