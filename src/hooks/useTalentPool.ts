@@ -9,12 +9,14 @@ export interface TalentPoolRow {
   latest_date: string;
   latest_job_title: string;
   latest_job_posting_id: string;
+  latest_application_id: string;
   latest_triage: string;
   latest_status: string;
   has_resume: boolean;
   latest_resume_url: string | null;
   latest_resume_filename: string | null;
   score: number;
+  is_favorite: boolean;
   total_count: number;
 }
 
@@ -30,6 +32,7 @@ export interface TalentApplication {
   resume_filename: string | null;
   form_data: Record<string, any>;
   form_fields: Array<{ id: string; label: string; [key: string]: any }> | null;
+  is_favorite: boolean;
 }
 
 export interface TalentFilters {
@@ -39,6 +42,7 @@ export interface TalentFilters {
   hasResume: boolean | null;
   minApplications: number | null;
   dateFrom: string | null;
+  onlyFavorites: boolean;
 }
 
 const DEFAULT_FILTERS: TalentFilters = {
@@ -48,6 +52,7 @@ const DEFAULT_FILTERS: TalentFilters = {
   hasResume: null,
   minApplications: null,
   dateFrom: null,
+  onlyFavorites: false,
 };
 
 export function useTalentPool(userId?: string) {
