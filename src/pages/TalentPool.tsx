@@ -39,6 +39,7 @@ export default function TalentPool() {
       hasResume: null,
       minApplications: null,
       dateFrom: null,
+      onlyFavorites: false,
     });
   };
 
