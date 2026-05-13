@@ -29,6 +29,7 @@ export default function TalentPool() {
     setPage,
     totalPages,
     jobOptions,
+    toggleFavorite,
   } = useTalentPool(userId);
 
   const handleClearFilters = () => {
