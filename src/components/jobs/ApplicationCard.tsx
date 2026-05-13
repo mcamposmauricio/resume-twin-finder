@@ -72,6 +72,13 @@ export function ApplicationCard({
             </p>
           </div>
 
+          {onToggleFavorite && (
+            <FavoriteStarButton
+              isFavorite={isFavorite}
+              onToggle={onToggleFavorite}
+              size="sm"
+            />
+          )}
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {hasResume && (
               <Button

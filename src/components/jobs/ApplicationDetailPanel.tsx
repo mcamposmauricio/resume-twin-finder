@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   Trash2,
 } from 'lucide-react';
+import { FavoriteStarButton } from '@/components/FavoriteStarButton';
 import {
   Sheet,
   SheetContent,
@@ -54,6 +55,7 @@ interface ApplicationDetailPanelProps {
   onUpdateTriageStatus: (id: string, status: string) => Promise<boolean>;
   getResumeUrl: (path: string) => Promise<string | null>;
   onDelete?: () => void;
+  onToggleFavorite?: (id: string, value: boolean) => Promise<boolean>;
 }
 
 export function ApplicationDetailPanel({
@@ -67,6 +69,7 @@ export function ApplicationDetailPanel({
   onUpdateTriageStatus,
   getResumeUrl,
   onDelete,
+  onToggleFavorite,
 }: ApplicationDetailPanelProps) {
   const [resumePreviewUrl, setResumePreviewUrl] = useState<string | null>(null);
   const [loadingResume, setLoadingResume] = useState(false);
@@ -131,9 +134,18 @@ export function ApplicationDetailPanel({
           </div>
 
           <div>
-            <SheetTitle className="text-xl">
-              {application.applicant_name || 'Candidato'}
-            </SheetTitle>
+            <div className="flex items-center gap-2">
+              <SheetTitle className="text-xl">
+                {application.applicant_name || 'Candidato'}
+              </SheetTitle>
+              {onToggleFavorite && (
+                <FavoriteStarButton
+                  isFavorite={!!application.is_favorite}
+                  onToggle={(next) => onToggleFavorite(application.id, next)}
+                  size="md"
+                />
+              )}
+            </div>
             <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
               {application.applicant_email && (
                 <span>{application.applicant_email}</span>
