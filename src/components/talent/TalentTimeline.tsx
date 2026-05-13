@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { TalentApplication } from '@/hooks/useTalentPool';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { FavoriteStarButton } from '@/components/FavoriteStarButton';
 
 const TRIAGE_LABELS: Record<string, string> = {
   new: 'Nova',
@@ -19,9 +20,10 @@ const TRIAGE_STYLES: Record<string, string> = {
 interface Props {
   applications: TalentApplication[];
   bestTriageId?: string;
+  onToggleFavorite?: (applicationId: string, next: boolean) => Promise<boolean | void> | boolean | void;
 }
 
-export function TalentTimeline({ applications, bestTriageId }: Props) {
+export function TalentTimeline({ applications, bestTriageId, onToggleFavorite }: Props) {
   return (
     <div className="relative pl-6">
       {/* Vertical line */}
@@ -30,6 +32,7 @@ export function TalentTimeline({ applications, bestTriageId }: Props) {
       <div className="space-y-4">
         {applications.map((app, idx) => {
           const isBest = app.id === bestTriageId;
+          const isFavorite = !!app.is_favorite;
           return (
             <div key={app.id} className="relative">
               {/* Dot */}
@@ -47,7 +50,13 @@ export function TalentTimeline({ applications, bestTriageId }: Props) {
                 )}
               </div>
 
-              <div className={`p-3 rounded-lg border ${isBest ? 'border-primary/30 bg-primary/5' : 'border-border bg-card'}`}>
+              <div className={`p-3 rounded-lg border ${
+                isFavorite
+                  ? 'border-amber-300 bg-amber-50/40'
+                  : isBest
+                    ? 'border-primary/30 bg-primary/5'
+                    : 'border-border bg-card'
+              }`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-medium text-sm truncate">{app.job_title}</p>
@@ -56,6 +65,13 @@ export function TalentTimeline({ applications, bestTriageId }: Props) {
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {onToggleFavorite && (
+                      <FavoriteStarButton
+                        isFavorite={isFavorite}
+                        onToggle={(next) => onToggleFavorite(app.id, next)}
+                        size="sm"
+                      />
+                    )}
                     {isBest && (
                       <Badge variant="outline" className="text-[10px] border-primary text-primary">
                         Melhor
