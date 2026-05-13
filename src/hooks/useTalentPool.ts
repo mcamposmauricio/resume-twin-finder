@@ -121,6 +121,20 @@ export function useTalentPool(userId?: string) {
     setFilters(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  const toggleFavorite = useCallback(async (email: string, applicationId: string, value: boolean) => {
+    const emailLc = email.toLowerCase();
+    setTalents(prev => prev.map(t => (t.email === emailLc ? { ...t, is_favorite: value } : t)));
+    const { error } = await supabase
+      .from('job_applications')
+      .update({ is_favorite: value } as any)
+      .eq('id', applicationId);
+    if (error) {
+      setTalents(prev => prev.map(t => (t.email === emailLc ? { ...t, is_favorite: !value } : t)));
+      return false;
+    }
+    return true;
+  }, []);
+
   return {
     talents,
     totalCount,
@@ -134,6 +148,7 @@ export function useTalentPool(userId?: string) {
     pageSize,
     jobOptions,
     refresh: fetchTalents,
+    toggleFavorite,
   };
 }
 
