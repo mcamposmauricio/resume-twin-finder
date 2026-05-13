@@ -106,6 +106,13 @@ export const TalentCard = memo(function TalentCard({ talent, onClick, onToggleFa
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+            {onToggleFavorite && (
+              <FavoriteStarButton
+                isFavorite={talent.is_favorite}
+                onToggle={onToggleFavorite}
+                size="sm"
+              />
+            )}
             <Badge variant="outline" className={`text-xs flex items-center gap-1 ${scoreBadge.className}`}>
               <ScoreIcon className="w-3 h-3" />
               {scoreBadge.label}
