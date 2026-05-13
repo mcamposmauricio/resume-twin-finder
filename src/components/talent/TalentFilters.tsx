@@ -40,6 +40,7 @@ export function TalentFiltersPanel({ filters, updateFilter, jobOptions, onClear 
     filters.minApplications,
     filters.dateFrom,
     filters.jobIds.length > 0,
+    filters.onlyFavorites,
   ].filter(Boolean).length;
 
   const handleJobToggle = (jobId: string) => {
@@ -72,7 +73,7 @@ export function TalentFiltersPanel({ filters, updateFilter, jobOptions, onClear 
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Button
           variant="outline"
           size="sm"
@@ -87,6 +88,16 @@ export function TalentFiltersPanel({ filters, updateFilter, jobOptions, onClear 
             </Badge>
           )}
           {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </Button>
+
+        <Button
+          variant={filters.onlyFavorites ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => updateFilter('onlyFavorites', !filters.onlyFavorites)}
+          className={`gap-1.5 ${filters.onlyFavorites ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500' : ''}`}
+        >
+          <span className={filters.onlyFavorites ? '' : 'text-amber-500'}>★</span>
+          Favoritos
         </Button>
 
         {activeCount > 0 && (

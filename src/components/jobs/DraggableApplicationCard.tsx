@@ -15,6 +15,7 @@ interface DraggableApplicationCardProps {
   onViewResume: () => void;
   onMoveToStage: (stageSlug: string) => void;
   onDelete?: () => void;
+  onToggleFavorite?: (next: boolean) => Promise<boolean | void> | boolean | void;
 }
 
 export function DraggableApplicationCard({
@@ -25,6 +26,7 @@ export function DraggableApplicationCard({
   onViewResume,
   onMoveToStage,
   onDelete,
+  onToggleFavorite,
 }: DraggableApplicationCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: application.id,
@@ -61,6 +63,7 @@ export function DraggableApplicationCard({
         onViewDetails={onViewDetails}
         onViewResume={onViewResume}
         onDelete={onDelete}
+        onToggleFavorite={onToggleFavorite}
         stageColor={stage.color}
       />
 

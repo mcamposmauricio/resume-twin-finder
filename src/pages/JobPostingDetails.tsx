@@ -55,7 +55,7 @@ export default function JobPostingDetails() {
   const [viewingApplication, setViewingApplication] = useState<JobApplication | null>(null);
 
   const { changeStatus, getJobById } = useJobPostings(userId);
-  const { applications, getResumeUrl, updateTriageStatus, deleteApplication, refetch: refetchApplications } = useJobApplications(id);
+  const { applications, getResumeUrl, updateTriageStatus, deleteApplication, toggleFavorite, refetch: refetchApplications } = useJobApplications(id);
   // [AI-FLOW] const resumeBalance = useResumeBalance(userId);
   // [AI-FLOW] const balance = resumeBalance.availableResumes;
   // [AI-FLOW] const { isFullAccess, loading: roleLoading } = useUserRole(userId);
@@ -312,6 +312,7 @@ export default function JobPostingDetails() {
               onViewDetails={setViewingApplication}
               onViewResume={handleViewResume}
               onUpdateTriageStatus={updateTriageStatus}
+              onToggleFavorite={toggleFavorite}
               onDeleteApplication={async (id) => {
                 const success = await deleteApplication(id);
                 if (success && viewingApplication?.id === id) {
@@ -369,6 +370,7 @@ export default function JobPostingDetails() {
           }}
           onUpdateTriageStatus={updateTriageStatus}
           getResumeUrl={getResumeUrl}
+          onToggleFavorite={toggleFavorite}
           onDelete={async () => {
             if (!viewingApplication) return;
             const success = await deleteApplication(viewingApplication.id);

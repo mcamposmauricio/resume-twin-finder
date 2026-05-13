@@ -29,6 +29,7 @@ export function useJobApplications(jobPostingId?: string) {
         form_data: (a.form_data as Record<string, any>) || {},
         status: a.status as ApplicationStatus,
         triage_status: (a.triage_status as TriageStatus) || 'new',
+        is_favorite: (a as any).is_favorite ?? false,
       }));
       setApplications(parsed);
     } catch (error: any) {
@@ -264,6 +265,28 @@ export function useJobApplications(jobPostingId?: string) {
     }
   };
 
+  const toggleFavorite = async (id: string, value: boolean): Promise<boolean> => {
+    // Optimistic update
+    setApplications(prev => prev.map(a => (a.id === id ? { ...a, is_favorite: value } : a)));
+    try {
+      const { error } = await supabase
+        .from('job_applications')
+        .update({ is_favorite: value } as any)
+        .eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
+      // Rollback
+      setApplications(prev => prev.map(a => (a.id === id ? { ...a, is_favorite: !value } : a)));
+      toast({
+        title: 'Erro ao atualizar favorito',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   return {
     applications,
     loading,
@@ -271,6 +294,7 @@ export function useJobApplications(jobPostingId?: string) {
     updateApplicationStatus,
     updateTriageStatus,
     deleteApplication,
+    toggleFavorite,
     linkToAnalysis,
     uploadResume,
     getResumeUrl,

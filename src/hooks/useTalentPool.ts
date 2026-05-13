@@ -9,12 +9,14 @@ export interface TalentPoolRow {
   latest_date: string;
   latest_job_title: string;
   latest_job_posting_id: string;
+  latest_application_id: string;
   latest_triage: string;
   latest_status: string;
   has_resume: boolean;
   latest_resume_url: string | null;
   latest_resume_filename: string | null;
   score: number;
+  is_favorite: boolean;
   total_count: number;
 }
 
@@ -30,6 +32,7 @@ export interface TalentApplication {
   resume_filename: string | null;
   form_data: Record<string, any>;
   form_fields: Array<{ id: string; label: string; [key: string]: any }> | null;
+  is_favorite: boolean;
 }
 
 export interface TalentFilters {
@@ -39,6 +42,7 @@ export interface TalentFilters {
   hasResume: boolean | null;
   minApplications: number | null;
   dateFrom: string | null;
+  onlyFavorites: boolean;
 }
 
 const DEFAULT_FILTERS: TalentFilters = {
@@ -48,6 +52,7 @@ const DEFAULT_FILTERS: TalentFilters = {
   hasResume: null,
   minApplications: null,
   dateFrom: null,
+  onlyFavorites: false,
 };
 
 export function useTalentPool(userId?: string) {
@@ -86,7 +91,8 @@ export function useTalentPool(userId?: string) {
         p_has_resume: filters.hasResume ?? undefined,
         p_min_applications: filters.minApplications ?? undefined,
         p_date_from: filters.dateFrom ?? undefined,
-      });
+        p_only_favorites: filters.onlyFavorites || undefined,
+      } as any);
 
       if (error) throw error;
 
@@ -115,6 +121,20 @@ export function useTalentPool(userId?: string) {
     setFilters(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  const toggleFavorite = useCallback(async (email: string, applicationId: string, value: boolean) => {
+    const emailLc = email.toLowerCase();
+    setTalents(prev => prev.map(t => (t.email === emailLc ? { ...t, is_favorite: value } : t)));
+    const { error } = await supabase
+      .from('job_applications')
+      .update({ is_favorite: value } as any)
+      .eq('id', applicationId);
+    if (error) {
+      setTalents(prev => prev.map(t => (t.email === emailLc ? { ...t, is_favorite: !value } : t)));
+      return false;
+    }
+    return true;
+  }, []);
+
   return {
     talents,
     totalCount,
@@ -128,6 +148,7 @@ export function useTalentPool(userId?: string) {
     pageSize,
     jobOptions,
     refresh: fetchTalents,
+    toggleFavorite,
   };
 }
 
@@ -152,5 +173,18 @@ export function useTalentDetail(userId?: string) {
     }
   }, [userId]);
 
-  return { applications, loading, fetchDetail };
+  const toggleApplicationFavorite = useCallback(async (applicationId: string, value: boolean) => {
+    setApplications(prev => prev.map(a => (a.id === applicationId ? { ...a, is_favorite: value } : a)));
+    const { error } = await supabase
+      .from('job_applications')
+      .update({ is_favorite: value } as any)
+      .eq('id', applicationId);
+    if (error) {
+      setApplications(prev => prev.map(a => (a.id === applicationId ? { ...a, is_favorite: !value } : a)));
+      return false;
+    }
+    return true;
+  }, []);
+
+  return { applications, loading, fetchDetail, setApplications, toggleApplicationFavorite };
 }

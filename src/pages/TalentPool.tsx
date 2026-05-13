@@ -29,6 +29,7 @@ export default function TalentPool() {
     setPage,
     totalPages,
     jobOptions,
+    toggleFavorite,
   } = useTalentPool(userId);
 
   const handleClearFilters = () => {
@@ -39,6 +40,7 @@ export default function TalentPool() {
       hasResume: null,
       minApplications: null,
       dateFrom: null,
+      onlyFavorites: false,
     });
   };
 
@@ -124,6 +126,9 @@ export default function TalentPool() {
                     setSelectedTalent(talent);
                     setDetailOpen(true);
                   }}
+                  onToggleFavorite={(next) =>
+                    toggleFavorite(talent.email, talent.latest_application_id, next)
+                  }
                 />
               ))}
             </div>

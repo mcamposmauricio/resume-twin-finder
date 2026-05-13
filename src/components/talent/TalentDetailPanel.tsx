@@ -9,6 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TalentPoolRow, TalentApplication, useTalentDetail } from '@/hooks/useTalentPool';
 import { TalentTimeline } from './TalentTimeline';
 import { LinkToJobDialog } from './LinkToJobDialog';
+import { FavoriteStarButton } from '@/components/FavoriteStarButton';
+import { supabase } from '@/integrations/supabase/client';
 
 function getScoreBadge(score: number) {
   if (score > 70) return { label: 'Quente', icon: Flame, className: 'bg-orange-100 text-orange-700 border-orange-200' };
@@ -30,14 +32,16 @@ interface TalentDetailPanelProps {
 }
 
 export function TalentDetailPanel({ talent, open, onOpenChange, userId }: TalentDetailPanelProps) {
-  const { applications, loading: detailLoading, fetchDetail } = useTalentDetail(userId);
+  const { applications, loading: detailLoading, fetchDetail, setApplications, toggleApplicationFavorite } = useTalentDetail(userId);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [headerFavorite, setHeaderFavorite] = useState<boolean>(!!talent?.is_favorite);
 
   useEffect(() => {
     if (open && talent?.email) {
       fetchDetail(talent.email);
+      setHeaderFavorite(!!talent.is_favorite);
     }
-  }, [open, talent?.email]);
+  }, [open, talent?.email, talent?.is_favorite]);
 
   if (!talent) return null;
 
@@ -81,7 +85,29 @@ export function TalentDetailPanel({ talent, open, onOpenChange, userId }: Talent
               <User className="w-5 h-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="truncate block">{talent.name}</span>
+              <div className="flex items-center gap-2">
+                <span className="truncate">{talent.name}</span>
+                <FavoriteStarButton
+                  isFavorite={headerFavorite}
+                  onToggle={async (next) => {
+                    setHeaderFavorite(next);
+                    // Mark the latest application of this candidate
+                    const target = applications[0];
+                    if (!target) return false;
+                    const { error } = await supabase
+                      .from('job_applications')
+                      .update({ is_favorite: next } as any)
+                      .eq('id', target.id);
+                    if (error) {
+                      setHeaderFavorite(!next);
+                      return false;
+                    }
+                    setApplications(prev => prev.map(a => (a.id === target.id ? { ...a, is_favorite: next } : a)));
+                    return true;
+                  }}
+                  size="md"
+                />
+              </div>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="outline" className={`text-[10px] flex items-center gap-1 ${scoreBadge.className}`}>
                   <ScoreIcon className="w-3 h-3" />
@@ -168,7 +194,15 @@ export function TalentDetailPanel({ talent, open, onOpenChange, userId }: Talent
                   <p className="text-sm font-semibold mb-3">
                     {applications.length} {applications.length === 1 ? 'aplicação' : 'aplicações'}
                   </p>
-                  <TalentTimeline applications={applications} bestTriageId={bestApp?.id} />
+                  <TalentTimeline
+                    applications={applications}
+                    bestTriageId={bestApp?.id}
+                    onToggleFavorite={async (id, next) => {
+                      const ok = await toggleApplicationFavorite(id, next);
+                      // sync header star with the latest application
+                      if (ok && applications[0]?.id === id) setHeaderFavorite(next);
+                    }}
+                  />
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Nenhuma aplicação encontrada.</p>

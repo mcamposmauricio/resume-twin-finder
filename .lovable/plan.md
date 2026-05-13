@@ -1,37 +1,25 @@
-## Problema
+## Favoritar candidato (estrela) — Opção A
 
-O popup do SSO MarQ HR não fecha porque:
+### Backend
+- `ALTER TABLE job_applications ADD COLUMN is_favorite boolean NOT NULL DEFAULT false;`
+- Índice parcial: `CREATE INDEX ON job_applications(job_posting_id) WHERE is_favorite;`
+- RLS: já existe `UPDATE` para o dono da vaga, então favoritar funciona sem mudanças.
+- `get_talent_pool`: adicionar `bool_or(ja.is_favorite) AS t_is_favorite` no agregado e ordenar `ORDER BY t_is_favorite DESC, t_score DESC, t_latest_date DESC`. Adicionar param opcional `p_only_favorites boolean`.
+- `get_talent_applications`: incluir `is_favorite` no retorno.
 
-1. `LoginHub.tsx` detecta popup via `window.opener && window.opener !== window`
-2. Após o redirect cross-origin para `https://sso.marqhr.com` e volta para `/login-hub`, o browser zera `window.opener` (política COOP / navegação cross-origin)
-3. Resultado: a checagem falha, o branch de `window.close()` nunca roda e a tela de login manual aparece dentro do popup
+### Frontend
+1. **Novo componente** `FavoriteStarButton.tsx` — botão com ícone `Star` (lucide). Quando `isFavorite`: estrela preenchida amarela. Ao clicar pra favoritar (false→true), dispara `canvas-confetti` preset `fireworks` (~1.2s) ancorado no botão. Ao desfavoritar, sem animação. Update otimista + rollback em erro.
+2. **`TalentCard.tsx`** — estrela no canto superior direito; quando favoritado, borda destacada (`ring-1 ring-amber-300`) + leve fundo âmbar. Ao favoritar pelo Banco de Talentos, marca a candidatura mais recente daquele e-mail (`latest_application_id` — adicionar no retorno da RPC).
+3. **`TalentDetailPanel.tsx`** — estrela no header ao lado do nome. Marca a candidatura aberta na timeline (cada item da timeline também ganha estrela própria).
+4. **`ApplicationCard.tsx`** + **`ApplicationDetailPanel.tsx`** (dentro de uma vaga) — estrela na candidatura, com mesmo destaque visual.
+5. **`TalentFilters.tsx`** — adicionar toggle "Apenas favoritos".
+6. **`useTalentPool.ts`** — novo filtro `onlyFavorites`, propaga `p_only_favorites` na RPC.
+7. **`useJobApplications.ts`** — novo método `toggleFavorite(applicationId, value)`.
 
-`postMessage(window.opener, ...)` também não funcionaria pelo mesmo motivo.
+### Lib
+- Instalar `canvas-confetti` + `@types/canvas-confetti`.
 
-## Correção
-
-Trocar a forma de detectar e de comunicar com a janela pai por algo que sobreviva à navegação cross-origin.
-
-### `src/pages/Auth.tsx` (`handleMarqHrLogin`)
-
-- Manter `window.open(..., 'marqhr-sso', ...)` (o segundo argumento já é o `window.name` que persiste no popup mesmo após o redirect)
-- Adicionar um `BroadcastChannel('marqhr-sso')` ao montar o componente
-
-### `src/pages/Auth.tsx` (listener)
-
-- Substituir o listener `window.addEventListener('message', ...)` por um listener no `BroadcastChannel('marqhr-sso')`
-- Ao receber `{ type: 'marqhr-sso', access_token }`, executar o mesmo fluxo atual (`exchange-hub-token` → `setSession`)
-- Fechar e desinscrever o canal no cleanup
-
-### `src/pages/LoginHub.tsx` (branch popup)
-
-- Trocar a detecção por `window.name === 'marqhr-sso'` (sobrevive ao cross-origin)
-- Coletar todos os `searchParams` num objeto `payload` e fazer `console.log('MarQ HR SSO callback JSON:', payload)` (mantém o comportamento já solicitado)
-- Postar via `BroadcastChannel('marqhr-sso')` com `{ type: 'marqhr-sso', ...payload }` (envia `access_token`, `refresh_token` etc.)
-- Chamar `window.close()` em seguida; como fallback, exibir uma mensagem curta "Pode fechar esta janela" caso o browser bloqueie o close
-
-### Notas técnicas
-
-- `BroadcastChannel` funciona entre janelas da mesma origin (Auth e LoginHub estão ambas em `app.marqtalent.com.br` / preview), então é o canal certo aqui
-- Não mexer no edge function `exchange-hub-token` nem em backend
-- Sem mudanças de UI visíveis fora do popup
+### Arquivos
+- migration: ALTER + índice + atualização das 2 RPCs.
+- novo: `src/components/FavoriteStarButton.tsx`
+- editar: `TalentCard.tsx`, `TalentDetailPanel.tsx`, `TalentTimeline.tsx`, `TalentFilters.tsx`, `useTalentPool.ts`, `ApplicationCard.tsx`, `ApplicationDetailPanel.tsx`, `useJobApplications.ts`
