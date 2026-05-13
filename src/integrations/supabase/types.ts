@@ -221,6 +221,7 @@ export type Database = {
           created_at: string
           form_data: Json
           id: string
+          is_favorite: boolean
           job_posting_id: string
           resume_filename: string | null
           resume_url: string | null
@@ -234,6 +235,7 @@ export type Database = {
           created_at?: string
           form_data?: Json
           id?: string
+          is_favorite?: boolean
           job_posting_id: string
           resume_filename?: string | null
           resume_url?: string | null
@@ -247,6 +249,7 @@ export type Database = {
           created_at?: string
           form_data?: Json
           id?: string
+          is_favorite?: boolean
           job_posting_id?: string
           resume_filename?: string | null
           resume_url?: string | null
@@ -625,6 +628,7 @@ export type Database = {
           form_data: Json
           form_fields: Json
           id: string
+          is_favorite: boolean
           job_posting_id: string
           job_status: string
           job_title: string
@@ -640,6 +644,7 @@ export type Database = {
           p_has_resume?: boolean
           p_job_ids?: string[]
           p_min_applications?: number
+          p_only_favorites?: boolean
           p_page?: number
           p_page_size?: number
           p_search?: string
@@ -649,6 +654,8 @@ export type Database = {
         Returns: {
           email: string
           has_resume: boolean
+          is_favorite: boolean
+          latest_application_id: string
           latest_date: string
           latest_job_posting_id: string
           latest_job_title: string
