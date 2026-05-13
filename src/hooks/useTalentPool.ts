@@ -91,7 +91,8 @@ export function useTalentPool(userId?: string) {
         p_has_resume: filters.hasResume ?? undefined,
         p_min_applications: filters.minApplications ?? undefined,
         p_date_from: filters.dateFrom ?? undefined,
-      });
+        p_only_favorites: filters.onlyFavorites || undefined,
+      } as any);
 
       if (error) throw error;
 
