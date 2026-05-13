@@ -72,6 +72,7 @@ export interface JobApplication {
   status: ApplicationStatus;
   triage_status: TriageStatus;
   analysis_id?: string;
+  is_favorite?: boolean;
   created_at: string;
   job_posting?: JobPosting;
 }
