@@ -16,12 +16,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { JobApplication, TriageStatus, TRIAGE_STATUS_LABELS } from '@/types/jobs';
 import { cn } from '@/lib/utils';
+import { FavoriteStarButton } from '@/components/FavoriteStarButton';
 
 interface ApplicationCardProps {
   application: JobApplication;
   onViewDetails: () => void;
   onViewResume: () => void;
   onDelete?: () => void;
+  onToggleFavorite?: (next: boolean) => Promise<boolean | void> | boolean | void;
   showTriageIndicator?: boolean;
   stageColor?: string;
 }
@@ -31,19 +33,22 @@ export function ApplicationCard({
   onViewDetails,
   onViewResume,
   onDelete,
+  onToggleFavorite,
   showTriageIndicator = false,
   stageColor,
 }: ApplicationCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const hasResume = !!application.resume_url;
   const isDeservesAnalysis = application.triage_status === 'deserves_analysis';
+  const isFavorite = !!application.is_favorite;
 
   return (
     <>
       <div
         className={cn(
           'group p-3 bg-card border rounded-lg hover:shadow-md transition-all cursor-pointer',
-          isDeservesAnalysis && 'ring-2 ring-primary/30 bg-primary/5'
+          isDeservesAnalysis && 'ring-2 ring-primary/30 bg-primary/5',
+          isFavorite && 'ring-2 ring-amber-300 bg-amber-50/40 border-amber-200'
         )}
         onClick={onViewDetails}
       >
