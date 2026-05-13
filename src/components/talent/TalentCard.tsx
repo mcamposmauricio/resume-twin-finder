@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { TalentPoolRow } from '@/hooks/useTalentPool';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { FavoriteStarButton } from '@/components/FavoriteStarButton';
+import { cn } from '@/lib/utils';
 
 const TRIAGE_STYLES: Record<string, string> = {
   new: 'bg-muted text-muted-foreground',
@@ -34,9 +36,10 @@ function getRecencyBadge(latestDate: string) {
 interface TalentCardProps {
   talent: TalentPoolRow;
   onClick: () => void;
+  onToggleFavorite?: (next: boolean) => Promise<boolean | void> | boolean | void;
 }
 
-export const TalentCard = memo(function TalentCard({ talent, onClick }: TalentCardProps) {
+export const TalentCard = memo(function TalentCard({ talent, onClick, onToggleFavorite }: TalentCardProps) {
   const latestDate = format(new Date(talent.latest_date), "dd MMM yyyy", { locale: ptBR });
   const scoreBadge = getScoreBadge(talent.score);
   const ScoreIcon = scoreBadge.icon;
@@ -44,7 +47,10 @@ export const TalentCard = memo(function TalentCard({ talent, onClick }: TalentCa
 
   return (
     <Card
-      className="cursor-pointer hover:shadow-md transition-shadow border-border"
+      className={cn(
+        'cursor-pointer hover:shadow-md transition-shadow border-border',
+        talent.is_favorite && 'ring-1 ring-amber-300 border-amber-200 bg-amber-50/30'
+      )}
       onClick={onClick}
     >
       <CardContent className="p-4">
