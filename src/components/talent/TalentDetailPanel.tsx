@@ -32,7 +32,7 @@ interface TalentDetailPanelProps {
 }
 
 export function TalentDetailPanel({ talent, open, onOpenChange, userId }: TalentDetailPanelProps) {
-  const { applications, loading: detailLoading, fetchDetail, setApplications } = useTalentDetail(userId);
+  const { applications, loading: detailLoading, fetchDetail, setApplications, toggleApplicationFavorite } = useTalentDetail(userId);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [headerFavorite, setHeaderFavorite] = useState<boolean>(!!talent?.is_favorite);
 
@@ -194,7 +194,15 @@ export function TalentDetailPanel({ talent, open, onOpenChange, userId }: Talent
                   <p className="text-sm font-semibold mb-3">
                     {applications.length} {applications.length === 1 ? 'aplicação' : 'aplicações'}
                   </p>
-                  <TalentTimeline applications={applications} bestTriageId={bestApp?.id} />
+                  <TalentTimeline
+                    applications={applications}
+                    bestTriageId={bestApp?.id}
+                    onToggleFavorite={async (id, next) => {
+                      const ok = await toggleApplicationFavorite(id, next);
+                      // sync header star with the latest application
+                      if (ok && applications[0]?.id === id) setHeaderFavorite(next);
+                    }}
+                  />
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Nenhuma aplicação encontrada.</p>
