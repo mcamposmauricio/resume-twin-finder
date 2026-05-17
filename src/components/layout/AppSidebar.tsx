@@ -1,6 +1,6 @@
-import { Briefcase, Users, FileText, Search, ExternalLink } from 'lucide-react';
+import { Briefcase, Users, FileText, Search, ExternalLink, Activity } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-// auth context not needed after removing admin item
+import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -29,9 +29,16 @@ const mainItems = [
   { title: 'Formulários', url: '/formularios', icon: FileText, end: false },
 ];
 
+const ACTIVITY_VISIBLE_EMAIL = 'mauricio@marqponto.com.br';
+
 export function AppSidebar() {
   const { setOpen, setOpenMobile, isMobile } = useSidebar();
+  const { userEmail } = useAuth();
   const closeSidebar = () => (isMobile ? setOpenMobile(false) : setOpen(false));
+  const showActivity = userEmail === ACTIVITY_VISIBLE_EMAIL;
+  const visibleItems = showActivity
+    ? [...mainItems, { title: 'Atividades', url: '/atividades', icon: Activity, end: false }]
+    : mainItems;
 
   return (
     <Sidebar collapsible="offcanvas" className="border-r border-border">
