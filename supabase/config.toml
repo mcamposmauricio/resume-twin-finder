@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.extract-application-data]
 verify_jwt = false
+
+[functions.system-full-export]
+verify_jwt = true
