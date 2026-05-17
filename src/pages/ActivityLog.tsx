@@ -26,6 +26,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
 import { AnalysisPreviewDialog } from "@/components/admin/AnalysisPreviewDialog";
+import { SystemExportTab } from "@/components/admin/SystemExportTab";
 import type { DateRange } from "react-day-picker";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -239,10 +240,19 @@ export default function ActivityLog() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className={cn("grid w-full", user?.email === 'mauricio@marqponto.com.br' ? "max-w-2xl grid-cols-3" : "max-w-md grid-cols-2")}>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="activities">Atividades</TabsTrigger>
+            {user?.email === 'mauricio@marqponto.com.br' && (
+              <TabsTrigger value="export">Exportação Completa</TabsTrigger>
+            )}
           </TabsList>
+
+          {user?.email === 'mauricio@marqponto.com.br' && (
+            <TabsContent value="export">
+              <SystemExportTab />
+            </TabsContent>
+          )}
 
           <TabsContent value="users">
             <UserManagementTab />
