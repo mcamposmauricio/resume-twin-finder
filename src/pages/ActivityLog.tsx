@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
 import { AnalysisPreviewDialog } from "@/components/admin/AnalysisPreviewDialog";
 import { SystemExportTab } from "@/components/admin/SystemExportTab";
+import { SystemCsvExportTab } from "@/components/admin/SystemCsvExportTab";
 import type { DateRange } from "react-day-picker";
 import type { Json } from "@/integrations/supabase/types";
 
