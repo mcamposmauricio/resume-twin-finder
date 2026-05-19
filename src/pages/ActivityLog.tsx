@@ -241,18 +241,26 @@ export default function ActivityLog() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className={cn("grid w-full", user?.email === 'mauricio@marqponto.com.br' ? "max-w-2xl grid-cols-3" : "max-w-md grid-cols-2")}>
+          <TabsList className={cn("grid w-full", user?.email === 'mauricio@marqponto.com.br' ? "max-w-3xl grid-cols-4" : "max-w-md grid-cols-2")}>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="activities">Atividades</TabsTrigger>
             {user?.email === 'mauricio@marqponto.com.br' && (
-              <TabsTrigger value="export">Exportação Completa</TabsTrigger>
+              <>
+                <TabsTrigger value="export">Exportação Completa</TabsTrigger>
+                <TabsTrigger value="csv-export">Exportação CSV</TabsTrigger>
+              </>
             )}
           </TabsList>
 
           {user?.email === 'mauricio@marqponto.com.br' && (
-            <TabsContent value="export">
-              <SystemExportTab />
-            </TabsContent>
+            <>
+              <TabsContent value="export">
+                <SystemExportTab />
+              </TabsContent>
+              <TabsContent value="csv-export">
+                <SystemCsvExportTab />
+              </TabsContent>
+            </>
           )}
 
           <TabsContent value="users">
