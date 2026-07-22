@@ -233,14 +233,13 @@ ja AS (
   GROUP BY jp.user_id
 ),
 ft AS (SELECT user_id, COUNT(*) AS c FROM public.form_templates GROUP BY user_id),
-jt AS (SELECT user_id, COUNT(*) AS c FROM public.job_templates GROUP BY user_id),
 ps AS (SELECT user_id, COUNT(*) AS c FROM public.pipeline_stages GROUP BY user_id),
 al AS (
   SELECT user_id, COUNT(*) AS c, MAX(created_at) AS last_at
   FROM public.activity_logs GROUP BY user_id
 ),
 inv AS (
-  SELECT invited_by AS user_id, COUNT(*) AS c FROM public.invites GROUP BY invited_by
+  SELECT inviter_user_id AS user_id, COUNT(*) AS c FROM public.invites GROUP BY inviter_user_id
 )
 SELECT
   p.user_id,
