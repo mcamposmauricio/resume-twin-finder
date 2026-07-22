@@ -325,7 +325,6 @@ LEFT JOIN an       ON an.user_id = p.user_id
 LEFT JOIN jp       ON jp.user_id = p.user_id
 LEFT JOIN ja       ON ja.user_id = p.user_id
 LEFT JOIN ft       ON ft.user_id = p.user_id
-LEFT JOIN jt       ON jt.user_id = p.user_id
 LEFT JOIN ps       ON ps.user_id = p.user_id
 LEFT JOIN al       ON al.user_id = p.user_id
 LEFT JOIN inv      ON inv.user_id = p.user_id
