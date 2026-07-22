@@ -29,3 +29,6 @@ verify_jwt = true
 
 [functions.system-csv-export]
 verify_jwt = true
+
+[functions.leads-export]
+verify_jwt = true

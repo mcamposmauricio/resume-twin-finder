@@ -1,87 +1,70 @@
-# Migração Let's Make por link — nada de anexo no chat
+# Exportação de Leads Enriquecida (CSV)
 
-Nova abordagem: o Lovable de destino recebe **um único link** (endpoint HTTP deste projeto) e um **token de acesso**. Ele mesmo baixa o SQL, o manifesto e os ~1.777 PDFs direto do bucket, em paralelo. Sem ZIP, sem anexo.
+Nova aba dentro do menu **Atividades** (mesma restrição: `mauricio@marqponto.com.br`) que gera um único CSV com **um lead por linha** (`profiles.user_id`), cruzando todas as tabelas do banco que trazem informação sobre o lead.
 
-## Como fica o fluxo
+## Onde vive
 
-```
-[Projeto origem]                              [Projeto destino — Lovable]
-─────────────────                             ────────────────────────────
-Edge function `letsmake-migration-index`
-  GET  /?scope=open                 ─────►    fetch(indexUrl, {x-migration-token})
-     retorna:                                 → recebe migration_index.json
-     {
-       sql_url,        (signed 7d)     ◄─────
-       manifest_url,   (signed 7d)
-       cvs: [{path, url, size}, ...],  (URLs assinadas 7d)
-       external_urls: [...]            (Azure, já absolutas)
-     }
-                                              baixa sql_url, roda no destino
-                                              itera cvs[] em paralelo:
-                                                fetch(cv.url) → upload no bucket
-                                                             `resumes/{job_id}/{filename}`
-                                              lê external_urls[] (só metadata,
-                                                nada a baixar)
-```
+- **Frontend:** nova aba `Exportação de Leads` em `src/pages/ActivityLog.tsx`, ao lado de "Exportação Completa" e "Exportação CSV".
+- **Componente:** `src/components/admin/LeadsExportTab.tsx` — botão único "Gerar CSV de Leads", barra de progresso, log em tempo real (mesmo padrão visual do `SystemCsvExportTab`).
+- **Backend:** nova edge function `supabase/functions/leads-export/index.ts` (`verify_jwt = true`), valida email admin, monta o CSV em streaming SSE (`progress` / `log` / `done` com URL assinada em `system-exports/leads/leads-YYYYMMDD-HHmm.csv`, 24h).
 
-Tudo servido pela infra de Storage do Supabase de origem via signed URLs de 7 dias (máx do Storage). Se expirar, basta re-chamar o índice: um único GET regenera todas as URLs.
+## Colunas do CSV (uma linha por lead)
 
-## O que será entregue
+Bloco **Identidade** (profiles + auth.users)
+- user_id, email, name, phone, cargo, company_name, employee_count
+- source (manual/hr_hub/…), hr_hub_user_id, lead_source, referral_code, referred_by_code
+- is_blocked, show_marq_banner, total_resumes
+- created_at, updated_at
+- auth_last_sign_in_at, auth_email_confirmed_at, auth_provider (de `auth.users.raw_app_meta_data->>'provider'`)
 
-**Ao final, você recebe apenas um bloco de texto pronto para colar no chat do outro Lovable**, contendo:
+Bloco **Papel & acesso** (user_roles)
+- role (lead/full_access/…), is_full_access, is_admin_email
 
-1. A URL do endpoint de índice (`https://<project>.functions.supabase.co/letsmake-migration-index?scope=open`).
-2. O token de acesso (`x-migration-token`).
-3. Instruções claras para o agente de destino: fetch → SQL → download+upload em paralelo → validação.
+Bloco **Marca / Página de carreiras** (profiles)
+- careers_page_enabled, careers_page_slug, company_website, company_linkedin, company_instagram, company_whatsapp, company_youtube, company_tiktok, company_glassdoor
+- has_logo (bool derivado de company_logo_url), brand_color
+- has_about, has_mission, has_vision, has_values, has_culture, benefits_count (jsonb length)
 
-Nada em `/mnt/documents`, nada de anexo. É só copiar e colar.
+Bloco **Uso — Análises** (analyses)
+- analyses_total, analyses_completed, analyses_last_at
+- tokens_used_total, resumes_analyzed_total (soma de `jsonb_array_length(candidates)`)
 
-## Escopo
+Bloco **Uso — Vagas** (job_postings)
+- jobs_total, jobs_draft, jobs_active, jobs_paused, jobs_closed
+- jobs_first_created_at, jobs_last_created_at
+- careers_public_jobs (ativas com slug público)
 
-Padrão: **`scope=open`** — 18 vagas ativas/pausadas da Anne, 1.800 candidaturas, ~1.777 PDFs internos + 22 URLs externas. Suporta `scope=all` também, caso você mude de ideia.
+Bloco **Uso — Candidaturas recebidas** (job_applications via job_postings.user_id)
+- applications_total, applications_last_at
+- applications_new, applications_low_fit, applications_deserves_analysis
+- applications_with_resume, applications_favorited
+- unique_candidates (distinct lower(applicant_email))
 
-## Passos que serão executados (build mode)
+Bloco **Templates & Pipeline**
+- form_templates_count, job_templates_count, pipeline_stages_count
 
-1. **Escolher e salvar o token compartilhado** via `generate_secret` como `LETSMAKE_MIGRATION_TOKEN` (32 chars, aleatório, nunca revelado no chat — o agente destino recebe o valor gerado uma única vez no bloco final).
-2. **Criar edge function `letsmake-migration-index`** em `supabase/functions/letsmake-migration-index/index.ts`:
-   - CORS liberado.
-   - Autenticação por header `x-migration-token` (compara com `LETSMAKE_MIGRATION_TOKEN`). Sem match → 401.
-   - Query `?scope=open|all` (default `open`).
-   - Resolve os `job_posting_id` da Anne (`user_id = 'df2a4abf-…'`) filtrando por status.
-   - Gera `01_import.sql` **dinamicamente** consultando `form_templates`, `pipeline_stages`, `job_postings`, `job_applications` com `ON CONFLICT DO NOTHING` e placeholder que resolve `user_id` por email `anne.caroline.osorio@gmail.com`. Faz upload em `system-exports/letsmake/{scope}/01_import.sql`, retorna signed URL 7d.
-   - Gera `manifest.json` com `{ job_posting_id, filename, storage_path, size, is_external }` para todas as candidaturas do escopo. Upload em `system-exports/letsmake/{scope}/manifest.json`, signed URL 7d.
-   - Lista objetos do bucket `resumes` cujo prefixo bate com os job_ids do escopo (paginado, 1000 em 1000).
-   - Chama `storage.from('resumes').createSignedUrls(paths, 604800)` em lotes de 100.
-   - Devolve JSON:
-     ```json
-     {
-       "scope": "open",
-       "generated_at": "2026-…",
-       "expires_in_days": 7,
-       "sql_url": "https://…",
-       "manifest_url": "https://…",
-       "target_email": "anne.caroline.osorio@gmail.com",
-       "counts": { "jobs": 18, "applications": 1800, "cvs_internal": 1777, "cvs_external": 22 },
-       "cvs": [ { "job_posting_id": "…", "filename": "…", "storage_path": "…/…pdf", "url": "https://…", "size": 123456 } ],
-       "external_urls": [ { "application_id": "…", "url": "https://…" } ]
-     }
-     ```
-3. **Testar** com `supabase--curl_edge_functions`: chamar com token, conferir contagens e uma signed URL de amostra (fazendo `HEAD` para validar 200).
-4. **Montar o prompt final** para o chat do Lovable destino com: URL do índice, token, instruções passo a passo (fetch, rodar SQL, loop de download/upload com concorrência 20 e retry x3, path exato `{job_posting_id}/{filename}`, validação de contagens no fim).
-5. **Deixar a function publicada** até a migração terminar. Combinamos deletar depois (function + secret + arquivos em `system-exports/letsmake/`).
+Bloco **Atividade & convites**
+- activity_logs_count, activity_logs_last_at
+- invites_sent
+
+Bloco **Derivados / scoring**
+- days_since_signup, days_since_last_activity (max de analyses/jobs/applications/activity)
+- engagement_score: `0` sem uso · `1` só cadastro + login · `2` criou vaga OU análise · `3` recebeu candidatura · `4` >10 candidaturas ou >3 vagas ativas
+
+## Como o backend monta
+
+Uma única query SQL com CTEs agregando cada bloco por `user_id`, `LEFT JOIN` em `profiles`. Roda via service role para ler `auth.users` e ignorar RLS. Escreve o CSV em memória (UTF-8 + BOM, aspas duplas escapadas), envia progresso a cada bloco processado, sobe no bucket `system-exports` e devolve signed URL.
 
 ## Detalhes técnicos
 
-- Nenhum ZIP, nenhum arquivo em `/mnt/documents`. Toda a persistência intermediária vai para o bucket privado `system-exports` que já existe.
-- Signed URL cap = 7 dias. Se o processo de migração levar mais tempo, um novo GET no índice regera tudo.
-- `createSignedUrls` aceita ~100 paths por chamada → paginação interna.
-- SQL gerado é idempotente (`ON CONFLICT (id) DO NOTHING/UPDATE`), preserva `id` de vagas/candidaturas, resolve `user_id` por email em runtime.
-- Nenhuma alteração de schema ou de dados no projeto origem.
-- Segurança: token via `generate_secret` (não fica no repo, não aparece no chat depois do bloco final), escopo travado ao `user_id` da Anne dentro da function, endpoint só devolve dados dela.
-- Se quiser rotacionar/invalidar acesso a qualquer momento: `update_secret` no `LETSMAKE_MIGRATION_TOKEN` e o link para de funcionar.
+- Reaproveita padrão SSE, autenticação e UI do `SystemCsvExportTab` existente.
+- Registro em `activity_logs` (`action: 'leads_export'`, metadata com contagem de linhas).
+- Sem mudanças de schema, sem migrations.
+- `supabase/config.toml`: adicionar `[functions.leads-export] verify_jwt = true`.
+- Nenhuma alteração em fluxos existentes.
 
-## Fora de escopo
+## Fora do escopo
 
-- Signup/autenticação real (basta o token compartilhado — mesmo padrão já usado no `letsmake-signed-urls` anterior).
-- Vagas encerradas (default `scope=open`).
-- Alterações no projeto destino — isso vai no prompt final que você cola lá.
+- Filtros por período/origem (usuário pediu "mais completo possível" — exporta tudo).
+- Exportar candidatos como linhas (leads = profiles conforme resposta).
+- Alterar exportações já existentes.
