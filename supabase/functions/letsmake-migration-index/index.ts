@@ -19,6 +19,27 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MIGRATION_TOKEN = Deno.env.get("LETSMAKE_MIGRATION_TOKEN")!;
 
+const PAGE = 1000;
+
+async function fetchAllApplications(jobIds: string[], cols: string) {
+  const out: any[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await admin
+      .from("job_applications")
+      .select(cols)
+      .in("job_posting_id", jobIds)
+      .order("created_at", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    out.push(...data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return out;
+}
+
 const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false },
 });
