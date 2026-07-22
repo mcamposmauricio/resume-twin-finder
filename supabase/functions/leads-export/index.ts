@@ -299,7 +299,6 @@ SELECT
   COALESCE(ja.applications_favorited, 0) AS applications_favorited,
   COALESCE(ja.unique_candidates, 0) AS unique_candidates,
   COALESCE(ft.c, 0) AS form_templates_count,
-  COALESCE(jt.c, 0) AS job_templates_count,
   COALESCE(ps.c, 0) AS pipeline_stages_count,
   COALESCE(al.c, 0) AS activity_logs_count,
   al.last_at        AS activity_logs_last_at,
