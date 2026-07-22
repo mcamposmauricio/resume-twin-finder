@@ -1,22 +1,67 @@
-## Objetivo
-Substituir o email `rebeca.liberato@letsmake.com.br` por `anne.caroline.osorio@gmail.com` para o mesmo usuário (user_id `df2a4abf-6754-447b-a179-e02d4d16b502`), mantendo todo o histórico, perfil, roles, vagas e permissões intactos. Apenas a forma de login e a identificação visual mudam.
+# Migração Let's Make → novo projeto Lovable
 
-## Mudanças
+Extrair as **38 vagas** (17 ativas, 20 fechadas, 1 pausada) e **2.189 candidaturas** (2.183 com CV, ~573 MB) da usuária `anne.caroline.osorio@gmail.com` para um novo projeto Lovable/Supabase, mantendo integridade referencial e sem perder dados.
 
-### 1. Atualizar email no `auth.users`
-- `UPDATE auth.users SET email = 'anne.caroline.osorio@gmail.com', email_confirmed_at = COALESCE(email_confirmed_at, now()) WHERE id = 'df2a4abf-6754-447b-a179-e02d4d16b502'`
+## Estratégia de mapeamento de dono
 
-### 2. Atualizar email no `public.profiles`
-- `UPDATE profiles SET email = 'anne.caroline.osorio@gmail.com' WHERE user_id = 'df2a4abf-...'`
+No projeto destino a Anne já existe. Todos os `user_id` do SQL de import serão resolvidos **em tempo de execução** por email:
 
-### 3. Atualizar função `is_template_authorized_email`
-Hoje a função libera acesso a templates apenas para alguns emails fixos. Trocar `rebeca.liberato@letsmake.com.br` por `anne.caroline.osorio@gmail.com` na lista, mantendo os admins Mauricio, Thaina e Marco.
+```sql
+-- topo do script
+\set target_email 'anne.caroline.osorio@gmail.com'
+-- resolve UUID uma vez em uma CTE / variável psql:
+SELECT id AS new_user_id FROM auth.users WHERE email = :'target_email' \gset
+```
 
-### 4. Atualizar logs antigos (opcional, mas recomendado para consistência)
-- `UPDATE activity_logs SET user_email = 'anne.caroline.osorio@gmail.com' WHERE user_id = 'df2a4abf-...'`
+Todo `INSERT` usa `:'new_user_id'` no lugar do UUID antigo (`df2a4abf-...`). Se a coluna `company_name` estiver preenchida no perfil destino, o script não sobrescreve.
 
-## Observações
-- O `user_id` permanece o mesmo, portanto todas as FKs (job_postings, applications, roles, etc.) continuam funcionando sem migração.
-- O email novo é Gmail (não corporativo), mas a validação `is_corporate_email` só roda no signup (`handle_new_user`), não em update — sem impacto.
-- A Anne deverá fazer login com o novo email. Se ela não souber a senha atual da Rebeca, será preciso usar o fluxo de reset de senha (`temp-password` ou "esqueci minha senha").
-- Como é mudança de dados (não schema), uso a tool de insert/update — sem migration.
+## O que será exportado (na ordem do SQL)
+
+1. **`form_templates`** — os 3 templates usados pelas 38 vagas (`INSERT ... ON CONFLICT (id) DO NOTHING`, com `user_id = :new_user_id`).
+2. **`pipeline_stages`** — as 8 etapas customizadas da Anne (idempotente por `(user_id, slug)`).
+3. **`job_postings`** — 38 linhas preservando `id` original (para bater com o path dos CVs no Storage), `status`, `public_slug`, `form_template_id`, `company_*`, `brand_color`, timestamps.
+4. **`job_applications`** — 2.189 linhas preservando `id`, `job_posting_id`, `form_data` (jsonb), `applicant_email/name`, `resume_url`, `resume_filename`, `status`, `triage_status`, `is_favorite`, `created_at`.
+
+IDs originais são mantidos para: (a) o path dos CVs `{job_posting_id}/{uuid}.pdf` continuar válido, (b) links públicos `/apply/:slug` seguirem funcionando, (c) permitir re-rodar o script sem duplicar (`ON CONFLICT (id) DO NOTHING`).
+
+## O que **não** vai no pacote
+
+- `profiles` da Anne (já existe no destino).
+- `user_roles`, `activity_logs`, `analyses`, `analysis_jobs`, `invites` (não pedidos, e alguns são específicos do projeto atual).
+- Schema/DDL — o projeto destino já foi clonado com a estrutura correta.
+
+## CVs (573 MB / 2.063 arquivos)
+
+Edge function `export-letsmake-cvs` (temporária, restrita à Anne) lista `storage.objects` do bucket `resumes` cujo `name` começa com um dos 38 `job_posting_id`, baixa cada arquivo via service role e devolve um **ZIP em stream**. Rodada em lotes de ~200 arquivos para não estourar memória; o front concatena os ZIPs parciais em um único arquivo salvo em `/mnt/documents/letsmake-cvs.zip`.
+
+No destino, um pequeno script Node incluído no ZIP faz upload de cada arquivo para o bucket `resumes` mantendo exatamente `{job_posting_id}/{filename}` — assim os `resume_url` importados batem sem reescrita.
+
+## Entregável final
+
+`/mnt/documents/letsmake-migration.zip` contendo:
+
+```text
+letsmake-migration/
+├── README.md                    # passos numerados, ordem de execução, checklist
+├── 01_import.sql                # idempotente, resolve user_id por email
+├── cvs/                         # 2.063 PDFs em subpastas {job_id}/
+└── scripts/
+    └── upload-cvs.mjs           # script Node com @supabase/supabase-js
+```
+
+## Passos de execução (documentados no README)
+
+1. No projeto destino, garantir que a Anne já fez login pelo menos uma vez (para existir em `auth.users`).
+2. Confirmar que schema (tabelas `job_postings`, `job_applications`, `form_templates`, `pipeline_stages`) e o bucket privado `resumes` existem com as mesmas policies.
+3. Rodar `01_import.sql` via SQL editor do novo projeto.
+4. `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/upload-cvs.mjs`.
+5. Validar: contagens por tabela + amostragem de 5 candidaturas abrindo o CV assinado.
+
+## Detalhes técnicos
+
+- **Edge function nova (temporária):** `supabase/functions/export-letsmake-migration/index.ts` — gera o `01_import.sql` e a lista de CVs a baixar. Restrita ao email da Anne + ao dono atual (`mauricio@marqponto.com.br`). Deletada após a migração.
+- **Front-end:** botão único em nova aba "Migração Let's Make" dentro de `ActivityLog.tsx` (só visível para os dois emails admin), com progresso em SSE similar ao `SystemExportTab`.
+- **Idempotência:** todos os `INSERT` usam `ON CONFLICT (id) DO NOTHING`; re-execução parcial é segura.
+- **`form_data` jsonb:** serializado com `jsonb_build_object` via `to_jsonb(...)` no export para evitar problemas de escape.
+- **`resume_url`:** mantido como está (path relativo dentro do bucket `resumes`), não URL assinada — assim o novo projeto gera signed URLs próprias.
+- **Tamanho:** ZIP final estimado em ~600 MB; se necessário, split em `cvs-part-01.zip`, `cvs-part-02.zip`.
