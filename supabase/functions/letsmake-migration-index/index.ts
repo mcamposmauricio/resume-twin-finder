@@ -335,7 +335,7 @@ Deno.serve(async (req) => {
       target_email: TARGET_EMAIL,
       counts: {
         jobs: jobIds.length,
-        applications: appsForExt?.length ?? 0,
+        applications: appsForExt.length,
         cvs_internal: cvs.length,
         cvs_external: externalUrls.length,
       },
