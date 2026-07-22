@@ -19,6 +19,27 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MIGRATION_TOKEN = Deno.env.get("LETSMAKE_MIGRATION_TOKEN")!;
 
+const PAGE = 1000;
+
+async function fetchAllApplications(jobIds: string[], cols: string) {
+  const out: any[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await admin
+      .from("job_applications")
+      .select(cols)
+      .in("job_posting_id", jobIds)
+      .order("created_at", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    out.push(...data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return out;
+}
+
 const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false },
 });
@@ -60,14 +81,14 @@ async function generateSql(jobIds: string[]): Promise<string> {
     ...new Set((jobsRows ?? []).map((j) => j.form_template_id).filter(Boolean)),
   ] as string[];
 
-  const [{ data: templates }, { data: stages }, { data: jobs }, { data: apps }] =
+  const [{ data: templates }, { data: stages }, { data: jobs }, apps] =
     await Promise.all([
       templateIds.length
         ? admin
             .from("form_templates")
             .select("id, name, description, fields, is_default, created_at, updated_at")
             .in("id", templateIds)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [] as any[] }),
       admin
         .from("pipeline_stages")
         .select("id, name, slug, color, icon, order, is_default, created_at")
@@ -78,13 +99,10 @@ async function generateSql(jobIds: string[]): Promise<string> {
           "id, title, description, requirements, location, salary_range, work_type, form_template_id, status, public_slug, expires_at, closed_at, analyzed_at, company_name, company_logo_url, brand_color, created_at, updated_at",
         )
         .in("id", jobIds),
-      admin
-        .from("job_applications")
-        .select(
-          "id, job_posting_id, form_data, resume_url, resume_filename, applicant_email, applicant_name, status, triage_status, is_favorite, created_at",
-        )
-        .in("job_posting_id", jobIds)
-        .limit(10000),
+      fetchAllApplications(
+        jobIds,
+        "id, job_posting_id, form_data, resume_url, resume_filename, applicant_email, applicant_name, status, triage_status, is_favorite, created_at",
+      ),
     ]);
 
   const header = `-- Let's Make migration import
@@ -283,14 +301,10 @@ Deno.serve(async (req) => {
     const jobIds = (jobsList ?? []).map((j) => j.id as string);
 
     // Applications summary for external URL list.
-    const { data: appsForExt } = await admin
-      .from("job_applications")
-      .select("id, resume_url")
-      .in("job_posting_id", jobIds)
-      .limit(10000);
-    const externalUrls = (appsForExt ?? [])
-      .filter((a) => a.resume_url && /^https?:\/\//i.test(a.resume_url))
-      .map((a) => ({ application_id: a.id, url: a.resume_url }));
+    const appsForExt = await fetchAllApplications(jobIds, "id, resume_url");
+    const externalUrls = appsForExt
+      .filter((a: any) => a.resume_url && /^https?:\/\//i.test(a.resume_url))
+      .map((a: any) => ({ application_id: a.id, url: a.resume_url }));
 
     // 1. SQL
     const sql = await generateSql(jobIds);
@@ -321,7 +335,7 @@ Deno.serve(async (req) => {
       target_email: TARGET_EMAIL,
       counts: {
         jobs: jobIds.length,
-        applications: appsForExt?.length ?? 0,
+        applications: appsForExt.length,
         cvs_internal: cvs.length,
         cvs_external: externalUrls.length,
       },
