@@ -172,7 +172,7 @@ const COLUMNS = [
   "applications_new", "applications_low_fit", "applications_deserves_analysis",
   "applications_with_resume", "applications_favorited", "unique_candidates",
   // Templates & pipeline
-  "form_templates_count", "job_templates_count", "pipeline_stages_count",
+  "form_templates_count", "pipeline_stages_count",
   // Activity & invites
   "activity_logs_count", "activity_logs_last_at", "invites_sent",
   // Derived
