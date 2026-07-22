@@ -301,14 +301,10 @@ Deno.serve(async (req) => {
     const jobIds = (jobsList ?? []).map((j) => j.id as string);
 
     // Applications summary for external URL list.
-    const { data: appsForExt } = await admin
-      .from("job_applications")
-      .select("id, resume_url")
-      .in("job_posting_id", jobIds)
-      .limit(10000);
-    const externalUrls = (appsForExt ?? [])
-      .filter((a) => a.resume_url && /^https?:\/\//i.test(a.resume_url))
-      .map((a) => ({ application_id: a.id, url: a.resume_url }));
+    const appsForExt = await fetchAllApplications(jobIds, "id, resume_url");
+    const externalUrls = appsForExt
+      .filter((a: any) => a.resume_url && /^https?:\/\//i.test(a.resume_url))
+      .map((a: any) => ({ application_id: a.id, url: a.resume_url }));
 
     // 1. SQL
     const sql = await generateSql(jobIds);
