@@ -81,14 +81,14 @@ async function generateSql(jobIds: string[]): Promise<string> {
     ...new Set((jobsRows ?? []).map((j) => j.form_template_id).filter(Boolean)),
   ] as string[];
 
-  const [{ data: templates }, { data: stages }, { data: jobs }, { data: apps }] =
+  const [{ data: templates }, { data: stages }, { data: jobs }, apps] =
     await Promise.all([
       templateIds.length
         ? admin
             .from("form_templates")
             .select("id, name, description, fields, is_default, created_at, updated_at")
             .in("id", templateIds)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [] as any[] }),
       admin
         .from("pipeline_stages")
         .select("id, name, slug, color, icon, order, is_default, created_at")
@@ -99,13 +99,10 @@ async function generateSql(jobIds: string[]): Promise<string> {
           "id, title, description, requirements, location, salary_range, work_type, form_template_id, status, public_slug, expires_at, closed_at, analyzed_at, company_name, company_logo_url, brand_color, created_at, updated_at",
         )
         .in("id", jobIds),
-      admin
-        .from("job_applications")
-        .select(
-          "id, job_posting_id, form_data, resume_url, resume_filename, applicant_email, applicant_name, status, triage_status, is_favorite, created_at",
-        )
-        .in("job_posting_id", jobIds)
-        .limit(10000),
+      fetchAllApplications(
+        jobIds,
+        "id, job_posting_id, form_data, resume_url, resume_filename, applicant_email, applicant_name, status, triage_status, is_favorite, created_at",
+      ),
     ]);
 
   const header = `-- Let's Make migration import
